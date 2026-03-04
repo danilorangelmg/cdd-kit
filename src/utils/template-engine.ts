@@ -27,6 +27,63 @@ Handlebars.registerHelper("join", (arr: string[], separator: string) =>
 );
 Handlebars.registerHelper("uppercase", (str: string) => str?.toUpperCase());
 Handlebars.registerHelper("lowercase", (str: string) => str?.toLowerCase());
+
+// Path helpers — read from context.paths (injected by generators via getPathMap)
+Handlebars.registerHelper(
+  "docsRoot",
+  function (this: unknown, options: Handlebars.HelperOptions) {
+    return options.data?.root?.paths?.docsRoot ?? "docs";
+  }
+);
+Handlebars.registerHelper(
+  "rulesDir",
+  function (this: unknown, options: Handlebars.HelperOptions) {
+    const p = options.data?.root?.paths;
+    return p ? `${p.docsRoot}/${p.rules}` : "docs/rules";
+  }
+);
+Handlebars.registerHelper(
+  "changelogDir",
+  function (this: unknown, mod: string, options: Handlebars.HelperOptions) {
+    const p = options.data?.root?.paths;
+    const base = p ? `${p.docsRoot}/${p.changelog}` : "docs/changelog";
+    return typeof mod === "string" ? `${base}/${mod}` : base;
+  }
+);
+Handlebars.registerHelper(
+  "businessRulesDir",
+  function (this: unknown, mod: string, options: Handlebars.HelperOptions) {
+    const p = options.data?.root?.paths;
+    return p
+      ? `${p.docsRoot}/${p.rules}/${mod}/${p.businessRules}`
+      : `docs/rules/${mod}/business-rules`;
+  }
+);
+Handlebars.registerHelper(
+  "testPlansDir",
+  function (this: unknown, mod: string, options: Handlebars.HelperOptions) {
+    const p = options.data?.root?.paths;
+    return p
+      ? `${p.docsRoot}/${p.rules}/${mod}/${p.testPlans}`
+      : `docs/rules/${mod}/test-plans`;
+  }
+);
+Handlebars.registerHelper(
+  "devPlansDir",
+  function (this: unknown, mod: string, options: Handlebars.HelperOptions) {
+    const p = options.data?.root?.paths;
+    return p
+      ? `${p.docsRoot}/${p.rules}/${mod}/${p.devPlans}`
+      : `docs/rules/${mod}/dev-plans`;
+  }
+);
+Handlebars.registerHelper(
+  "templatesDir",
+  function (this: unknown, options: Handlebars.HelperOptions) {
+    const p = options.data?.root?.paths;
+    return p ? `${p.docsRoot}/${p.templates}` : "docs/templates";
+  }
+);
 Handlebars.registerHelper(
   "ifRule",
   function (this: unknown, ruleId: string, options: Handlebars.HelperOptions) {

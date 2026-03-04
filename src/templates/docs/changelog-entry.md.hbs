@@ -25,7 +25,7 @@
 
 ## Regras
 
-- Um arquivo por dia por modulo: `documentos/change-log/{modulo}/{YYYY-MM-DD}.md`
+- Um arquivo por dia por modulo: `{{paths.docsRoot}}/{{paths.changelog}}/{modulo}/{YYYY-MM-DD}.md`
 - Multiplas mudancas no mesmo dia → multiplas secoes no mesmo arquivo
 - Diagrama Mermaid obrigatorio apenas para: novo endpoint, mudanca de schema, nova integracao
 {{else}}
@@ -55,7 +55,7 @@
 
 ## Rules
 
-- One file per day per module: `documentos/change-log/{module}/{YYYY-MM-DD}.md`
+- One file per day per module: `{{paths.docsRoot}}/{{paths.changelog}}/{module}/{YYYY-MM-DD}.md`
 - Multiple changes same day → multiple sections in same file
 - Mermaid diagram mandatory only for: new endpoint, schema change, new integration
 {{/if}}

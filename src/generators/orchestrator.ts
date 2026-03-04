@@ -4,6 +4,7 @@ import { writeFile } from "../utils/fs.js";
 import type { ProjectConfig } from "../utils/validation.js";
 import { getActiveRules } from "../methodology/rules.js";
 import { getRoleById } from "../methodology/roles.js";
+import { getPathMap } from "../utils/paths.js";
 
 export async function generateOrchestrator(
   projectDir: string,
@@ -46,11 +47,13 @@ function buildContext(config: ProjectConfig): Record<string, unknown> {
     ...m,
     roleInfo: getRoleById(m.role),
   }));
+  const paths = getPathMap(config.project.language);
 
   return {
     ...config,
     activeRules,
     modulesWithRoles,
+    paths,
     hasBackend: config.modules.some(
       (m) => m.role === "backend" || m.role === "agent-ai"
     ),

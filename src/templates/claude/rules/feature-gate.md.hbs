@@ -13,7 +13,7 @@ globs: ["**/*"]
 1. Classificar: feature nova ou bug fix/refactoring?
 2. Se feature → identificar modulos afetados
 3. Validar escopo (Regra #5): logica no projeto correto?
-4. Verificar docs em `documentos/regras/{modulo}/regras-negocio/{feature}.md`
+4. Verificar docs em `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{feature}.md`
 5. Se NAO existem → `/plan-feature` ANTES de implementar
 6. Se existem → usar como guia
 {{#ifRule "tdd-enforcement"}}
@@ -24,10 +24,10 @@ globs: ["**/*"]
 ## Estrutura de Docs por Feature
 
 ```
-documentos/regras/{modulo}/
-  regras-negocio/{feature}.md
-  plano-testes/{feature}.md
-  plano-desenvolvimento/{feature}.md
+{{paths.docsRoot}}/{{paths.rules}}/{modulo}/
+  {{paths.businessRules}}/{feature}.md
+  {{paths.testPlans}}/{feature}.md
+  {{paths.devPlans}}/{feature}.md
 ```
 
 ## Auto-Deteccao
@@ -45,7 +45,7 @@ documentos/regras/{modulo}/
 1. Classify: new feature or bug fix/refactoring?
 2. If feature → identify affected modules
 3. Validate scope (Rule #5): logic in the correct project?
-4. Check docs in `documentos/regras/{module}/regras-negocio/{feature}.md`
+4. Check docs in `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{feature}.md`
 5. If NOT present → `/plan-feature` BEFORE implementing
 6. If present → use as guide
 {{#ifRule "tdd-enforcement"}}
@@ -56,10 +56,10 @@ documentos/regras/{modulo}/
 ## Docs Structure per Feature
 
 ```
-documentos/regras/{module}/
-  regras-negocio/{feature}.md
-  plano-testes/{feature}.md
-  plano-desenvolvimento/{feature}.md
+{{paths.docsRoot}}/{{paths.rules}}/{module}/
+  {{paths.businessRules}}/{feature}.md
+  {{paths.testPlans}}/{feature}.md
+  {{paths.devPlans}}/{feature}.md
 ```
 
 ## Auto-Detection

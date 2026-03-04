@@ -3,6 +3,7 @@ import { renderTemplate } from "../utils/template-engine.js";
 import { writeFile, ensureDir } from "../utils/fs.js";
 import type { ProjectConfig, ModuleConfig } from "../utils/validation.js";
 import { getRoleById } from "../methodology/roles.js";
+import { getPathMap } from "../utils/paths.js";
 
 export async function generateModule(
   projectDir: string,
@@ -12,10 +13,12 @@ export async function generateModule(
   const generatedFiles: string[] = [];
   const role = getRoleById(mod.role);
 
+  const paths = getPathMap(config.project.language);
   const context = {
     ...config,
     module: mod,
     role,
+    paths,
   };
 
   // Module directory

@@ -12,9 +12,9 @@ export const RULES: Rule[] = [
   {
     id: "absolute-delegation",
     number: 0,
-    name: "Delegacao Absoluta",
+    name: "Absolute Delegation",
     description:
-      "O orquestrador NUNCA edita arquivos dentro de modulos. Toda implementacao e delegada a sub-agentes especializados via Task tool.",
+      "The orchestrator NEVER edits files inside modules. All implementation is delegated to specialized sub-agents via Task tool.",
     alwaysActive: true,
     requires: [],
     category: "core",
@@ -22,9 +22,9 @@ export const RULES: Rule[] = [
   {
     id: "changelog-by-date",
     number: 1,
-    name: "Changelog por Data",
+    name: "Changelog by Date",
     description:
-      "Toda delegacao concluida gera uma entrada em documentos/change-log/{modulo}/{YYYY-MM-DD}.md com titulo, agente, status, decisao, alteracoes e diagrama Mermaid (se aplicavel).",
+      "Every completed delegation generates a changelog entry per module per day with title, agent, status, decision, changes, and Mermaid diagram (if applicable).",
     alwaysActive: false,
     requires: [],
     category: "documentation",
@@ -32,9 +32,9 @@ export const RULES: Rule[] = [
   {
     id: "conditional-mermaid",
     number: 2,
-    name: "Diagramas Mermaid Condicionais",
+    name: "Conditional Mermaid Diagrams",
     description:
-      "Diagramas Mermaid sao obrigatorios APENAS para: novo endpoint (sequenceDiagram), mudanca de schema (erDiagram), nova integracao (flowchart). NAO para: bug fixes, config, refactoring, CRUD basico.",
+      "Mermaid diagrams are mandatory ONLY for: new endpoint (sequenceDiagram), schema change (erDiagram), new integration (flowchart). NOT for: bug fixes, config, refactoring, basic CRUD.",
     alwaysActive: false,
     requires: ["changelog-by-date"],
     category: "documentation",
@@ -44,7 +44,7 @@ export const RULES: Rule[] = [
     number: 3,
     name: "Feature Planning Gate",
     description:
-      "Auto-detecta features novas (implementar, criar, adicionar, novo modulo). Classifica como SIMPLES ou COMPLEXA. Features complexas exigem documentos (regras-negocio, plano-testes, plano-desenvolvimento) por modulo ANTES da implementacao.",
+      "Auto-detects new features (implement, create, add, new module). Classifies as SIMPLE or COMPLEX. Complex features require per-module documentation (business rules, test plans, dev plans) BEFORE implementation.",
     alwaysActive: false,
     requires: [],
     category: "quality",
@@ -52,9 +52,9 @@ export const RULES: Rule[] = [
   {
     id: "api-response-contract",
     number: 4,
-    name: "Contrato de Resposta API",
+    name: "API Response Contract",
     description:
-      'Todas as APIs seguem envelope padrao: sucesso {"data": {...}}, erro {"error": {"message": "...", "code": "..."}}. Sem JSON solto na raiz.',
+      'All APIs follow a standard envelope: success {"data": {...}}, error {"error": {"message": "...", "code": "..."}}. No loose JSON at root.',
     alwaysActive: false,
     requires: [],
     category: "quality",
@@ -62,9 +62,9 @@ export const RULES: Rule[] = [
   {
     id: "scope-of-responsibility",
     number: 5,
-    name: "Escopo de Responsabilidade",
+    name: "Scope of Responsibility",
     description:
-      "Cada modulo tem responsabilidade bem definida. Frontends sao camada visual pura (zero logica de negocio). Backends contem toda logica de negocio. Cada role tem mapa de PODE/NAO PODE.",
+      "Each module has well-defined responsibility. Frontends are pure visual layer (zero business logic). Backends contain all business logic. Each role has a CAN/CANNOT map.",
     alwaysActive: true,
     requires: [],
     category: "core",
@@ -72,9 +72,9 @@ export const RULES: Rule[] = [
   {
     id: "e2e-test-protection",
     number: 6,
-    name: "Protecao E2E",
+    name: "E2E Protection",
     description:
-      "Testes E2E sao protegidos por chmod 555 (dirs) / 444 (files). So desbloqueados na fase Red (make e2e-unlock). Auto-bloqueados apos dev/test. Features/step definitions NUNCA modificados na fase Green.",
+      "E2E tests are protected by chmod 555 (dirs) / 444 (files). Only unlocked in Red phase (make e2e-unlock). Auto-locked after dev/test. Features/step definitions NEVER modified in Green phase.",
     alwaysActive: false,
     requires: ["tdd-enforcement"],
     category: "testing",
@@ -82,9 +82,9 @@ export const RULES: Rule[] = [
   {
     id: "post-dev-e2e-validation",
     number: 7,
-    name: "Validacao E2E Pos-Implementacao",
+    name: "Post-dev E2E Validation",
     description:
-      "Apos QUALQUER mudanca em frontend ou backend: rodar testes E2E. Loop de diagnostico max 3 iteracoes sem sucesso → reportar ao usuario. NUNCA modificar testes para passar — corrigir codigo da aplicacao.",
+      "After ANY frontend or backend change: run E2E tests. Diagnostic loop max 3 iterations without success → report to user. NEVER modify tests to pass — fix application code.",
     alwaysActive: false,
     requires: ["e2e-test-protection"],
     category: "testing",
@@ -94,7 +94,7 @@ export const RULES: Rule[] = [
     number: 8,
     name: "TDD Enforcement",
     description:
-      "4 hooks automaticos protegem o workflow TDD: PreToolUse (bloqueia edicao de src/ sem teste), PostToolUse (roda testes apos edicao), UserPromptSubmit (injeta avaliacao TDD), Stop (verifica testes antes de encerrar).",
+      "4 automatic hooks protect TDD workflow: PreToolUse (blocks src/ edits without tests), PostToolUse (runs tests after edits), UserPromptSubmit (injects TDD eval), Stop (verifies tests before exit).",
     alwaysActive: false,
     requires: [],
     category: "testing",

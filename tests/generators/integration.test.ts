@@ -56,13 +56,18 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(files).toContain(".env.example");
     expect(files).toContain("cdd.json");
 
-    // Verify CLAUDE.md content
+    // Verify CLAUDE.md content (English)
     const claude = await fs.readFile(path.join(TEST_DIR, "CLAUDE.md"), "utf-8");
     expect(claude).toContain("test-project");
     expect(claude).toContain("frontend");
     expect(claude).toContain("api");
     expect(claude).toContain("database");
-    expect(claude).toContain("Delegation");
+    expect(claude).toContain("You are the Orchestrator");
+    expect(claude).toContain("Delegation Map");
+
+    // Should use English paths
+    expect(claude).toContain("docs/rules/");
+    expect(claude).not.toContain("documentos/");
 
     // Verify Makefile targets
     const makefile = await fs.readFile(path.join(TEST_DIR, "Makefile"), "utf-8");
@@ -143,33 +148,61 @@ describe("Project Generation (Standard preset, English)", () => {
       path.join(TEST_DIR, ".claude", "hooks", "tdd-guard.sh")
     );
     expect(hookStat.mode & 0o111).toBeGreaterThan(0);
+
+    // Skills should use English paths
+    const tddSkill = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "skills", "tdd", "SKILL.md"),
+      "utf-8"
+    );
+    expect(tddSkill).toContain("docs/rules/");
+    expect(tddSkill).toContain("business-rules");
+    expect(tddSkill).not.toContain("documentos/");
+
+    // Agents should use English paths
+    const testWriter = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "agents", "tdd-test-writer.md"),
+      "utf-8"
+    );
+    expect(testWriter).toContain("docs/rules/");
+    expect(testWriter).not.toContain("documentos/regras/");
   });
 
-  it("generates documentation structure", async () => {
+  it("generates English documentation structure", async () => {
     const files = await generateDocs(TEST_DIR, standardConfig);
 
-    expect(files).toContain("documentos/change-log/");
-    expect(files).toContain("documentos/regras/");
-    expect(files).toContain("documentos/templates/feature-planning.md");
-    expect(files).toContain("documentos/templates/changelog-entry.md");
+    // English directory names
+    expect(files).toContain("docs/changelog/");
+    expect(files).toContain("docs/rules/");
+    expect(files).toContain("docs/templates/feature-planning.md");
+    expect(files).toContain("docs/templates/changelog-entry.md");
 
-    // Verify per-module doc structure
+    // Verify per-module doc structure with English names
     for (const mod of standardConfig.modules) {
       expect(
         await fs.pathExists(
-          path.join(TEST_DIR, "documentos", "regras", mod.name, "regras-negocio")
+          path.join(TEST_DIR, "docs", "rules", mod.name, "business-rules")
         )
       ).toBe(true);
       expect(
         await fs.pathExists(
-          path.join(TEST_DIR, "documentos", "regras", mod.name, "plano-testes")
+          path.join(TEST_DIR, "docs", "rules", mod.name, "test-plans")
+        )
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          path.join(TEST_DIR, "docs", "rules", mod.name, "dev-plans")
         )
       ).toBe(true);
     }
+
+    // Should NOT have Portuguese directory names
+    expect(
+      await fs.pathExists(path.join(TEST_DIR, "documentos"))
+    ).toBe(false);
   });
 });
 
-describe("Project Generation (Minimal preset)", () => {
+describe("Project Generation (Minimal preset, PT-BR)", () => {
   const minimalConfig: ProjectConfig = {
     version: "1.0.0",
     project: {
@@ -228,5 +261,54 @@ describe("Project Generation (Minimal preset)", () => {
       "utf-8"
     );
     expect(claude).toContain("Modulo customizado");
+  });
+
+  it("generates Portuguese directory names for pt-BR", async () => {
+    const ptBrFullConfig: ProjectConfig = {
+      ...minimalConfig,
+      methodology: {
+        preset: "standard",
+        rules: {
+          ...minimalConfig.methodology.rules,
+          "changelog-by-date": true,
+          "feature-planning-gate": true,
+        },
+      },
+    };
+
+    const files = await generateDocs(TEST_DIR, ptBrFullConfig);
+
+    // Portuguese directory names
+    expect(files).toContain("documentos/change-log/");
+    expect(files).toContain("documentos/regras/");
+
+    // Verify Portuguese sub-dir names
+    expect(
+      await fs.pathExists(
+        path.join(TEST_DIR, "documentos", "regras", "app", "regras-negocio")
+      )
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        path.join(TEST_DIR, "documentos", "regras", "app", "plano-testes")
+      )
+    ).toBe(true);
+
+    // Should NOT have English directory names
+    expect(await fs.pathExists(path.join(TEST_DIR, "docs"))).toBe(false);
+  });
+
+  it("generates Portuguese CLAUDE.md for pt-BR orchestrator", async () => {
+    const ptBrConfig: ProjectConfig = {
+      ...minimalConfig,
+    };
+
+    await generateOrchestrator(TEST_DIR, ptBrConfig);
+    const claude = await fs.readFile(
+      path.join(TEST_DIR, "CLAUDE.md"),
+      "utf-8"
+    );
+    expect(claude).toContain("Voce e o Orquestrador");
+    expect(claude).not.toContain("You are the Orchestrator");
   });
 });

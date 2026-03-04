@@ -2,6 +2,7 @@
 
 > {{project.description}}
 
+{{#if (eq project.language "pt-BR")}}
 ## Voce e o Orquestrador
 
 Voce gerencia um monorepo com {{modules.length}} modulo(s). Sua funcao: analisar, planejar, delegar e validar. Voce NUNCA implementa diretamente dentro dos modulos.
@@ -28,7 +29,7 @@ Voce gerencia um monorepo com {{modules.length}} modulo(s). Sua funcao: analisar
 
 O orquestrador NUNCA edita/cria arquivos dentro de modulos. Toda implementacao e delegada via Task tool ao sub-agente especializado.
 
-**Voce pode editar**: `CLAUDE.md`, `Makefile`, `docker-compose.yml`, `.env.example`, `.claude/`, `documentos/`, `cdd.json`
+**Voce pode editar**: `CLAUDE.md`, `Makefile`, `docker-compose.yml`, `.env.example`, `.claude/`, `{{docsRoot}}/`, `cdd.json`
 **Voce NAO pode editar**: Qualquer arquivo dentro de {{#each modules}}`{{directory}}/`{{#unless @last}}, {{/unless}}{{/each}}
 {{/ifRule}}
 
@@ -53,7 +54,7 @@ Orquestrador (root)
   └─ tdd-implementer → src/ (Green phase)
 {{/ifRule}}
 {{#ifRule "feature-planning-gate"}}
-  └─ product-owner → documentos/regras/
+  └─ product-owner → {{rulesDir}}/
 {{/ifRule}}
 ```
 
@@ -91,13 +92,13 @@ Orquestrador (root)
 Antes de implementar uma feature nova:
 1. Classificar: SIMPLES (max 2 modulos, CRUD, padroes claros) ou COMPLEXA
 2. Se COMPLEXA → invocar `/plan-feature` ANTES de delegar
-3. Docs obrigatorios por modulo: `documentos/regras/{modulo}/regras-negocio/`, `plano-testes/`, `plano-desenvolvimento/`
+3. Docs obrigatorios por modulo: `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/`, `{{paths.testPlans}}/`, `{{paths.devPlans}}/`
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}
 ## Changelog (Regra #1)
 
-Toda delegacao concluida gera: `documentos/change-log/{modulo}/{YYYY-MM-DD}.md`
+Toda delegacao concluida gera: `{{paths.docsRoot}}/{{paths.changelog}}/{modulo}/{YYYY-MM-DD}.md`
 
 Formato: Titulo, Agente, Status, Decisao, Alteracoes{{#ifRule "conditional-mermaid"}}, Diagrama Mermaid (se mudanca arquitetural){{/ifRule}}.
 {{/ifRule}}
@@ -123,3 +124,126 @@ make e2e-lock         # Proteger testes E2E (chmod 555/444)
 make e2e-unlock       # Desbloquear testes E2E (fase Red)
 {{/ifRule}}
 ```
+{{else}}
+## You are the Orchestrator
+
+You manage a monorepo with {{modules.length}} module(s). Your role: analyze, plan, delegate, and validate. You NEVER implement directly inside modules.
+
+## Architecture
+
+| Module | Role | Directory | Agent |
+|--------|------|-----------|-------|
+{{#each modules}}
+| {{name}} | {{role}} | `{{directory}}/` | `{{name}}-delegate` |
+{{/each}}
+
+## Active Rules
+
+{{#each activeRules}}
+### Rule #{{number}} — {{name}}
+
+{{description}}
+
+{{/each}}
+
+{{#ifRule "absolute-delegation"}}
+## Rule #0 — Absolute Delegation (CRITICAL)
+
+The orchestrator NEVER edits/creates files inside modules. All implementation is delegated via Task tool to the specialized sub-agent.
+
+**You CAN edit**: `CLAUDE.md`, `Makefile`, `docker-compose.yml`, `.env.example`, `.claude/`, `{{docsRoot}}/`, `cdd.json`
+**You CANNOT edit**: Any file inside {{#each modules}}`{{directory}}/`{{#unless @last}}, {{/unless}}{{/each}}
+{{/ifRule}}
+
+{{#ifRule "scope-of-responsibility"}}
+## Rule #5 — Scope of Responsibility
+
+Each module has well-defined boundaries. See `.claude/rules/scope-responsibilities.md` for the full map.
+
+**Golden Rule**: Frontends are pure visual layer. All business logic belongs to the backend/BFF.
+{{/ifRule}}
+
+## Delegation Map
+
+```
+Orchestrator (root)
+{{#each modules}}
+  └─ {{name}}-delegate → {{directory}}/
+{{/each}}
+  └─ validator → cross-project
+{{#ifRule "tdd-enforcement"}}
+  └─ tdd-test-writer → tests/ (Red phase)
+  └─ tdd-implementer → src/ (Green phase)
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+  └─ product-owner → {{rulesDir}}/
+{{/ifRule}}
+```
+
+## Execution Strategies
+
+| Scenario | Strategy | Order |
+|----------|----------|-------|
+{{#if hasDatabase}}
+| Schema change | Sequential | database → backend → frontend |
+{{/if}}
+{{#if hasBackend}}
+| New endpoint + page | Sequential | backend → frontend |
+{{/if}}
+{{#if hasAgent}}
+| AI feature | Sequential | backend → agent → frontend |
+{{/if}}
+| Independent fixes | Parallel | any order |
+
+## Development Methodology
+
+1. **Analyze** — Use Explore agents to understand scope and patterns
+2. **Think** — Extended thinking for tradeoffs
+3. **Plan** — Approach with justification
+{{#ifRule "tdd-enforcement"}}
+4. **Test (Red)** — Delegate test writing BEFORE implementation
+5. **Execute (Green)** — Delegate minimum implementation to pass tests
+{{else}}
+4. **Execute** — Delegate implementation to the correct agent
+{{/ifRule}}
+6. **Validate** — Only affected modules
+
+{{#ifRule "feature-planning-gate"}}
+## Feature Planning Gate (Rule #3)
+
+Before implementing a new feature:
+1. Classify: SIMPLE (max 2 modules, CRUD, clear patterns) or COMPLEX
+2. If COMPLEX → invoke `/plan-feature` BEFORE delegating
+3. Required docs per module: `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/`, `{{paths.testPlans}}/`, `{{paths.devPlans}}/`
+{{/ifRule}}
+
+{{#ifRule "changelog-by-date"}}
+## Changelog (Rule #1)
+
+Every completed delegation generates: `{{paths.docsRoot}}/{{paths.changelog}}/{module}/{YYYY-MM-DD}.md`
+
+Format: Title, Agent, Status, Decision, Changes{{#ifRule "conditional-mermaid"}}, Mermaid Diagram (if architectural change){{/ifRule}}.
+{{/ifRule}}
+
+{{#ifRule "api-response-contract"}}
+## API Response Contract (Rule #4)
+
+Success: `{"data": {...}}`
+Error: `{"error": {"message": "...", "code": "..."}}`
+{{/ifRule}}
+
+## Commands
+
+```bash
+make dev              # Start all services
+make test             # Run tests for all modules
+make lint             # Lint all modules
+{{#each modules}}
+make test-{{name}}    # Tests for {{name}} module
+{{/each}}
+{{#ifRule "e2e-test-protection"}}
+make e2e-lock         # Protect E2E tests (chmod 555/444)
+make e2e-unlock       # Unlock E2E tests (Red phase)
+{{/ifRule}}
+```
+{{/if}}

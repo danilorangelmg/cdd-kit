@@ -20,6 +20,24 @@ Formato: `[modulo] [feature-ou-tarefa] [contexto opcional]`
 - **modulo**: {{#each modules}}`{{name}}`{{#unless @last}}, {{/unless}}{{/each}}
 - **feature-ou-tarefa**: nome da feature ou descricao da tarefa
 
+## Mapa de Modulos
+
+| Modulo | Diretorio | Comando de Teste |
+|--------|-----------|-----------------|
+{{#each modules}}
+| {{name}} | `{{directory}}/` | `make test-{{name}}` |
+{{/each}}
+
+{{#ifRule "feature-planning-gate"}}
+## Pre-Requisito — Feature Gate (Regra #3)
+
+ANTES de iniciar TDD, verificar se documentacao existe:
+1. Verificar `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{feature}.md` existe
+2. Verificar `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.testPlans}}/{feature}.md` existe
+3. Se NAO encontrado → abortar e invocar `/plan-feature` primeiro
+4. Se encontrado → prosseguir para Fase 1
+{{/ifRule}}
+
 ## Ciclo TDD
 
 ### Fase 1 — Red (Test Writer)
@@ -27,8 +45,8 @@ Formato: `[modulo] [feature-ou-tarefa] [contexto opcional]`
 Delegue ao `tdd-test-writer` via Task tool:
 
 ```
-Leia as specs em documentos/regras/{modulo}/regras-negocio/{feature}.md e
-documentos/regras/{modulo}/plano-testes/{feature}.md.
+Leia as specs em {{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{feature}.md e
+{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.testPlans}}/{feature}.md.
 Escreva testes unitarios em {modulo}/tests/ que verifiquem os cenarios.
 Os testes DEVEM falhar (Red phase).
 Retorne: TESTES_CRIADOS, CENARIOS_COBERTOS, RESULTADO_RED, DEPENDENCIAS.
@@ -54,8 +72,19 @@ Retorne: ARQUIVOS_ALTERADOS, RESUMO, RESULTADO_GREEN, VALIDACAO_LOCAL, DEPENDENC
 ### Fase 3 — Validacao
 
 1. **Lint**: `cd {modulo} && make lint`
-2. **Coverage**: Verificar cobertura
+2. **Coverage**: Verificar cobertura >= 80% (sugerido)
+   - Se ferramenta de coverage disponivel: `cd {modulo} && make coverage`
+   - Reportar branches nao cobertas
 3. **E2E** (se aplicavel): `make test-e2e`
+
+### Fase 4 — Report
+
+Consolidar resultados do ciclo TDD:
+1. Testes criados (quantidade e arquivos)
+2. Arquivos de implementacao alterados
+3. Delta de cobertura (antes/depois)
+4. Issues pendentes ou divida tecnica
+5. Salvar report em `.claude/agent-memory/tdd-report-{feature}.md`
 
 ## Regras
 
@@ -74,6 +103,24 @@ Format: `[module] [feature-or-task] [optional context]`
 - **module**: {{#each modules}}`{{name}}`{{#unless @last}}, {{/unless}}{{/each}}
 - **feature-or-task**: feature name or task description
 
+## Module Map
+
+| Module | Directory | Test Command |
+|--------|-----------|-------------|
+{{#each modules}}
+| {{name}} | `{{directory}}/` | `make test-{{name}}` |
+{{/each}}
+
+{{#ifRule "feature-planning-gate"}}
+## Pre-Requisite — Feature Gate (Rule #3)
+
+BEFORE starting TDD, verify documentation exists:
+1. Check `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{feature}.md` exists
+2. Check `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.testPlans}}/{feature}.md` exists
+3. If NOT found → abort and invoke `/plan-feature` first
+4. If found → proceed to Phase 1
+{{/ifRule}}
+
 ## TDD Cycle
 
 ### Phase 1 — Red (Test Writer)
@@ -81,8 +128,8 @@ Format: `[module] [feature-or-task] [optional context]`
 Delegate to `tdd-test-writer` via Task tool:
 
 ```
-Read specs in documentos/regras/{module}/regras-negocio/{feature}.md and
-documentos/regras/{module}/plano-testes/{feature}.md.
+Read specs in {{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{feature}.md and
+{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.testPlans}}/{feature}.md.
 Write unit tests in {module}/tests/ that verify the scenarios.
 Tests MUST fail (Red phase).
 Return: TESTS_CREATED, SCENARIOS_COVERED, RED_RESULT, DEPENDENCIES.
@@ -108,8 +155,19 @@ Return: FILES_CHANGED, SUMMARY, GREEN_RESULT, LOCAL_VALIDATION, EXTERNAL_DEPENDE
 ### Phase 3 — Validation
 
 1. **Lint**: `cd {module} && make lint`
-2. **Coverage**: Check coverage
+2. **Coverage**: Verify coverage >= 80% (suggested)
+   - If coverage tool available: `cd {module} && make coverage`
+   - Report uncovered branches
 3. **E2E** (if applicable): `make test-e2e`
+
+### Phase 4 — Report
+
+Consolidate TDD cycle results:
+1. Tests created (count and files)
+2. Implementation files changed
+3. Coverage delta (before/after)
+4. Remaining issues or tech debt
+5. Save report to `.claude/agent-memory/tdd-report-{feature}.md`
 
 ## Rules
 

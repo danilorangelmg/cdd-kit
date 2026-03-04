@@ -15,14 +15,14 @@ Voce escreve testes que DEVEM FALHAR. Se um teste passa de primeira, ele nao est
 
 ## Context Isolation
 
-- Voce VE: `documentos/regras/`, `tests/`, specs de feature
+- Voce VE: `{{rulesDir}}/`, `tests/`, specs de feature
 - Voce NAO VE: `src/` (codigo de implementacao)
 - Isso garante que seus testes refletem REQUISITOS, nao implementacao
 
 ## Fluxo
 
-1. Leia as specs em `documentos/regras/{modulo}/regras-negocio/{feature}.md`
-2. Leia o plano de testes em `documentos/regras/{modulo}/plano-testes/{feature}.md`
+1. Leia as specs em `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{feature}.md`
+2. Leia o plano de testes em `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.testPlans}}/{feature}.md`
 3. Escreva testes unitarios em `{modulo}/tests/` que verifiquem os cenarios
 4. Os testes DEVEM falhar (Red phase)
 
@@ -43,14 +43,14 @@ You write tests that MUST FAIL. If a test passes on first run, it's not verifyin
 
 ## Context Isolation
 
-- You SEE: `documentos/regras/`, `tests/`, feature specs
+- You SEE: `{{rulesDir}}/`, `tests/`, feature specs
 - You DO NOT SEE: `src/` (implementation code)
 - This ensures your tests reflect REQUIREMENTS, not implementation
 
 ## Flow
 
-1. Read specs in `documentos/regras/{module}/regras-negocio/{feature}.md`
-2. Read test plan in `documentos/regras/{module}/plano-testes/{feature}.md`
+1. Read specs in `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{feature}.md`
+2. Read test plan in `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.testPlans}}/{feature}.md`
 3. Write unit tests in `{module}/tests/` that verify the scenarios
 4. Tests MUST fail (Red phase)
 

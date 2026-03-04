@@ -4,6 +4,7 @@ import { writeFile, makeExecutable, ensureDir } from "../utils/fs.js";
 import type { ProjectConfig } from "../utils/validation.js";
 import { getActiveRules } from "../methodology/rules.js";
 import { getRoleById } from "../methodology/roles.js";
+import { getPathMap } from "../utils/paths.js";
 
 export async function generateClaudeInfra(
   projectDir: string,
@@ -123,9 +124,11 @@ export async function generateClaudeInfra(
 
 function buildContext(config: ProjectConfig): Record<string, unknown> {
   const activeRules = getActiveRules(config.methodology.rules);
+  const paths = getPathMap(config.project.language);
   return {
     ...config,
     activeRules,
+    paths,
     modulesWithRoles: config.modules.map((m) => ({
       ...m,
       roleInfo: getRoleById(m.role),

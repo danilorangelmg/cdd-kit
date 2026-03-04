@@ -61,9 +61,9 @@ my-project/
 │   └── CLAUDE.md                # Module governance (business logic)
 ├── database/
 │   └── CLAUDE.md                # Module governance (DDL only)
-└── documentos/
-    ├── change-log/{module}/     # Daily changelogs per module
-    ├── regras/{module}/         # Business rules, test plans, dev plans
+└── docs/                        # (or documentos/ for PT-BR)
+    ├── changelog/{module}/      # Daily changelogs per module
+    ├── rules/{module}/          # Business rules, test plans, dev plans
     └── templates/               # Document templates
 ```
 
@@ -122,6 +122,12 @@ cdd-kit generates **methodology**, not code. The CLAUDE.md files describe roles,
 - Governance rules prevent chaos (rigor of engineering)
 - TDD enforcement ensures correctness
 - Multi-agent orchestration scales to enterprise projects
+
+## Documentation
+
+- [Methodology](docs/methodology.md) — What CDD is and how it works
+- [Rules Reference](docs/rules-reference.md) — Detailed description of all 9 rules
+- [Getting Started](docs/getting-started.md) — Install and scaffold your first project
 
 ## License
 

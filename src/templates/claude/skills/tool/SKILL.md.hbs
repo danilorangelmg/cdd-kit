@@ -1,0 +1,113 @@
+---
+name: tool
+{{#if (eq project.language "pt-BR")}}
+description: Criar Tool para agentes LLM/MCP
+{{else}}
+description: Create Tool for LLM/MCP agents
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /tool — Criar Tool LLM/MCP
+
+## Uso
+```
+/tool [nome]
+```
+
+## Conceito
+
+Tools sao funcoes que agentes LLM podem invocar para interagir com sistemas externos. A **docstring e critica** — e o que o LLM usa para decidir quando invocar a tool.
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler tools existentes para entender o padrao
+2. Verificar como o agente invoca tools
+3. Identificar servicos/APIs que a tool vai acessar
+
+### Fase 1 — Definicao
+- **Nome**: verbo_substantivo (ex: `buscar_usuario`, `criar_alerta`)
+- **Docstring**: Clara, concisa, descreve QUANDO usar e O QUE retorna
+- **Parametros**: Tipados, com descricao. Minimo necessario
+- **Retorno**: Formato padronizado (string ou structured)
+
+### Fase 2 — Implementacao
+- Funcao async (tools geralmente fazem I/O)
+- Tratamento de erros robusto (LLM precisa entender falhas)
+- Timeout configuravel
+- Logging de chamadas (observabilidade)
+- Retorno com informacao suficiente para o LLM prosseguir
+
+### Fase 3 — Registro
+- Registrar no servidor MCP ou no agente LLM
+- Configurar permissoes de acesso
+
+### Fase 4 — Testes
+- Testar com inputs validos
+- Testar com inputs invalidos
+- Testar tratamento de erros
+- Testar timeout
+
+## Checklist
+- [ ] Docstring clara (LLM entende quando usar)
+- [ ] Parametros tipados com descricao
+- [ ] Tratamento de erros (LLM recebe mensagem util)
+- [ ] Timeout configurado
+- [ ] Logging de chamadas
+- [ ] Registrada no agente/MCP
+- [ ] Testes cobrindo cenarios principais
+{{else}}
+# /tool — Create LLM/MCP Tool
+
+## Usage
+```
+/tool [name]
+```
+
+## Concept
+
+Tools are functions that LLM agents can invoke to interact with external systems. The **docstring is critical** — it's what the LLM uses to decide when to invoke the tool.
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read existing tools to understand the pattern
+2. Check how the agent invokes tools
+3. Identify services/APIs the tool will access
+
+### Phase 1 — Definition
+- **Name**: verb_noun (e.g., `search_user`, `create_alert`)
+- **Docstring**: Clear, concise, describes WHEN to use and WHAT it returns
+- **Parameters**: Typed, with description. Minimum necessary
+- **Return**: Standardized format (string or structured)
+
+### Phase 2 — Implementation
+- Async function (tools typically do I/O)
+- Robust error handling (LLM needs to understand failures)
+- Configurable timeout
+- Call logging (observability)
+- Return with enough info for LLM to proceed
+
+### Phase 3 — Registration
+- Register in MCP server or LLM agent
+- Configure access permissions
+
+### Phase 4 — Tests
+- Test with valid inputs
+- Test with invalid inputs
+- Test error handling
+- Test timeout
+
+## Checklist
+- [ ] Clear docstring (LLM understands when to use)
+- [ ] Typed parameters with description
+- [ ] Error handling (LLM receives useful message)
+- [ ] Timeout configured
+- [ ] Call logging
+- [ ] Registered in agent/MCP
+- [ ] Tests covering main scenarios
+{{/if}}

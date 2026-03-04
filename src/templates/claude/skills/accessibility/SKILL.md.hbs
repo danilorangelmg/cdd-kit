@@ -1,0 +1,175 @@
+---
+name: accessibility
+{{#if (eq project.language "pt-BR")}}
+description: Auditoria de acessibilidade WCAG 2.1 em componentes
+{{else}}
+description: WCAG 2.1 accessibility audit on components
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Glob, Grep
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /accessibility — Auditoria de Acessibilidade
+
+## Uso
+```
+/accessibility [alvo]
+```
+
+## WCAG 2.1 Level AA — Checklist
+
+### 1. Perceptivel
+- [ ] **Alt text**: Todas as imagens com alt descritivo (ou `alt=""` para decorativas)
+- [ ] **Contraste de cor**: Minimo 4.5:1 para texto normal, 3:1 para texto grande
+- [ ] **Redimensionamento**: Conteudo legivel em 200% zoom
+- [ ] **Nao depender so de cor**: Informacao transmitida por cor tem alternativa (icone, texto)
+
+### 2. Operavel
+- [ ] **Navegacao por teclado**: Todos os elementos interativos acessiveis via Tab/Enter/Space
+- [ ] **Focus visivel**: Indicador de foco claro em todos os elementos interativos
+- [ ] **Sem armadilhas de foco**: Tab percorre todos os elementos sem ficar preso
+- [ ] **Skip links**: Link para pular navegacao em paginas complexas
+- [ ] **Touch targets**: Minimo 44x44px em dispositivos touch
+
+### 3. Compreensivel
+- [ ] **Labels**: Todo input tem label associado (`htmlFor`/`aria-label`/`aria-labelledby`)
+- [ ] **Erros**: Mensagens de erro identificam o campo e sugerem correcao
+- [ ] **Instrucoes**: Campos com formato especial tem instrucoes visiveis
+- [ ] **Linguagem**: Atributo `lang` no HTML
+
+### 4. Robusto
+- [ ] **HTML semantico**: Uso correto de `<nav>`, `<main>`, `<section>`, `<article>`
+- [ ] **ARIA roles**: Roles corretos quando HTML semantico nao e suficiente
+- [ ] **Headings**: Hierarquia logica (h1 → h2 → h3, sem pular niveis)
+- [ ] **Live regions**: `aria-live` para conteudo dinamico (alertas, notificacoes)
+
+## Padroes de Correcao
+
+### Botao com icone (sem texto)
+```jsx
+<button aria-label="Fechar modal">
+  <XIcon aria-hidden="true" />
+</button>
+```
+
+### Input com label
+```jsx
+<label htmlFor="email">Email</label>
+<input id="email" type="email" aria-describedby="email-help" />
+<span id="email-help">Formato: usuario@dominio.com</span>
+```
+
+### Imagem informativa
+```jsx
+<img src="grafico.png" alt="Grafico mostrando aumento de 30% nas vendas" />
+```
+
+### Imagem decorativa
+```jsx
+<img src="decoracao.png" alt="" role="presentation" />
+```
+
+## Formato de Saida
+
+```markdown
+# Auditoria de Acessibilidade — {alvo}
+
+| Pilar | Conformidade | Issues |
+|-------|-------------|--------|
+| Perceptivel | X/Y | N |
+| Operavel | X/Y | N |
+| Compreensivel | X/Y | N |
+| Robusto | X/Y | N |
+
+## Issues Criticas
+1. {descricao} — {arquivo}:{linha} — {correcao sugerida}
+
+## Recomendacoes
+1. {descricao}
+
+## Nivel: A | AA | Nao conforme
+```
+{{else}}
+# /accessibility — Accessibility Audit
+
+## Usage
+```
+/accessibility [target]
+```
+
+## WCAG 2.1 Level AA — Checklist
+
+### 1. Perceivable
+- [ ] **Alt text**: All images with descriptive alt (or `alt=""` for decorative)
+- [ ] **Color contrast**: Minimum 4.5:1 for normal text, 3:1 for large text
+- [ ] **Resizing**: Content readable at 200% zoom
+- [ ] **Don't rely on color alone**: Info conveyed by color has alternative (icon, text)
+
+### 2. Operable
+- [ ] **Keyboard navigation**: All interactive elements accessible via Tab/Enter/Space
+- [ ] **Visible focus**: Clear focus indicator on all interactive elements
+- [ ] **No focus traps**: Tab traverses all elements without getting stuck
+- [ ] **Skip links**: Link to skip navigation on complex pages
+- [ ] **Touch targets**: Minimum 44x44px on touch devices
+
+### 3. Understandable
+- [ ] **Labels**: Every input has associated label (`htmlFor`/`aria-label`/`aria-labelledby`)
+- [ ] **Errors**: Error messages identify field and suggest correction
+- [ ] **Instructions**: Fields with special format have visible instructions
+- [ ] **Language**: `lang` attribute on HTML
+
+### 4. Robust
+- [ ] **Semantic HTML**: Correct use of `<nav>`, `<main>`, `<section>`, `<article>`
+- [ ] **ARIA roles**: Correct roles when semantic HTML is insufficient
+- [ ] **Headings**: Logical hierarchy (h1 → h2 → h3, no skipping levels)
+- [ ] **Live regions**: `aria-live` for dynamic content (alerts, notifications)
+
+## Correction Patterns
+
+### Icon button (no text)
+```jsx
+<button aria-label="Close modal">
+  <XIcon aria-hidden="true" />
+</button>
+```
+
+### Input with label
+```jsx
+<label htmlFor="email">Email</label>
+<input id="email" type="email" aria-describedby="email-help" />
+<span id="email-help">Format: user@domain.com</span>
+```
+
+### Informative image
+```jsx
+<img src="chart.png" alt="Chart showing 30% increase in sales" />
+```
+
+### Decorative image
+```jsx
+<img src="decoration.png" alt="" role="presentation" />
+```
+
+## Output Format
+
+```markdown
+# Accessibility Audit — {target}
+
+| Pillar | Compliance | Issues |
+|--------|-----------|--------|
+| Perceivable | X/Y | N |
+| Operable | X/Y | N |
+| Understandable | X/Y | N |
+| Robust | X/Y | N |
+
+## Critical Issues
+1. {description} — {file}:{line} — {suggested fix}
+
+## Recommendations
+1. {description}
+
+## Level: A | AA | Non-compliant
+```
+{{/if}}

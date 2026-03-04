@@ -1,0 +1,127 @@
+---
+name: agent-create
+{{#if (eq project.language "pt-BR")}}
+description: Criar agente LLM com prompts estruturados e endpoints
+{{else}}
+description: Create LLM agent with structured prompts and endpoints
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /agent-create — Criar Agente LLM
+
+## Uso
+```
+/agent-create [nome]
+```
+
+## Conceito
+
+Agentes sao pipelines LLM com prompts estruturados, tools, e endpoints de exposicao. Combinam regras deterministicas com capacidades de LLM.
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler agentes existentes para entender o padrao
+2. Identificar tools disponiveis
+3. Verificar regras deterministicas relacionadas
+
+### Fase 1 — Prompt
+- **System prompt**: Define papel, restricoes, formato de saida
+- **Template de input**: Estruturado com dados de contexto
+- **Structured output**: Schema de resposta do LLM
+- **Exemplos**: Few-shot quando necessario
+
+### Fase 2 — Pipeline
+- Pre-processamento de dados de entrada
+- Chamada LLM com prompt construido
+- Parsing de resposta estruturada
+- Pos-processamento e validacao
+
+### Fase 3 — Tools
+- Registrar tools que o agente pode usar
+- Cada tool com docstring descritiva
+- Tratar fallback quando tool falha
+
+### Fase 4 — Endpoint
+- Expor agente via API (REST ou MCP)
+- Schema de request/response
+- Timeout e retry configurados
+- Observabilidade (tokens, custo, latencia)
+
+### Fase 5 — Testes
+- Testar com inputs validos
+- Testar structured output parsing
+- Testar fallback de tools
+- Testar timeout e erros
+- Mock de LLM para testes rapidos
+
+## Checklist
+- [ ] System prompt claro e com restricoes
+- [ ] Structured output com schema
+- [ ] Tools com docstrings descritivas
+- [ ] Observabilidade (tokens/custo/latencia)
+- [ ] Timeout e retry configurados
+- [ ] Testes com LLM mockado
+- [ ] Endpoint documentado
+{{else}}
+# /agent-create — Create LLM Agent
+
+## Usage
+```
+/agent-create [name]
+```
+
+## Concept
+
+Agents are LLM pipelines with structured prompts, tools, and exposure endpoints. They combine deterministic rules with LLM capabilities.
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read existing agents to understand the pattern
+2. Identify available tools
+3. Check related deterministic rules
+
+### Phase 1 — Prompt
+- **System prompt**: Defines role, constraints, output format
+- **Input template**: Structured with context data
+- **Structured output**: LLM response schema
+- **Examples**: Few-shot when necessary
+
+### Phase 2 — Pipeline
+- Pre-process input data
+- LLM call with constructed prompt
+- Structured response parsing
+- Post-processing and validation
+
+### Phase 3 — Tools
+- Register tools the agent can use
+- Each tool with descriptive docstring
+- Handle fallback when tool fails
+
+### Phase 4 — Endpoint
+- Expose agent via API (REST or MCP)
+- Request/response schema
+- Timeout and retry configured
+- Observability (tokens, cost, latency)
+
+### Phase 5 — Tests
+- Test with valid inputs
+- Test structured output parsing
+- Test tool fallback
+- Test timeout and errors
+- LLM mock for fast tests
+
+## Checklist
+- [ ] Clear system prompt with constraints
+- [ ] Structured output with schema
+- [ ] Tools with descriptive docstrings
+- [ ] Observability (tokens/cost/latency)
+- [ ] Timeout and retry configured
+- [ ] Tests with mocked LLM
+- [ ] Endpoint documented
+{{/if}}

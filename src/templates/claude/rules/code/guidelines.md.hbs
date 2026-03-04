@@ -1,0 +1,103 @@
+{{#if (eq project.language "pt-BR")}}
+# Diretrizes de Codigo — {{module.name}}
+
+## Filosofia
+
+1. **Pragmatismo** — KISS. Resolver o problema sem over-engineering
+2. **DIP** — Depender de abstracoes (Protocol/Interface), nao de implementacoes
+3. **SRP** — Cada funcao/classe com uma unica responsabilidade
+4. **Zero Lixo** — Sem codigo morto, sem imports nao usados, sem TODO esquecido
+5. **Native First** — Stdlib antes de dependencias externas
+
+## Praticas de Codificacao
+
+### Funcoes
+- Pequenas e reutilizaveis
+- Nomes descritivos (verbos para acoes)
+- Early return para validacoes
+- Sem aninhamento profundo (max 3 niveis)
+- Documentacao em funcoes publicas
+
+### Nomenclatura
+| Tipo | Padrao | Exemplo |
+|------|--------|---------|
+| Variaveis/funcoes | camelCase | `getUserName` |
+| Classes/tipos | PascalCase | `UserService` |
+| Constantes | SCREAMING_SNAKE | `MAX_RETRIES` |
+| Arquivos | kebab-case | `user-service.ts` |
+| Enums (valores) | SCREAMING_SNAKE | `STATUS_ACTIVE` |
+
+### Organizacao de Imports
+1. Stdlib / built-in
+2. Bibliotecas externas
+3. Modulos internos do projeto
+4. Tipos (se linguagem tipada)
+5. Constantes
+
+### Tratamento de Erros
+- Erros com mensagens claras e uteis
+- Nao engolir erros silenciosamente
+- Logging estruturado para erros
+- Stack traces em desenvolvimento, nao em producao
+
+## Clean Code
+
+- [ ] Sem classes/funcoes vazias
+- [ ] Sem imports nao usados
+- [ ] Sem variaveis nao usadas
+- [ ] Sem codigo comentado (usar git para historico)
+- [ ] Sem `any` (se linguagem tipada)
+- [ ] Sem magic numbers (usar constantes nomeadas)
+- [ ] Interfaces/abstractions para contratos de servico
+{{else}}
+# Code Guidelines — {{module.name}}
+
+## Philosophy
+
+1. **Pragmatism** — KISS. Solve the problem without over-engineering
+2. **DIP** — Depend on abstractions (Protocol/Interface), not implementations
+3. **SRP** — Each function/class with a single responsibility
+4. **Zero Waste** — No dead code, no unused imports, no forgotten TODO
+5. **Native First** — Stdlib before external dependencies
+
+## Coding Practices
+
+### Functions
+- Small and reusable
+- Descriptive names (verbs for actions)
+- Early return for validations
+- No deep nesting (max 3 levels)
+- Documentation on public functions
+
+### Naming
+| Type | Pattern | Example |
+|------|---------|---------|
+| Variables/functions | camelCase | `getUserName` |
+| Classes/types | PascalCase | `UserService` |
+| Constants | SCREAMING_SNAKE | `MAX_RETRIES` |
+| Files | kebab-case | `user-service.ts` |
+| Enums (values) | SCREAMING_SNAKE | `STATUS_ACTIVE` |
+
+### Import Organization
+1. Stdlib / built-in
+2. External libraries
+3. Internal project modules
+4. Types (if typed language)
+5. Constants
+
+### Error Handling
+- Errors with clear, useful messages
+- Don't silently swallow errors
+- Structured logging for errors
+- Stack traces in development, not production
+
+## Clean Code
+
+- [ ] No empty classes/functions
+- [ ] No unused imports
+- [ ] No unused variables
+- [ ] No commented-out code (use git for history)
+- [ ] No `any` (if typed language)
+- [ ] No magic numbers (use named constants)
+- [ ] Interfaces/abstractions for service contracts
+{{/if}}

@@ -1,0 +1,169 @@
+---
+name: tech-review
+{{#if (eq project.language "pt-BR")}}
+description: Realizar revisao tecnica de codigo com checklist completo
+{{else}}
+description: Perform technical code review with comprehensive checklist
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Glob, Grep
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /tech-review — Revisao Tecnica
+
+## Uso
+```
+/tech-review [alvo]
+```
+
+**Alvo**: arquivo, diretorio ou feature
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler todos os arquivos relevantes do alvo
+2. Identificar padroes existentes no projeto
+3. Verificar regras em `.claude/rules/`
+
+### Fase 1 — Revisar
+
+#### 1. Arquitetura & Design
+- [ ] Segue padroes do projeto
+- [ ] Separacao de responsabilidades
+- [ ] Baixo acoplamento, alta coesao
+- [ ] Nao viola fronteiras de modulo
+- [ ] Dependencias na direcao correta
+
+#### 2. Qualidade de Codigo
+- [ ] Legibilidade (nomes claros, funcoes pequenas)
+- [ ] Responsabilidade unica
+- [ ] Sem duplicacao (DRY)
+- [ ] Nomenclatura consistente
+- [ ] Sem codigo morto
+
+#### 3. Performance
+- [ ] Sem operacoes desnecessariamente caras
+- [ ] Otimizacao adequada (sem prematura)
+- [ ] Lazy loading onde apropriado
+- [ ] Caching quando justificado
+
+#### 4. Seguranca
+- [ ] Input validado
+- [ ] Sem dados sensiveis expostos
+- [ ] Tratamento de erros seguro
+- [ ] Sanitizacao de dados de entrada
+
+#### 5. Manutenibilidade
+- [ ] Facil de entender
+- [ ] Facil de modificar
+- [ ] Facil de testar
+- [ ] Documentacao onde necessario
+
+## Formato de Saida
+
+```markdown
+# Tech Review — {alvo}
+
+**Revisor**: software-architect
+**Data**: {YYYY-MM-DD}
+
+## Resumo
+{avaliacao geral em 2-3 linhas}
+
+## Issues
+
+### Criticas (bloqueia merge)
+1. {descricao} — {arquivo}:{linha}
+
+### Importantes (deve corrigir)
+1. {descricao} — {arquivo}:{linha}
+
+### Sugestoes (nice to have)
+1. {descricao} — {arquivo}:{linha}
+
+## Pontos Positivos
+- {o que esta bem feito}
+
+## Score: {X}/10
+```
+{{else}}
+# /tech-review — Technical Review
+
+## Usage
+```
+/tech-review [target]
+```
+
+**Target**: file, directory, or feature
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read all relevant target files
+2. Identify existing project patterns
+3. Check rules in `.claude/rules/`
+
+### Phase 1 — Review
+
+#### 1. Architecture & Design
+- [ ] Follows project patterns
+- [ ] Separation of concerns
+- [ ] Low coupling, high cohesion
+- [ ] No module boundary violations
+- [ ] Dependencies in correct direction
+
+#### 2. Code Quality
+- [ ] Readability (clear names, small functions)
+- [ ] Single responsibility
+- [ ] No duplication (DRY)
+- [ ] Consistent naming
+- [ ] No dead code
+
+#### 3. Performance
+- [ ] No unnecessarily expensive operations
+- [ ] Appropriate optimization (not premature)
+- [ ] Lazy loading where appropriate
+- [ ] Caching when justified
+
+#### 4. Security
+- [ ] Input validated
+- [ ] No sensitive data exposed
+- [ ] Secure error handling
+- [ ] Input data sanitization
+
+#### 5. Maintainability
+- [ ] Easy to understand
+- [ ] Easy to modify
+- [ ] Easy to test
+- [ ] Documentation where needed
+
+## Output Format
+
+```markdown
+# Tech Review — {target}
+
+**Reviewer**: software-architect
+**Date**: {YYYY-MM-DD}
+
+## Summary
+{general assessment in 2-3 lines}
+
+## Issues
+
+### Critical (blocks merge)
+1. {description} — {file}:{line}
+
+### Important (should fix)
+1. {description} — {file}:{line}
+
+### Suggestions (nice to have)
+1. {description} — {file}:{line}
+
+## Positive Points
+- {what was well done}
+
+## Score: {X}/10
+```
+{{/if}}

@@ -1,0 +1,149 @@
+---
+name: test
+{{#if (eq project.language "pt-BR")}}
+description: Criar testes unitarios seguindo padroes do projeto
+{{else}}
+description: Create unit tests following project patterns
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /test — Criar Testes
+
+## Uso
+```
+/test [arquivo] [tipo]
+```
+
+**Tipos**: `service` | `hook` | `component`
+
+## Categorias de Teste
+
+### Service Tests (funcoes puras, sem mocks)
+- Testar input/output diretamente
+- Edge cases: arrays vazios, campos null, valores limite
+- Factory functions para cada DTO/entidade
+
+### Hook Tests
+- Mock de dependencias (sub-hooks, API, query library)
+- Testar shape do retorno vs interface
+- Testar loading/error
+- Testar logica derivada
+- Testar mutations e invalidacao
+
+### Component Tests
+- Renderiza sem crash
+- Exibe conteudo correto de props
+- Handlers de click/interacao
+- Estados: loading, error, empty
+
+## Setup Padrao
+
+```
+1. Mocks declarados ANTES dos imports do SUT
+2. Factory functions para cada DTO
+3. vi.clearAllMocks() no beforeEach
+4. vi.useRealTimers() no afterEach
+```
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler o arquivo alvo para entender a interface
+2. Ler testes existentes para entender padroes
+3. Identificar dependencias a mockar
+
+### Fase 1 — Setup
+- Declarar mocks antes dos imports
+- Criar factory functions para dados de teste
+- Configurar beforeEach/afterEach
+
+### Fase 2 — Cenarios
+- Happy path (caso padrao funciona)
+- Edge cases (vazios, nulls, limites)
+- Erros (entradas invalidas, falhas de rede)
+- Estados (loading, error, empty, success)
+
+### Fase 3 — Validacao
+- Rodar testes e verificar que passam
+- Verificar cobertura dos cenarios principais
+
+## Anti-Padroes
+- [ ] NAO testar detalhes de implementacao
+- [ ] NAO usar snapshot testing
+- [ ] NAO usar @ts-ignore em testes
+- [ ] NAO esquecer cleanup de timers
+- [ ] NAO importar SUT antes dos mocks
+- [ ] NAO testar sem factory functions
+{{else}}
+# /test — Create Tests
+
+## Usage
+```
+/test [file] [type]
+```
+
+**Types**: `service` | `hook` | `component`
+
+## Test Categories
+
+### Service Tests (pure functions, no mocks)
+- Test input/output directly
+- Edge cases: empty arrays, null fields, boundary values
+- Factory functions for each DTO/entity
+
+### Hook Tests
+- Mock dependencies (sub-hooks, API, query library)
+- Test return shape vs interface
+- Test loading/error
+- Test derived logic
+- Test mutations and invalidation
+
+### Component Tests
+- Renders without crash
+- Displays correct content from props
+- Click/interaction handlers
+- States: loading, error, empty
+
+## Standard Setup
+
+```
+1. Mocks declared BEFORE SUT imports
+2. Factory functions for each DTO
+3. vi.clearAllMocks() in beforeEach
+4. vi.useRealTimers() in afterEach
+```
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read target file to understand the interface
+2. Read existing tests to understand patterns
+3. Identify dependencies to mock
+
+### Phase 1 — Setup
+- Declare mocks before imports
+- Create factory functions for test data
+- Configure beforeEach/afterEach
+
+### Phase 2 — Scenarios
+- Happy path (default case works)
+- Edge cases (empty, nulls, boundaries)
+- Errors (invalid input, network failures)
+- States (loading, error, empty, success)
+
+### Phase 3 — Validation
+- Run tests and verify they pass
+- Check coverage of main scenarios
+
+## Anti-Patterns
+- [ ] Do NOT test implementation details
+- [ ] Do NOT use snapshot testing
+- [ ] Do NOT use @ts-ignore in tests
+- [ ] Do NOT forget timer cleanup
+- [ ] Do NOT import SUT before mocks
+- [ ] Do NOT test without factory functions
+{{/if}}

@@ -1,0 +1,105 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes de Arquitetura — {{module.name}}
+
+## Principios Fundamentais
+
+### Pragmatismo Arquitetural
+- **KISS** — A solucao mais simples que funciona
+- **Evitar over-engineering** — Nao projetar para requisitos hipoteticos
+- **Composicao sobre heranca** — Heranca somente para relacoes "is-a" claras (max 2 niveis)
+
+### SOLID
+1. **S** — Single Responsibility: cada modulo/classe com uma unica razao para mudar
+2. **O** — Open/Closed: aberto para extensao, fechado para modificacao
+3. **L** — Liskov Substitution: subtipos substituiveis sem quebrar contrato
+4. **I** — Interface Segregation: interfaces pequenas e especificas
+5. **D** — Dependency Inversion: depender de abstracoes, nao de implementacoes
+
+### Separacao de Camadas
+
+{{#if (eq module.role "backend")}}
+```
+Routes (HTTP) → Services (Logica) → Repositories (Dados)
+```
+- **Routes**: Recebe HTTP, valida input, retorna response
+- **Services**: Logica de negocio pura, sem HTTP
+- **Repositories**: Acesso a dados, sem logica de negocio
+{{else if (eq module.role "frontend")}}
+```
+Pages (View) → Hooks (ViewModel) → Services (Model)
+```
+- **Pages**: Composicao, layout, roteamento
+- **Hooks**: Estado, fetching, mutations, logica derivada
+- **Services**: Funcoes puras de transformacao
+{{else if (eq module.role "agent-ai")}}
+```
+HTTP/MCP → Services/Dispatcher → Rules/Agents → Repos/Tools
+```
+- **Rules**: Funcoes puras deterministicas
+- **Agents**: Pipelines LLM com prompts
+- **Dispatcher**: Orquestra execucao
+{{else}}
+Cada camada com responsabilidade unica e clara.
+{{/if}}
+
+## Anti-Padroes a Evitar
+- Prop drilling excessivo → usar Context/DI
+- Logica de negocio na camada de apresentacao
+- Acesso direto a dados na camada de roteamento
+- Dependencias circulares entre modulos
+- Camadas que pulam niveis (rota chamando repositorio)
+- Funcoes utilitarias genericas (`GeneralUtils`) → separar por tipo
+- Dependencias externas desnecessarias → Native First
+{{else}}
+# Architecture Patterns — {{module.name}}
+
+## Fundamental Principles
+
+### Architectural Pragmatism
+- **KISS** — The simplest solution that works
+- **Avoid over-engineering** — Don't design for hypothetical requirements
+- **Composition over inheritance** — Inheritance only for clear "is-a" relationships (max 2 levels)
+
+### SOLID
+1. **S** — Single Responsibility: each module/class with a single reason to change
+2. **O** — Open/Closed: open for extension, closed for modification
+3. **L** — Liskov Substitution: subtypes replaceable without breaking contracts
+4. **I** — Interface Segregation: small, specific interfaces
+5. **D** — Dependency Inversion: depend on abstractions, not implementations
+
+### Layer Separation
+
+{{#if (eq module.role "backend")}}
+```
+Routes (HTTP) → Services (Logic) → Repositories (Data)
+```
+- **Routes**: Receive HTTP, validate input, return response
+- **Services**: Pure business logic, no HTTP
+- **Repositories**: Data access, no business logic
+{{else if (eq module.role "frontend")}}
+```
+Pages (View) → Hooks (ViewModel) → Services (Model)
+```
+- **Pages**: Composition, layout, routing
+- **Hooks**: State, fetching, mutations, derived logic
+- **Services**: Pure transformation functions
+{{else if (eq module.role "agent-ai")}}
+```
+HTTP/MCP → Services/Dispatcher → Rules/Agents → Repos/Tools
+```
+- **Rules**: Pure deterministic functions
+- **Agents**: LLM pipelines with prompts
+- **Dispatcher**: Orchestrates execution
+{{else}}
+Each layer with unique and clear responsibility.
+{{/if}}
+
+## Anti-Patterns to Avoid
+- Excessive prop drilling → use Context/DI
+- Business logic in presentation layer
+- Direct data access in routing layer
+- Circular dependencies between modules
+- Layers that skip levels (route calling repository)
+- Generic utility functions (`GeneralUtils`) → separate by type
+- Unnecessary external dependencies → Native First
+{{/if}}

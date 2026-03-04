@@ -1,0 +1,115 @@
+---
+name: service
+{{#if (eq project.language "pt-BR")}}
+description: Criar Service com logica de negocio pura
+{{else}}
+description: Create Service with pure business logic
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /service — Criar Service
+
+## Uso
+```
+/service [dominio] [metodos]
+```
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler services existentes para entender padroes
+2. Identificar entidades do dominio
+3. Verificar regras de arquitetura em `.claude/rules/`
+
+### Fase 1 — Criar Service
+
+**Principios**:
+- Logica de negocio pura (sem I/O direto)
+- Injecao de dependencias para repositorios
+- Metodos com responsabilidade unica
+- Documentacao em cada metodo publico
+
+**Padroes de Metodo**:
+| Prefixo | Proposito | Exemplo |
+|---------|----------|---------|
+| `filter` | Filtragem com early return | `filterActiveUsers(users)` |
+| `compute` | Agregacoes, calculos | `computeAverageScore(scores)` |
+| `build` | Construir estruturas | `buildUserMap(users)` |
+| `find` | Busca por criterio | `findByStatus(items, status)` |
+| `get` | Utilitarios, getters | `getDisplayName(user)` |
+| `validate` | Validacao de regras | `validateOrder(order)` |
+| `transform` | Transformacao de dados | `transformToDTO(entity)` |
+
+### Fase 2 — Testes
+- Testar cada metodo publico isoladamente
+- Usar factory functions para dados de teste
+- Cobrir edge cases: arrays vazios, nulls, limites
+- Services sao funcoes puras → testes sem mocks
+
+### Fase 3 — Validacao
+- Rodar testes
+- Verificar lint
+
+## Checklist
+- [ ] Service sem dependencia de framework/HTTP
+- [ ] Cada metodo com responsabilidade unica
+- [ ] Documentacao nos metodos publicos
+- [ ] Testes sem mocks (logica pura)
+- [ ] Edge cases cobertos
+- [ ] Nomenclatura consistente com padroes do projeto
+{{else}}
+# /service — Create Service
+
+## Usage
+```
+/service [domain] [methods]
+```
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read existing services to understand patterns
+2. Identify domain entities
+3. Check architecture rules in `.claude/rules/`
+
+### Phase 1 — Create Service
+
+**Principles**:
+- Pure business logic (no direct I/O)
+- Dependency injection for repositories
+- Single-responsibility methods
+- Documentation on every public method
+
+**Method Patterns**:
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `filter` | Filtering with early return | `filterActiveUsers(users)` |
+| `compute` | Aggregations, calculations | `computeAverageScore(scores)` |
+| `build` | Build structures | `buildUserMap(users)` |
+| `find` | Search by criteria | `findByStatus(items, status)` |
+| `get` | Utilities, getters | `getDisplayName(user)` |
+| `validate` | Rule validation | `validateOrder(order)` |
+| `transform` | Data transformation | `transformToDTO(entity)` |
+
+### Phase 2 — Tests
+- Test each public method in isolation
+- Use factory functions for test data
+- Cover edge cases: empty arrays, nulls, boundaries
+- Services are pure functions → tests without mocks
+
+### Phase 3 — Validation
+- Run tests
+- Check lint
+
+## Checklist
+- [ ] Service without framework/HTTP dependency
+- [ ] Each method with single responsibility
+- [ ] Documentation on public methods
+- [ ] Tests without mocks (pure logic)
+- [ ] Edge cases covered
+- [ ] Naming consistent with project patterns
+{{/if}}

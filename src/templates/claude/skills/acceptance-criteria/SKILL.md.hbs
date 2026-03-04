@@ -1,0 +1,127 @@
+---
+name: acceptance-criteria
+{{#if (eq project.language "pt-BR")}}
+description: Definir criterios de aceitacao detalhados em formato BDD/Gherkin
+{{else}}
+description: Define detailed acceptance criteria in BDD/Gherkin format
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Write, Glob, Grep
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /acceptance-criteria — Criterios de Aceitacao
+
+## Uso
+```
+/acceptance-criteria [feature]
+```
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Entender a feature e seus requisitos
+2. Identificar personas envolvidas
+3. Ler historias de usuario relacionadas
+
+### Fase 1 — Gerar Criterios
+
+Salvar em: `{{paths.docsRoot}}/po/acceptance-criteria/{feature-kebab-case}.md`
+
+```markdown
+# Criterios de Aceitacao — {Feature}
+
+## Cenarios
+
+### @happy-path
+**Cenario**: {descricao do caminho feliz}
+**Dado** que {pre-condicao}
+**Quando** {acao do usuario}
+**Entao** {resultado esperado}
+**E** {resultado adicional}
+
+### @alternative
+**Cenario**: {descricao de caminho alternativo}
+**Dado** que {pre-condicao diferente}
+**Quando** {acao do usuario}
+**Entao** {resultado alternativo}
+
+### @error-handling
+**Cenario**: {descricao de erro}
+**Dado** que {pre-condicao de erro}
+**Quando** {acao que causa erro}
+**Entao** {mensagem de erro exibida}
+**E** {sistema permanece consistente}
+
+### @edge-case
+**Cenario**: {descricao de caso limite}
+**Dado** que {condicao limite}
+**Quando** {acao}
+**Entao** {comportamento correto no limite}
+
+## Checklist de Cobertura
+- [ ] Campos obrigatorios validados
+- [ ] Limites de caracteres
+- [ ] Permissoes/autorizacao
+- [ ] Estados de loading e erro
+- [ ] Responsividade mobile
+```
+{{else}}
+# /acceptance-criteria — Acceptance Criteria
+
+## Usage
+```
+/acceptance-criteria [feature]
+```
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Understand the feature and its requirements
+2. Identify involved personas
+3. Read related user stories
+
+### Phase 1 — Generate Criteria
+
+Save to: `{{paths.docsRoot}}/po/acceptance-criteria/{feature-kebab-case}.md`
+
+```markdown
+# Acceptance Criteria — {Feature}
+
+## Scenarios
+
+### @happy-path
+**Scenario**: {happy path description}
+**Given** {precondition}
+**When** {user action}
+**Then** {expected result}
+**And** {additional result}
+
+### @alternative
+**Scenario**: {alternative path description}
+**Given** {different precondition}
+**When** {user action}
+**Then** {alternative result}
+
+### @error-handling
+**Scenario**: {error description}
+**Given** {error precondition}
+**When** {action causing error}
+**Then** {error message displayed}
+**And** {system remains consistent}
+
+### @edge-case
+**Scenario**: {edge case description}
+**Given** {boundary condition}
+**When** {action}
+**Then** {correct boundary behavior}
+
+## Coverage Checklist
+- [ ] Required fields validated
+- [ ] Character limits
+- [ ] Permissions/authorization
+- [ ] Loading and error states
+- [ ] Mobile responsiveness
+```
+{{/if}}

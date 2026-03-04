@@ -6,6 +6,53 @@ import { getActiveRules } from "../methodology/rules.js";
 import { getRoleById } from "../methodology/roles.js";
 import { getPathMap } from "../utils/paths.js";
 
+// Role-specific agents mapping (each role gets these specialist agents)
+const ROLE_AGENTS: Record<string, string[]> = {
+  backend: ["software-architect", "backend-specialist"],
+  frontend: ["software-architect", "frontend-specialist"],
+  "agent-ai": ["software-architect", "ai-engineer", "backend-specialist"],
+  database: ["software-architect"],
+  mobile: ["software-architect", "frontend-specialist"],
+  e2e: [],
+  generic: ["software-architect"],
+};
+
+// Common skills (all roles get these)
+const COMMON_SKILLS = [
+  "adr",
+  "diagram",
+  "backlog",
+  "acceptance-criteria",
+  "user-story",
+  "tech-review",
+];
+
+// Role-specific skills mapping
+const ROLE_SKILLS: Record<string, string[]> = {
+  backend: ["endpoint", "service", "api-review"],
+  frontend: ["component", "hook", "test", "ui-review", "accessibility"],
+  "agent-ai": [
+    "rule",
+    "tool",
+    "agent-create",
+    "endpoint",
+    "service",
+    "api-review",
+  ],
+  database: [],
+  mobile: ["component", "hook", "test", "ui-review", "accessibility"],
+  e2e: ["test"],
+  generic: [],
+};
+
+// Core rules for per-module .claude/ (all roles get these)
+const CORE_RULES = [
+  "architecture/patterns",
+  "code/guidelines",
+  "skills/auto-invoke",
+  "validation/post-implementation",
+];
+
 export async function generateClaudeInfra(
   projectDir: string,
   config: ProjectConfig
@@ -167,7 +214,7 @@ async function generatePerModuleClaudeInfra(
       }
     }
 
-    // Rules
+    // Rules — base rules
     const ruleFiles = ["anti-patterns.md", "scope-responsibilities.md"];
     for (const ruleFile of ruleFiles) {
       const content = renderTemplate(`claude/rules/${ruleFile}.hbs`, modContext);
@@ -175,7 +222,31 @@ async function generatePerModuleClaudeInfra(
       generatedFiles.push(`${prefix}/rules/${ruleFile}`);
     }
 
-    // Agents — module delegate + shared agents
+    // Rules — core rules (architecture, code, auto-invoke, post-implementation)
+    for (const coreRule of CORE_RULES) {
+      const content = renderTemplate(
+        `claude/rules/${coreRule}.md.hbs`,
+        modContext
+      );
+      const rulePath = `${coreRule}.md`;
+      await writeFile(path.join(modClaudeDir, "rules", rulePath), content);
+      generatedFiles.push(`${prefix}/rules/${rulePath}`);
+    }
+
+    // Rules — PO requirements (when feature-planning-gate enabled)
+    if (config.methodology.rules["feature-planning-gate"]) {
+      const poRule = renderTemplate(
+        "claude/rules/po/requirements.md.hbs",
+        modContext
+      );
+      await writeFile(
+        path.join(modClaudeDir, "rules", "po", "requirements.md"),
+        poRule
+      );
+      generatedFiles.push(`${prefix}/rules/po/requirements.md`);
+    }
+
+    // Agents — module delegate
     const delegateContent = renderTemplate(
       "claude/agents/delegate.md.hbs",
       modContext
@@ -186,6 +257,21 @@ async function generatePerModuleClaudeInfra(
     );
     generatedFiles.push(`${prefix}/agents/${mod.name}-delegate.md`);
 
+    // Agents — role-specific specialists
+    const roleAgents = ROLE_AGENTS[mod.role] ?? [];
+    for (const agent of roleAgents) {
+      const content = renderTemplate(
+        `claude/agents/${agent}.md.hbs`,
+        modContext
+      );
+      await writeFile(
+        path.join(modClaudeDir, "agents", `${agent}.md`),
+        content
+      );
+      generatedFiles.push(`${prefix}/agents/${agent}.md`);
+    }
+
+    // Agents — TDD agents (if enabled)
     if (config.methodology.rules["tdd-enforcement"]) {
       for (const agent of ["tdd-test-writer.md", "tdd-implementer.md"]) {
         const content = renderTemplate(`claude/agents/${agent}.hbs`, modContext);
@@ -194,6 +280,7 @@ async function generatePerModuleClaudeInfra(
       }
     }
 
+    // Agents — product-owner (if feature gate enabled)
     if (config.methodology.rules["feature-planning-gate"]) {
       const poContent = renderTemplate(
         "claude/agents/product-owner.md.hbs",
@@ -206,7 +293,34 @@ async function generatePerModuleClaudeInfra(
       generatedFiles.push(`${prefix}/agents/product-owner.md`);
     }
 
-    // Skills
+    // Skills — common skills (all roles)
+    for (const skill of COMMON_SKILLS) {
+      const content = renderTemplate(
+        `claude/skills/${skill}/SKILL.md.hbs`,
+        modContext
+      );
+      await writeFile(
+        path.join(modClaudeDir, "skills", skill, "SKILL.md"),
+        content
+      );
+      generatedFiles.push(`${prefix}/skills/${skill}/SKILL.md`);
+    }
+
+    // Skills — role-specific skills
+    const roleSkills = ROLE_SKILLS[mod.role] ?? [];
+    for (const skill of roleSkills) {
+      const content = renderTemplate(
+        `claude/skills/${skill}/SKILL.md.hbs`,
+        modContext
+      );
+      await writeFile(
+        path.join(modClaudeDir, "skills", skill, "SKILL.md"),
+        content
+      );
+      generatedFiles.push(`${prefix}/skills/${skill}/SKILL.md`);
+    }
+
+    // Skills — TDD (if enabled)
     if (config.methodology.rules["tdd-enforcement"]) {
       const tddSkill = renderTemplate(
         "claude/skills/tdd/SKILL.md.hbs",
@@ -219,6 +333,7 @@ async function generatePerModuleClaudeInfra(
       generatedFiles.push(`${prefix}/skills/tdd/SKILL.md`);
     }
 
+    // Skills — plan-feature (if feature gate enabled)
     if (config.methodology.rules["feature-planning-gate"]) {
       const planSkill = renderTemplate(
         "claude/skills/plan-feature/SKILL.md.hbs",

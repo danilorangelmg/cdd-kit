@@ -1,0 +1,157 @@
+---
+name: api-review
+{{#if (eq project.language "pt-BR")}}
+description: Revisar API para conformidade REST, seguranca e performance
+{{else}}
+description: Review API for REST compliance, security, and performance
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Glob, Grep
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /api-review — Revisao de API
+
+## Uso
+```
+/api-review [alvo]
+```
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler endpoints, schemas e services do alvo
+2. Verificar contratos de API existentes
+3. Ler regras em `.claude/rules/`
+
+### Fase 1 — Revisar
+
+#### 1. RESTful Compliance
+- [ ] Verbos HTTP corretos (GET=ler, POST=criar, PUT=substituir, PATCH=parcial, DELETE=remover)
+- [ ] Status codes semanticos (200, 201, 204, 400, 401, 403, 404, 409, 422, 500)
+- [ ] URIs como substantivos plurais (`/users`, nao `/getUsers`)
+- [ ] Versionamento de API (`/api/v1/`)
+- [ ] Paginacao em listas (`?page=1&limit=20`)
+
+#### 2. Schemas & Validacao
+- [ ] Request schemas com validacao strict
+- [ ] Response schemas documentados
+- [ ] Tipos consistentes (nao misturar string/number)
+- [ ] Campos opcionais vs obrigatorios claros
+- [ ] Enums validados
+
+#### 3. Seguranca
+- [ ] Autenticacao verificada em endpoints protegidos
+- [ ] Autorizacao (roles/permissions) aplicada
+- [ ] Input sanitizado contra injection
+- [ ] Rate limiting considerado
+- [ ] Dados sensiveis nao expostos em responses
+
+#### 4. Performance
+- [ ] Paginacao em listas grandes
+- [ ] Campos selecionaveis (sparse fieldsets) se necessario
+- [ ] Cache headers configurados
+- [ ] N+1 queries evitados
+- [ ] Payloads compactos
+
+#### 5. Error Handling
+- [ ] Formato de erro consistente
+- [ ] Mensagens uteis para o consumidor
+- [ ] Stack traces NAO expostas em producao
+- [ ] Erros de validacao com detalhes por campo
+
+## Formato de Saida
+
+```markdown
+# API Review — {alvo}
+
+| Categoria | Score | Issues |
+|-----------|-------|--------|
+| REST | X/10 | N |
+| Schemas | X/10 | N |
+| Seguranca | X/10 | N |
+| Performance | X/10 | N |
+| Erros | X/10 | N |
+
+## Issues Criticas
+1. ...
+
+## Recomendacoes
+1. ...
+
+## Score Geral: X/10
+```
+{{else}}
+# /api-review — API Review
+
+## Usage
+```
+/api-review [target]
+```
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read endpoints, schemas, and services of the target
+2. Check existing API contracts
+3. Read rules in `.claude/rules/`
+
+### Phase 1 — Review
+
+#### 1. RESTful Compliance
+- [ ] Correct HTTP verbs (GET=read, POST=create, PUT=replace, PATCH=partial, DELETE=remove)
+- [ ] Semantic status codes (200, 201, 204, 400, 401, 403, 404, 409, 422, 500)
+- [ ] URIs as plural nouns (`/users`, not `/getUsers`)
+- [ ] API versioning (`/api/v1/`)
+- [ ] Pagination on lists (`?page=1&limit=20`)
+
+#### 2. Schemas & Validation
+- [ ] Strict request schema validation
+- [ ] Documented response schemas
+- [ ] Consistent types (don't mix string/number)
+- [ ] Clear optional vs required fields
+- [ ] Validated enums
+
+#### 3. Security
+- [ ] Authentication verified on protected endpoints
+- [ ] Authorization (roles/permissions) applied
+- [ ] Input sanitized against injection
+- [ ] Rate limiting considered
+- [ ] Sensitive data not exposed in responses
+
+#### 4. Performance
+- [ ] Pagination on large lists
+- [ ] Selectable fields (sparse fieldsets) if needed
+- [ ] Cache headers configured
+- [ ] N+1 queries avoided
+- [ ] Compact payloads
+
+#### 5. Error Handling
+- [ ] Consistent error format
+- [ ] Useful messages for consumers
+- [ ] Stack traces NOT exposed in production
+- [ ] Validation errors with per-field details
+
+## Output Format
+
+```markdown
+# API Review — {target}
+
+| Category | Score | Issues |
+|----------|-------|--------|
+| REST | X/10 | N |
+| Schemas | X/10 | N |
+| Security | X/10 | N |
+| Performance | X/10 | N |
+| Errors | X/10 | N |
+
+## Critical Issues
+1. ...
+
+## Recommendations
+1. ...
+
+## Overall Score: X/10
+```
+{{/if}}

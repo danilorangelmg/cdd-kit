@@ -1,0 +1,157 @@
+---
+name: ui-review
+{{#if (eq project.language "pt-BR")}}
+description: Revisar UI/UX para consistencia, responsividade, estados e acessibilidade
+{{else}}
+description: Review UI/UX for consistency, responsiveness, states, and accessibility
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Glob, Grep
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /ui-review — Revisao de UI/UX
+
+## Uso
+```
+/ui-review [alvo]
+```
+
+## Checklist de Revisao
+
+### 1. Consistencia
+- [ ] Cores do design system (tokens, nao hardcoded)
+- [ ] Tipografia consistente (tamanhos, pesos, familias)
+- [ ] Espacamento padronizado (scale do design system)
+- [ ] Icones do mesmo conjunto
+- [ ] Componentes do design system (nao custom sem necessidade)
+
+### 2. Responsividade
+- [ ] Mobile-first (funciona em 320px+)
+- [ ] Breakpoints progressivos (sm, md, lg, xl)
+- [ ] Layout adapta sem scroll horizontal
+- [ ] Touch targets minimo 44x44px
+- [ ] Textos legiveis em todos os tamanhos
+
+### 3. Estados Visuais
+| Estado | Obrigatorio |
+|--------|------------|
+| Default | Sim |
+| Hover | Sim |
+| Focus | Sim |
+| Active | Sim |
+| Disabled | Sim |
+| Loading | Sim |
+| Error | Sim |
+| Empty | Sim |
+
+### 4. Interatividade
+- [ ] Hover com feedback visual
+- [ ] Focus visivel em todos os elementos interativos
+- [ ] Transicoes suaves (nao abruptas)
+- [ ] Feedback de acao (loading, success, error)
+
+### 5. Hierarquia Visual
+- [ ] Elementos importantes em destaque
+- [ ] Fluxo de leitura logico
+- [ ] CTA (Call-to-Action) visivel
+- [ ] Agrupamento logico de informacoes
+
+### 6. Acessibilidade Basica
+- [ ] Contraste minimo AA (4.5:1 texto normal, 3:1 texto grande)
+- [ ] Labels em todos os inputs
+- [ ] Alt text em imagens
+- [ ] Navegacao por teclado funcional
+- [ ] Hierarquia de headings (h1 → h2 → h3)
+
+## Formato de Saida
+
+```markdown
+# UI Review — {alvo}
+
+## Issues
+### Criticas
+1. {descricao} — {arquivo}:{linha}
+
+### Importantes
+1. {descricao}
+
+### Sugestoes
+1. {descricao}
+
+## Score: X/10
+```
+{{else}}
+# /ui-review — UI/UX Review
+
+## Usage
+```
+/ui-review [target]
+```
+
+## Review Checklist
+
+### 1. Consistency
+- [ ] Design system colors (tokens, not hardcoded)
+- [ ] Consistent typography (sizes, weights, families)
+- [ ] Standardized spacing (design system scale)
+- [ ] Icons from same set
+- [ ] Design system components (no unnecessary custom)
+
+### 2. Responsiveness
+- [ ] Mobile-first (works at 320px+)
+- [ ] Progressive breakpoints (sm, md, lg, xl)
+- [ ] Layout adapts without horizontal scroll
+- [ ] Touch targets minimum 44x44px
+- [ ] Text readable at all sizes
+
+### 3. Visual States
+| State | Required |
+|-------|----------|
+| Default | Yes |
+| Hover | Yes |
+| Focus | Yes |
+| Active | Yes |
+| Disabled | Yes |
+| Loading | Yes |
+| Error | Yes |
+| Empty | Yes |
+
+### 4. Interactivity
+- [ ] Hover with visual feedback
+- [ ] Visible focus on all interactive elements
+- [ ] Smooth transitions (not abrupt)
+- [ ] Action feedback (loading, success, error)
+
+### 5. Visual Hierarchy
+- [ ] Important elements highlighted
+- [ ] Logical reading flow
+- [ ] CTA (Call-to-Action) visible
+- [ ] Logical information grouping
+
+### 6. Basic Accessibility
+- [ ] Minimum AA contrast (4.5:1 normal text, 3:1 large text)
+- [ ] Labels on all inputs
+- [ ] Alt text on images
+- [ ] Functional keyboard navigation
+- [ ] Heading hierarchy (h1 → h2 → h3)
+
+## Output Format
+
+```markdown
+# UI Review — {target}
+
+## Issues
+### Critical
+1. {description} — {file}:{line}
+
+### Important
+1. {description}
+
+### Suggestions
+1. {description}
+
+## Score: X/10
+```
+{{/if}}

@@ -1,0 +1,147 @@
+---
+name: adr
+{{#if (eq project.language "pt-BR")}}
+description: Criar Architecture Decision Record (ADR) para decisoes tecnicas importantes
+{{else}}
+description: Create Architecture Decision Record (ADR) for important technical decisions
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Write, Glob, Grep
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /adr — Architecture Decision Record
+
+## Uso
+```
+/adr [titulo da decisao]
+```
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler ADRs existentes em `{{paths.docsRoot}}/adr/` para entender o padrao
+2. Determinar proximo numero sequencial (ADR-XXX)
+
+### Fase 1 — Criar ADR
+Salvar em: `{{paths.docsRoot}}/adr/ADR-{XXX}-{titulo-kebab-case}.md`
+
+```markdown
+# ADR-{XXX}: {Titulo}
+
+**Data**: {YYYY-MM-DD}
+**Status**: Proposta | Aceita | Depreciada | Substituida
+**Decisores**: [quem participou]
+
+## Contexto
+[Qual problema estamos resolvendo? Por que precisamos decidir agora?]
+
+## Decisao
+[O que decidimos fazer]
+
+## Alternativas Consideradas
+
+### Alternativa 1: [nome]
+- **Pros**: ...
+- **Contras**: ...
+
+### Alternativa 2: [nome]
+- **Pros**: ...
+- **Contras**: ...
+
+## Justificativa
+[Por que esta alternativa foi escolhida]
+
+## Consequencias
+
+### Positivas
+- ...
+
+### Negativas
+- ...
+
+### Neutras
+- ...
+
+## Implementacao
+[Passos concretos para implementar a decisao]
+
+## Referencias
+- [links relevantes]
+```
+
+## Checklist
+- [ ] Contexto claro e objetivo
+- [ ] Pelo menos 2 alternativas consideradas
+- [ ] Trade-offs explicitos
+- [ ] Consequencias documentadas
+- [ ] Numero sequencial correto
+{{else}}
+# /adr — Architecture Decision Record
+
+## Usage
+```
+/adr [decision title]
+```
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read existing ADRs in `{{paths.docsRoot}}/adr/` to understand the pattern
+2. Determine next sequential number (ADR-XXX)
+
+### Phase 1 — Create ADR
+Save to: `{{paths.docsRoot}}/adr/ADR-{XXX}-{title-kebab-case}.md`
+
+```markdown
+# ADR-{XXX}: {Title}
+
+**Date**: {YYYY-MM-DD}
+**Status**: Proposed | Accepted | Deprecated | Replaced
+**Decision Makers**: [who participated]
+
+## Context
+[What problem are we solving? Why do we need to decide now?]
+
+## Decision
+[What we decided to do]
+
+## Alternatives Considered
+
+### Alternative 1: [name]
+- **Pros**: ...
+- **Cons**: ...
+
+### Alternative 2: [name]
+- **Pros**: ...
+- **Cons**: ...
+
+## Justification
+[Why this alternative was chosen]
+
+## Consequences
+
+### Positive
+- ...
+
+### Negative
+- ...
+
+### Neutral
+- ...
+
+## Implementation
+[Concrete steps to implement the decision]
+
+## References
+- [relevant links]
+```
+
+## Checklist
+- [ ] Clear and objective context
+- [ ] At least 2 alternatives considered
+- [ ] Explicit trade-offs
+- [ ] Consequences documented
+- [ ] Correct sequential number
+{{/if}}

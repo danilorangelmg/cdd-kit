@@ -1,0 +1,121 @@
+---
+name: backlog
+{{#if (eq project.language "pt-BR")}}
+description: Gerenciar e priorizar backlog do produto
+{{else}}
+description: Manage and prioritize product backlog
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Write, Glob, Grep
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /backlog — Gestao de Backlog
+
+## Uso
+```
+/backlog [acao]
+```
+
+**Acoes**: `list` | `prioritize` | `refine`
+
+## Acoes
+
+### list — Listar itens do backlog
+1. Identificar features planejadas, TODOs no codigo, issues conhecidos
+2. Consolidar em lista com status e prioridade
+
+### prioritize — Priorizar com MoSCoW
+1. Classificar cada item:
+   - **Must** — Essencial, sem isso nao funciona
+   - **Should** — Importante, mas nao bloqueia
+   - **Could** — Desejavel se houver tempo
+   - **Won't** — Fora do escopo atual
+2. Ordenar por valor de negocio vs complexidade
+
+### refine — Refinar historias
+1. Quebrar historias grandes em tarefas menores
+2. Identificar dependencias entre modulos
+3. Estimar complexidade (P/M/G)
+
+## Formato de Saida
+
+```markdown
+# Backlog — {data}
+
+## Must Have
+| # | Historia | Modulo | Complexidade | Dependencias |
+|---|---------|--------|-------------|--------------|
+| 1 | ...     | ...    | P/M/G       | ...          |
+
+## Should Have
+...
+
+## Could Have
+...
+
+## Won't Have (este ciclo)
+...
+
+## Metricas
+- Total de itens: X
+- Must: X | Should: X | Could: X | Won't: X
+```
+
+Salvar em: `{{paths.docsRoot}}/backlog/backlog-{YYYY-MM-DD}.md`
+{{else}}
+# /backlog — Backlog Management
+
+## Usage
+```
+/backlog [action]
+```
+
+**Actions**: `list` | `prioritize` | `refine`
+
+## Actions
+
+### list — List backlog items
+1. Identify planned features, code TODOs, known issues
+2. Consolidate into list with status and priority
+
+### prioritize — Prioritize with MoSCoW
+1. Classify each item:
+   - **Must** — Essential, won't work without it
+   - **Should** — Important, but not blocking
+   - **Could** — Nice to have if time allows
+   - **Won't** — Out of current scope
+2. Order by business value vs complexity
+
+### refine — Refine stories
+1. Break large stories into smaller tasks
+2. Identify cross-module dependencies
+3. Estimate complexity (S/M/L)
+
+## Output Format
+
+```markdown
+# Backlog — {date}
+
+## Must Have
+| # | Story | Module | Complexity | Dependencies |
+|---|-------|--------|-----------|--------------|
+| 1 | ...   | ...    | S/M/L     | ...          |
+
+## Should Have
+...
+
+## Could Have
+...
+
+## Won't Have (this cycle)
+...
+
+## Metrics
+- Total items: X
+- Must: X | Should: X | Could: X | Won't: X
+```
+
+Save to: `{{paths.docsRoot}}/backlog/backlog-{YYYY-MM-DD}.md`
+{{/if}}

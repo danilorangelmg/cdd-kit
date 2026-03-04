@@ -1,0 +1,111 @@
+{{#if (eq project.language "pt-BR")}}
+# Auto-Invoke de Skills — {{module.name}}
+
+## Principio
+
+Skills codificam padroes. Implementar sem skill viola consistencia.
+
+## Protocolo
+
+**Antes de criar qualquer arquivo:**
+1. "Existe uma skill em `.claude/skills/` que cobre este artefato?"
+2. "Existe uma regra em `.claude/rules/` que define o padrao?"
+3. Se SIM → invocar skill ou seguir regra
+4. Se NAO → avaliar se vale criar uma skill
+
+## Mapeamento Artefato → Skill
+
+| Artefato | Skill | Formato |
+|----------|-------|---------|
+{{#if (or (eq module.role "frontend") (eq module.role "mobile"))}}
+| Componente (.tsx/.jsx) | `/component [nome] [tipo]` | `src/components/{dominio}/` |
+| Custom hook (use*.ts) | `/hook [nome] [tipo]` | `src/hooks/{dominio}/` |
+| Service class | `/service [dominio]` | `src/services/{dominio}/` |
+| Testes unitarios | `/test [arquivo] [tipo]` | `tests/{path}/` |
+{{/if}}
+{{#if (or (eq module.role "backend") (eq module.role "agent-ai"))}}
+| Endpoint/Route | `/endpoint [recurso] [metodo]` | `src/routes/` |
+| Service | `/service [dominio]` | `src/services/` |
+{{/if}}
+{{#if (eq module.role "agent-ai")}}
+| Regra deterministica | `/rule [nome]` | `src/rules/` |
+| Tool LLM/MCP | `/tool [nome]` | `src/tools/` |
+| Agente LLM | `/agent-create [nome]` | `src/agents/` |
+{{/if}}
+| User story | `/user-story [descricao]` | `{{paths.docsRoot}}/po/` |
+| Criterios de aceitacao | `/acceptance-criteria [feature]` | `{{paths.docsRoot}}/po/` |
+| ADR | `/adr [titulo]` | `{{paths.docsRoot}}/adr/` |
+| Revisao tecnica | `/tech-review [alvo]` | — (output only) |
+{{#if (or (eq module.role "frontend") (eq module.role "mobile"))}}
+| Revisao UI | `/ui-review [alvo]` | — (output only) |
+| Acessibilidade | `/accessibility [alvo]` | — (output only) |
+{{/if}}
+{{#if (or (eq module.role "backend") (eq module.role "agent-ai"))}}
+| Revisao API | `/api-review [alvo]` | — (output only) |
+{{/if}}
+| Diagrama | `/diagram [tipo] [contexto]` | `{{paths.docsRoot}}/diagrams/` |
+| Backlog | `/backlog [acao]` | `{{paths.docsRoot}}/po/` |
+
+## Criterio para Criar Nova Skill
+
+Todos devem ser verdadeiros:
+1. Padrao e repetitivo (2+ instancias no codebase)
+2. Task multi-arquivo (gera 2+ arquivos)
+3. Template-driven (segue convencao)
+4. Reutilizavel (sera usado novamente)
+{{else}}
+# Skills Auto-Invoke — {{module.name}}
+
+## Principle
+
+Skills codify patterns. Implementing without a skill violates consistency.
+
+## Protocol
+
+**Before creating any file:**
+1. "Does a skill in `.claude/skills/` cover this artifact?"
+2. "Does a rule in `.claude/rules/` define the pattern?"
+3. If YES → invoke skill or follow rule
+4. If NO → evaluate creating a skill
+
+## Artifact → Skill Mapping
+
+| Artifact | Skill | Format |
+|----------|-------|--------|
+{{#if (or (eq module.role "frontend") (eq module.role "mobile"))}}
+| Component (.tsx/.jsx) | `/component [name] [type]` | `src/components/{domain}/` |
+| Custom hook (use*.ts) | `/hook [name] [type]` | `src/hooks/{domain}/` |
+| Service class | `/service [domain]` | `src/services/{domain}/` |
+| Unit tests | `/test [file] [type]` | `tests/{path}/` |
+{{/if}}
+{{#if (or (eq module.role "backend") (eq module.role "agent-ai"))}}
+| Endpoint/Route | `/endpoint [resource] [method]` | `src/routes/` |
+| Service | `/service [domain]` | `src/services/` |
+{{/if}}
+{{#if (eq module.role "agent-ai")}}
+| Deterministic rule | `/rule [name]` | `src/rules/` |
+| LLM/MCP tool | `/tool [name]` | `src/tools/` |
+| LLM agent | `/agent-create [name]` | `src/agents/` |
+{{/if}}
+| User story | `/user-story [description]` | `{{paths.docsRoot}}/po/` |
+| Acceptance criteria | `/acceptance-criteria [feature]` | `{{paths.docsRoot}}/po/` |
+| ADR | `/adr [title]` | `{{paths.docsRoot}}/adr/` |
+| Technical review | `/tech-review [target]` | — (output only) |
+{{#if (or (eq module.role "frontend") (eq module.role "mobile"))}}
+| UI review | `/ui-review [target]` | — (output only) |
+| Accessibility | `/accessibility [target]` | — (output only) |
+{{/if}}
+{{#if (or (eq module.role "backend") (eq module.role "agent-ai"))}}
+| API review | `/api-review [target]` | — (output only) |
+{{/if}}
+| Diagram | `/diagram [type] [context]` | `{{paths.docsRoot}}/diagrams/` |
+| Backlog | `/backlog [action]` | `{{paths.docsRoot}}/po/` |
+
+## Criteria for Creating New Skills
+
+All must be true:
+1. Pattern is repetitive (2+ instances in codebase)
+2. Multi-file task (generates 2+ files)
+3. Template-driven (follows convention)
+4. Reusable (will be used again)
+{{/if}}

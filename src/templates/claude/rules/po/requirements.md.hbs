@@ -1,0 +1,85 @@
+{{#if (eq project.language "pt-BR")}}
+# Requisitos e Product Owner — {{module.name}}
+
+## Formato de User Story
+
+```
+Como {persona},
+Quero {acao desejada},
+Para {beneficio/objetivo}.
+```
+
+### Principios INVEST
+- **I**ndependent — Historia nao depende de outra
+- **N**egotiable — Detalhes negociaveis
+- **V**aluable — Entrega valor ao usuario
+- **E**stimable — Complexidade estimavel
+- **S**mall — Completavel em um sprint
+- **T**estable — Criterios de aceitacao verificaveis
+
+## Criterios de Aceitacao
+
+- Formato Gherkin (Dado/Quando/Entao)
+- Testaveis e mensuraveis
+- Happy path + edge cases
+- Requisitos de performance quando relevante
+- Acessibilidade e responsividade
+
+## Priorizacao
+
+- **MoSCoW**: Must / Should / Could / Won't
+- Balancear valor de negocio vs complexidade
+- Documentar dependencias entre historias
+- Manter MVP enxuto
+
+## Documentacao
+
+- Stories em `{{paths.docsRoot}}/po/user-stories/`
+- Criterios em `{{paths.docsRoot}}/po/acceptance-criteria/`
+- Backlog em `{{paths.docsRoot}}/po/backlog/`
+- IDs unicos (FEATURE-XXX, BUG-XXX, TECH-XXX)
+- Vincular a epics quando aplicavel
+- Atualizar status com progresso
+{{else}}
+# Requirements and Product Owner — {{module.name}}
+
+## User Story Format
+
+```
+As a {persona},
+I want {desired action},
+So that {benefit/goal}.
+```
+
+### INVEST Principles
+- **I**ndependent — Story doesn't depend on another
+- **N**egotiable — Details negotiable
+- **V**aluable — Delivers value to user
+- **E**stimable — Complexity estimable
+- **S**mall — Completable in a sprint
+- **T**estable — Acceptance criteria verifiable
+
+## Acceptance Criteria
+
+- Gherkin format (Given/When/Then)
+- Testable and measurable
+- Happy path + edge cases
+- Performance requirements when relevant
+- Accessibility and responsiveness
+
+## Prioritization
+
+- **MoSCoW**: Must / Should / Could / Won't
+- Balance business value vs complexity
+- Document dependencies between stories
+- Keep MVP lean
+
+## Documentation
+
+- Stories in `{{paths.docsRoot}}/po/user-stories/`
+- Criteria in `{{paths.docsRoot}}/po/acceptance-criteria/`
+- Backlog in `{{paths.docsRoot}}/po/backlog/`
+- Unique IDs (FEATURE-XXX, BUG-XXX, TECH-XXX)
+- Link to epics when applicable
+- Update status with progress
+{{/if}}

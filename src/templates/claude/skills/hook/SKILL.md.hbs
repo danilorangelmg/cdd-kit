@@ -1,0 +1,155 @@
+---
+name: hook
+{{#if (eq project.language "pt-BR")}}
+description: Criar custom hook (ViewModel) seguindo padrao MVVM
+{{else}}
+description: Create custom hook (ViewModel) following MVVM pattern
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /hook — Criar Custom Hook
+
+## Uso
+```
+/hook [nome] [tipo]
+```
+
+**Tipos**: `panel` | `compositor` | `data` | `filter`
+
+## Tipos de Hook
+
+### Panel Hook
+- Busca um unico endpoint via query library
+- Expoe dados + mutations
+- Estado derivado via service
+
+### Compositor Hook
+- Compoe 2+ panel hooks
+- Agrega loading/error de todos
+- Deriva estatisticas e metricas
+- Expoe refetch unificado
+
+### Data Hook
+- Query + mutations em um unico hook
+- Estado de filtro local
+- Feedback via toast/notificacao
+
+### Filter Hook
+- Queries encadeadas com `enabled` condicional
+- Setters individuais para cada filtro
+- Limpa filtros dependentes ao mudar pai
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler hooks existentes para entender padroes
+2. Identificar services e API modules disponiveis
+3. Verificar query keys existentes
+
+### Fase 1 — Tipo de Retorno
+Criar interface `Use{Nome}Return` com:
+- Dados expostos (tipados)
+- Estado (isLoading, error)
+- Acoes (refetch, mutate, setters)
+
+### Fase 2 — Implementacao
+- Query library para server state
+- Service para logica derivada
+- `useCallback`/`useMemo` para estabilidade de referencia
+- Cleanup adequado em `useEffect`
+
+### Fase 3 — Testes
+- Mock de dependencias (sub-hooks, API, query library)
+- Testar shape do retorno vs interface
+- Testar agregacao de loading/error
+- Testar logica derivada
+- Testar mutations e cache invalidation
+
+### Fase 4 — Validacao
+- Rodar testes
+- Verificar lint
+
+## Checklist
+- [ ] Interface `Use{Nome}Return` definida
+- [ ] Server state via query library (nao useState)
+- [ ] Logica derivada no service (nao no hook)
+- [ ] Memoizacao adequada (nao excessiva)
+- [ ] Cleanup de side effects
+- [ ] Testes cobrindo todos os cenarios
+- [ ] Query keys registradas
+{{else}}
+# /hook — Create Custom Hook
+
+## Usage
+```
+/hook [name] [type]
+```
+
+**Types**: `panel` | `compositor` | `data` | `filter`
+
+## Hook Types
+
+### Panel Hook
+- Fetches single endpoint via query library
+- Exposes data + mutations
+- Derived state via service
+
+### Compositor Hook
+- Composes 2+ panel hooks
+- Aggregates loading/error from all
+- Derives statistics and metrics
+- Exposes unified refetch
+
+### Data Hook
+- Query + mutations in single hook
+- Local filter state
+- Feedback via toast/notification
+
+### Filter Hook
+- Chained queries with conditional `enabled`
+- Individual setters for each filter
+- Clears dependent filters on parent change
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read existing hooks to understand patterns
+2. Identify available services and API modules
+3. Check existing query keys
+
+### Phase 1 — Return Type
+Create `Use{Name}Return` interface with:
+- Exposed data (typed)
+- State (isLoading, error)
+- Actions (refetch, mutate, setters)
+
+### Phase 2 — Implementation
+- Query library for server state
+- Service for derived logic
+- `useCallback`/`useMemo` for reference stability
+- Proper cleanup in `useEffect`
+
+### Phase 3 — Tests
+- Mock dependencies (sub-hooks, API, query library)
+- Test return shape vs interface
+- Test loading/error aggregation
+- Test derived logic
+- Test mutations and cache invalidation
+
+### Phase 4 — Validation
+- Run tests
+- Check lint
+
+## Checklist
+- [ ] `Use{Name}Return` interface defined
+- [ ] Server state via query library (not useState)
+- [ ] Derived logic in service (not in hook)
+- [ ] Appropriate memoization (not excessive)
+- [ ] Side effect cleanup
+- [ ] Tests covering all scenarios
+- [ ] Query keys registered
+{{/if}}

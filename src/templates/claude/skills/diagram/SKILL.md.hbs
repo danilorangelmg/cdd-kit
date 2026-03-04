@@ -1,0 +1,157 @@
+---
+name: diagram
+{{#if (eq project.language "pt-BR")}}
+description: Criar diagramas Mermaid (componentes, fluxos, sequencia, ER, estados)
+{{else}}
+description: Create Mermaid diagrams (components, flows, sequence, ER, state)
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Write, Glob, Grep
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /diagram — Diagramas Mermaid
+
+## Uso
+```
+/diagram [tipo] [contexto]
+```
+
+**Tipos**: `components` | `flow` | `sequence` | `er` | `state`
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Entender o contexto solicitado (modulo, feature, fluxo)
+2. Ler codigo relevante para extrair componentes e relacoes reais
+
+### Fase 1 — Gerar Diagrama
+
+Salvar em: `{{paths.docsRoot}}/diagrams/{contexto}-{tipo}.md`
+
+#### Componentes (C4 simplificado)
+```mermaid
+graph TB
+    subgraph "Modulo X"
+        A[Componente A] --> B[Componente B]
+        B --> C[Componente C]
+    end
+```
+
+#### Fluxo de Dados
+```mermaid
+flowchart LR
+    Input --> Process --> Output
+    Process --> |erro| ErrorHandler
+```
+
+#### Sequencia
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant F as Frontend
+    participant B as Backend
+    U->>F: Acao
+    F->>B: Request
+    B-->>F: Response
+    F-->>U: Feedback
+```
+
+#### Entidade-Relacionamento
+```mermaid
+erDiagram
+    ENTITY_A ||--o{ ENTITY_B : "relacao"
+    ENTITY_B {
+        string id PK
+        string name
+    }
+```
+
+#### Maquina de Estados
+```mermaid
+stateDiagram-v2
+    [*] --> Inicial
+    Inicial --> Processando : evento
+    Processando --> Concluido : sucesso
+    Processando --> Erro : falha
+```
+
+## Checklist
+- [ ] Diagrama reflete a realidade do codigo
+- [ ] Labels claros e descritivos
+- [ ] Direcao de fluxo logica
+- [ ] Sintaxe Mermaid valida
+{{else}}
+# /diagram — Mermaid Diagrams
+
+## Usage
+```
+/diagram [type] [context]
+```
+
+**Types**: `components` | `flow` | `sequence` | `er` | `state`
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Understand the requested context (module, feature, flow)
+2. Read relevant code to extract real components and relationships
+
+### Phase 1 — Generate Diagram
+
+Save to: `{{paths.docsRoot}}/diagrams/{context}-{type}.md`
+
+#### Components (simplified C4)
+```mermaid
+graph TB
+    subgraph "Module X"
+        A[Component A] --> B[Component B]
+        B --> C[Component C]
+    end
+```
+
+#### Data Flow
+```mermaid
+flowchart LR
+    Input --> Process --> Output
+    Process --> |error| ErrorHandler
+```
+
+#### Sequence
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    U->>F: Action
+    F->>B: Request
+    B-->>F: Response
+    F-->>U: Feedback
+```
+
+#### Entity-Relationship
+```mermaid
+erDiagram
+    ENTITY_A ||--o{ ENTITY_B : "relationship"
+    ENTITY_B {
+        string id PK
+        string name
+    }
+```
+
+#### State Machine
+```mermaid
+stateDiagram-v2
+    [*] --> Initial
+    Initial --> Processing : event
+    Processing --> Completed : success
+    Processing --> Error : failure
+```
+
+## Checklist
+- [ ] Diagram reflects code reality
+- [ ] Clear and descriptive labels
+- [ ] Logical flow direction
+- [ ] Valid Mermaid syntax
+{{/if}}

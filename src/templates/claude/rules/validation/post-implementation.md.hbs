@@ -1,0 +1,121 @@
+{{#if (eq project.language "pt-BR")}}
+# Validacao Pos-Implementacao — {{module.name}}
+
+## REGRA BLOQUEANTE
+
+Nenhuma mudanca de codigo esta completa sem passar por todas as validacoes. O build NUNCA fica quebrado.
+
+## Quando Executar
+
+- Apos implementacao de feature
+- Apos bug fix
+- Apos refatoracao
+- Apos melhorias de performance
+- Apos mudancas em tipos, constantes ou config de build
+
+## Quando NAO Executar
+
+- Documentacao (.md)
+- Configuracao de `.claude/` (skills, rules, settings)
+- Documentos PO (`{{paths.docsRoot}}/po/`)
+- `.env`, `.gitignore`, Makefile
+
+## Pipeline de Validacao (3 estagios, em ordem)
+
+### 1. Lint
+```bash
+# Executar linter do projeto
+```
+- Ler erros, corrigir cada um
+- Preferir correcoes manuais sobre auto-fix
+- Auto-fix somente para muitos erros cosmeticos
+
+### 2. Testes
+**Localizado (1-3 arquivos mudados)**:
+```bash
+# Rodar testes dos arquivos especificos
+```
+
+**Amplo (4+ arquivos ou mudanca estrutural)**:
+```bash
+# Rodar todos os testes
+```
+
+**Regra critica**: Se testes que voce NAO tocou quebraram, provavelmente ha um bug na mudanca.
+
+### 3. Build
+```bash
+# Compilar/build do projeto
+```
+- Corrigir erros de tipo, imports, exports
+- **Build NUNCA fica quebrado**
+
+## Resumo
+
+| Estagio | Quando |
+|---------|--------|
+| Lint | Sempre |
+| Teste (escopo) | 1-3 arquivos |
+| Teste (completo) | 4+ arquivos ou estrutural |
+| Build | Sempre |
+{{else}}
+# Post-Implementation Validation — {{module.name}}
+
+## BLOCKING RULE
+
+No code change is complete without passing all validations. The build NEVER stays broken.
+
+## When to Execute
+
+- After feature implementation
+- After bug fixes
+- After refactoring
+- After performance improvements
+- After changes to types, constants, or build config
+
+## When NOT to Execute
+
+- Documentation (.md)
+- `.claude/` configuration (skills, rules, settings)
+- PO documents (`{{paths.docsRoot}}/po/`)
+- `.env`, `.gitignore`, Makefile
+
+## Validation Pipeline (3 stages, in order)
+
+### 1. Lint
+```bash
+# Run project linter
+```
+- Read errors, fix each one
+- Prefer manual fixes over auto-fix
+- Auto-fix only for many cosmetic errors
+
+### 2. Tests
+**Localized (1-3 files changed)**:
+```bash
+# Run tests for specific files
+```
+
+**Broad (4+ files or structural change)**:
+```bash
+# Run all tests
+```
+
+**Critical rule**: If tests you did NOT touch break, there's likely a bug in the change.
+
+### 3. Build
+```bash
+# Compile/build the project
+```
+- Fix type errors, imports, exports
+- **Build NEVER stays broken**
+
+## Summary
+
+| Stage | When |
+|-------|------|
+| Lint | Always |
+| Test (scoped) | 1-3 files |
+| Test (full) | 4+ files or structural |
+| Build | Always |
+{{/if}}

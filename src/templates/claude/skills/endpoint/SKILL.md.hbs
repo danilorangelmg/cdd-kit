@@ -1,0 +1,137 @@
+---
+name: endpoint
+{{#if (eq project.language "pt-BR")}}
+description: Criar endpoint completo (route + schema + service + teste)
+{{else}}
+description: Create complete endpoint (route + schema + service + test)
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /endpoint — Criar Endpoint
+
+## Uso
+```
+/endpoint [recurso] [metodo]
+```
+
+**Metodos**: `GET` | `POST` | `PUT` | `PATCH` | `DELETE`
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler endpoints existentes para entender padroes (routes, schemas, services)
+2. Verificar regras em `.claude/rules/`
+3. Identificar entidades e DTOs existentes
+
+### Fase 1 — Schema/DTO
+Criar tipos de request e response:
+
+```
+Request:  {Recurso}{Metodo}Request  (ex: UserCreateRequest)
+Response: {Recurso}{Metodo}Response (ex: UserCreateResponse)
+```
+
+- Input validado com esquema strict
+- Response tipado com contrato claro
+- Separar DTO de entrada e saida
+
+### Fase 2 — Service
+Criar ou atualizar service com logica de negocio:
+
+- Metodo no service corresponde 1:1 com o endpoint
+- Service NAO conhece HTTP (sem request/response objects)
+- Recebe parametros primitivos ou DTOs
+- Retorna dados tipados (nao response HTTP)
+- Injecao de dependencia para repositorios
+
+### Fase 3 — Route/Controller
+Criar o endpoint:
+
+- Recebe HTTP request, valida input via schema
+- Chama service com parametros extraidos
+- Retorna response formatado
+- Error handling com codigos HTTP corretos
+
+### Fase 4 — Testes
+- Teste do service (logica pura, sem HTTP)
+- Teste do endpoint (request/response completo)
+- Cenarios: happy path, validacao de input, erros
+
+### Fase 5 — Validacao
+- Rodar testes
+- Verificar lint
+
+## Checklist
+- [ ] Schema de request com validacao strict
+- [ ] Schema de response documentado
+- [ ] Service sem acoplamento HTTP
+- [ ] Erros com mensagens claras e codigos corretos
+- [ ] Testes cobrindo happy path e erros
+- [ ] Segue REST conventions (verbos, status codes, URI)
+{{else}}
+# /endpoint — Create Endpoint
+
+## Usage
+```
+/endpoint [resource] [method]
+```
+
+**Methods**: `GET` | `POST` | `PUT` | `PATCH` | `DELETE`
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read existing endpoints to understand patterns (routes, schemas, services)
+2. Check rules in `.claude/rules/`
+3. Identify existing entities and DTOs
+
+### Phase 1 — Schema/DTO
+Create request and response types:
+
+```
+Request:  {Resource}{Method}Request  (e.g., UserCreateRequest)
+Response: {Resource}{Method}Response (e.g., UserCreateResponse)
+```
+
+- Strict schema input validation
+- Typed response with clear contract
+- Separate input and output DTOs
+
+### Phase 2 — Service
+Create or update service with business logic:
+
+- Service method maps 1:1 with endpoint
+- Service does NOT know HTTP (no request/response objects)
+- Receives primitive params or DTOs
+- Returns typed data (not HTTP response)
+- Dependency injection for repositories
+
+### Phase 3 — Route/Controller
+Create the endpoint:
+
+- Receives HTTP request, validates input via schema
+- Calls service with extracted parameters
+- Returns formatted response
+- Error handling with correct HTTP codes
+
+### Phase 4 — Tests
+- Service test (pure logic, no HTTP)
+- Endpoint test (full request/response)
+- Scenarios: happy path, input validation, errors
+
+### Phase 5 — Validation
+- Run tests
+- Check lint
+
+## Checklist
+- [ ] Request schema with strict validation
+- [ ] Response schema documented
+- [ ] Service without HTTP coupling
+- [ ] Errors with clear messages and correct codes
+- [ ] Tests covering happy path and errors
+- [ ] Follows REST conventions (verbs, status codes, URI)
+{{/if}}

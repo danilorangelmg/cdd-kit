@@ -497,6 +497,128 @@ describe("Project Generation (with git submodules)", () => {
     }
   });
 
+  it("generates role-specific agents per module", async () => {
+    const files = await generateClaudeInfra(TEST_DIR, submoduleConfig);
+
+    // Frontend module should have frontend-specialist and software-architect
+    expect(files).toContain("my-app-front/.claude/agents/software-architect.md");
+    expect(files).toContain("my-app-front/.claude/agents/frontend-specialist.md");
+    // Frontend should NOT have backend-specialist or ai-engineer
+    expect(files).not.toContain("my-app-front/.claude/agents/backend-specialist.md");
+    expect(files).not.toContain("my-app-front/.claude/agents/ai-engineer.md");
+
+    // Backend module should have backend-specialist and software-architect
+    expect(files).toContain("my-app-bff/.claude/agents/software-architect.md");
+    expect(files).toContain("my-app-bff/.claude/agents/backend-specialist.md");
+    // Backend should NOT have frontend-specialist
+    expect(files).not.toContain("my-app-bff/.claude/agents/frontend-specialist.md");
+
+    // Database module should have software-architect only
+    expect(files).toContain("my-app-db/.claude/agents/software-architect.md");
+    expect(files).not.toContain("my-app-db/.claude/agents/backend-specialist.md");
+    expect(files).not.toContain("my-app-db/.claude/agents/frontend-specialist.md");
+
+    // Verify agent file content
+    const architect = await fs.readFile(
+      path.join(TEST_DIR, "my-app-front", ".claude", "agents", "software-architect.md"),
+      "utf-8"
+    );
+    expect(architect).toContain("Software Architect");
+    expect(architect).toContain("front");
+  });
+
+  it("generates common skills for all module roles", async () => {
+    const files = await generateClaudeInfra(TEST_DIR, submoduleConfig);
+
+    const commonSkills = ["adr", "diagram", "backlog", "acceptance-criteria", "user-story", "tech-review"];
+
+    for (const mod of submoduleConfig.modules) {
+      for (const skill of commonSkills) {
+        expect(files).toContain(`${mod.directory}/.claude/skills/${skill}/SKILL.md`);
+        expect(
+          await fs.pathExists(
+            path.join(TEST_DIR, mod.directory, ".claude", "skills", skill, "SKILL.md")
+          )
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("generates role-specific skills per module", async () => {
+    const files = await generateClaudeInfra(TEST_DIR, submoduleConfig);
+
+    // Frontend should have component, hook, test, ui-review, accessibility
+    expect(files).toContain("my-app-front/.claude/skills/component/SKILL.md");
+    expect(files).toContain("my-app-front/.claude/skills/hook/SKILL.md");
+    expect(files).toContain("my-app-front/.claude/skills/test/SKILL.md");
+    expect(files).toContain("my-app-front/.claude/skills/ui-review/SKILL.md");
+    expect(files).toContain("my-app-front/.claude/skills/accessibility/SKILL.md");
+    // Frontend should NOT have backend skills
+    expect(files).not.toContain("my-app-front/.claude/skills/endpoint/SKILL.md");
+    expect(files).not.toContain("my-app-front/.claude/skills/api-review/SKILL.md");
+
+    // Backend should have endpoint, service, api-review
+    expect(files).toContain("my-app-bff/.claude/skills/endpoint/SKILL.md");
+    expect(files).toContain("my-app-bff/.claude/skills/service/SKILL.md");
+    expect(files).toContain("my-app-bff/.claude/skills/api-review/SKILL.md");
+    // Backend should NOT have frontend skills
+    expect(files).not.toContain("my-app-bff/.claude/skills/component/SKILL.md");
+    expect(files).not.toContain("my-app-bff/.claude/skills/hook/SKILL.md");
+
+    // Database has no role-specific skills
+    expect(files).not.toContain("my-app-db/.claude/skills/endpoint/SKILL.md");
+    expect(files).not.toContain("my-app-db/.claude/skills/component/SKILL.md");
+  });
+
+  it("generates core rules for all modules", async () => {
+    const files = await generateClaudeInfra(TEST_DIR, submoduleConfig);
+
+    const coreRules = [
+      "architecture/patterns.md",
+      "code/guidelines.md",
+      "skills/auto-invoke.md",
+      "validation/post-implementation.md",
+    ];
+
+    for (const mod of submoduleConfig.modules) {
+      for (const rule of coreRules) {
+        expect(files).toContain(`${mod.directory}/.claude/rules/${rule}`);
+        expect(
+          await fs.pathExists(
+            path.join(TEST_DIR, mod.directory, ".claude", "rules", rule)
+          )
+        ).toBe(true);
+      }
+    }
+
+    // PO requirements should be generated (feature-planning-gate is enabled)
+    expect(files).toContain("my-app-front/.claude/rules/po/requirements.md");
+    expect(files).toContain("my-app-bff/.claude/rules/po/requirements.md");
+  });
+
+  it("generates agent-ai specific skills for agent role", async () => {
+    const agentConfig: ProjectConfig = {
+      ...submoduleConfig,
+      modules: [
+        { name: "agent", role: "agent-ai", directory: "my-app-agent" },
+      ],
+    };
+
+    const files = await generateClaudeInfra(TEST_DIR, agentConfig);
+
+    // Agent-AI should have rule, tool, agent-create + backend skills
+    expect(files).toContain("my-app-agent/.claude/skills/rule/SKILL.md");
+    expect(files).toContain("my-app-agent/.claude/skills/tool/SKILL.md");
+    expect(files).toContain("my-app-agent/.claude/skills/agent-create/SKILL.md");
+    expect(files).toContain("my-app-agent/.claude/skills/endpoint/SKILL.md");
+    expect(files).toContain("my-app-agent/.claude/skills/service/SKILL.md");
+
+    // Agent-AI should have ai-engineer and backend-specialist
+    expect(files).toContain("my-app-agent/.claude/agents/ai-engineer.md");
+    expect(files).toContain("my-app-agent/.claude/agents/backend-specialist.md");
+    expect(files).toContain("my-app-agent/.claude/agents/software-architect.md");
+  });
+
   it("does NOT generate per-module .claude/ without submodules", async () => {
     const noGitConfig: ProjectConfig = {
       ...submoduleConfig,

@@ -1,0 +1,143 @@
+---
+name: user-story
+{{#if (eq project.language "pt-BR")}}
+description: Criar user stories estruturadas com criterios de aceitacao
+{{else}}
+description: Create structured user stories with acceptance criteria
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Write, Glob, Grep
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /user-story — User Story
+
+## Uso
+```
+/user-story [descricao]
+```
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler historias existentes em `{{paths.docsRoot}}/po/` para entender o padrao
+2. Identificar personas do projeto
+3. Verificar features relacionadas
+
+### Fase 1 — Criar User Story
+
+Salvar em: `{{paths.docsRoot}}/po/user-stories/{id}-{titulo-kebab-case}.md`
+
+```markdown
+# {ID}: {Titulo}
+
+**Tipo**: Feature | Bug Fix | Melhoria
+**Modulo(s)**: {modulos afetados}
+**Prioridade**: Must | Should | Could
+
+## Historia
+
+**Como** {persona},
+**Quero** {acao desejada},
+**Para** {beneficio/objetivo}.
+
+## Criterios de Aceitacao
+
+### Cenario 1: {caminho feliz}
+**Dado** que {pre-condicao}
+**Quando** {acao}
+**Entao** {resultado}
+
+### Cenario 2: {caminho alternativo}
+**Dado** que {pre-condicao}
+**Quando** {acao}
+**Entao** {resultado}
+
+### Cenario 3: {tratamento de erro}
+**Dado** que {pre-condicao}
+**Quando** {acao invalida}
+**Entao** {mensagem de erro}
+
+## Notas Tecnicas
+- **Componentes**: {componentes afetados}
+- **API**: {endpoints necessarios}
+- **Dependencias**: {dependencias de outros modulos}
+
+## Estimativa
+- **Complexidade**: P | M | G
+- **Story Points**: 1 | 2 | 3 | 5 | 8 | 13
+```
+
+## Checklist
+- [ ] Persona identificada
+- [ ] Beneficio claro (nao apenas a acao)
+- [ ] Criterios de aceitacao testaveis
+- [ ] Cenario de erro incluido
+- [ ] Estimativa de complexidade
+{{else}}
+# /user-story — User Story
+
+## Usage
+```
+/user-story [description]
+```
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read existing stories in `{{paths.docsRoot}}/po/` to understand the pattern
+2. Identify project personas
+3. Check related features
+
+### Phase 1 — Create User Story
+
+Save to: `{{paths.docsRoot}}/po/user-stories/{id}-{title-kebab-case}.md`
+
+```markdown
+# {ID}: {Title}
+
+**Type**: Feature | Bug Fix | Enhancement
+**Module(s)**: {affected modules}
+**Priority**: Must | Should | Could
+
+## Story
+
+**As a** {persona},
+**I want** {desired action},
+**So that** {benefit/goal}.
+
+## Acceptance Criteria
+
+### Scenario 1: {happy path}
+**Given** {precondition}
+**When** {action}
+**Then** {result}
+
+### Scenario 2: {alternative path}
+**Given** {precondition}
+**When** {action}
+**Then** {result}
+
+### Scenario 3: {error handling}
+**Given** {precondition}
+**When** {invalid action}
+**Then** {error message}
+
+## Technical Notes
+- **Components**: {affected components}
+- **API**: {required endpoints}
+- **Dependencies**: {dependencies on other modules}
+
+## Estimation
+- **Complexity**: S | M | L
+- **Story Points**: 1 | 2 | 3 | 5 | 8 | 13
+```
+
+## Checklist
+- [ ] Persona identified
+- [ ] Clear benefit (not just the action)
+- [ ] Testable acceptance criteria
+- [ ] Error scenario included
+- [ ] Complexity estimation
+{{/if}}

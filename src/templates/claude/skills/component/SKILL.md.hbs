@@ -1,0 +1,143 @@
+---
+name: component
+{{#if (eq project.language "pt-BR")}}
+description: Criar componente seguindo padroes do projeto (tipagem, estados, testes)
+{{else}}
+description: Create component following project patterns (typing, states, tests)
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /component — Criar Componente
+
+## Uso
+```
+/component [nome] [tipo]
+```
+
+**Tipos**: `ui` | `feature` | `page`
+
+## Tipos de Componente
+
+| Tipo | Proposito | Diretorio |
+|------|----------|-----------|
+| `ui` | Atomico, reutilizavel, sem logica de negocio | `src/components/ui/` |
+| `feature` | Especifico de dominio, recebe dados via props | `src/components/{dominio}/` |
+| `page` | Componente de rota, usa hook compositor | `src/pages/{dominio}/` |
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler componentes existentes para entender padroes
+2. Verificar design system e tokens de cor
+3. Ler regras em `.claude/rules/`
+
+### Fase 1 — Criar Componente
+
+**UI Component** (atomico):
+- `forwardRef` para composicao
+- `cn()` para merge de classes
+- Props interface com `className?`
+- `displayName` definido
+- Skeleton companion para loading
+
+**Feature Component** (dominio):
+- Props tipadas com interface dedicada
+- Recebe dados via props (sem fetch)
+- Trata estados: loading, error, empty, success
+- Responsivo (mobile-first)
+
+**Page Component** (rota):
+- Shell fino (~40-60 linhas)
+- Usa hook compositor para dados
+- Composicao de feature components
+- Layout e routing
+
+### Fase 2 — Testes
+- Renderiza sem crash
+- Exibe conteudo correto baseado em props
+- Handlers de click/interacao
+- Estados: loading, error, empty
+
+### Fase 3 — Validacao
+- Rodar testes
+- Verificar lint
+
+## Checklist
+- [ ] Todos os estados visuais (loading/error/empty/success)
+- [ ] Responsivo (mobile-first)
+- [ ] Sem cores hardcoded (usa tokens)
+- [ ] Dark mode funcional
+- [ ] Props interface tipada
+- [ ] Acessibilidade basica (labels, contraste, keyboard)
+- [ ] Testes cobrindo cenarios principais
+- [ ] Sem logica de negocio no componente
+{{else}}
+# /component — Create Component
+
+## Usage
+```
+/component [name] [type]
+```
+
+**Types**: `ui` | `feature` | `page`
+
+## Component Types
+
+| Type | Purpose | Directory |
+|------|---------|-----------|
+| `ui` | Atomic, reusable, no business logic | `src/components/ui/` |
+| `feature` | Domain-specific, receives data via props | `src/components/{domain}/` |
+| `page` | Route component, uses compositor hook | `src/pages/{domain}/` |
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read existing components to understand patterns
+2. Check design system and color tokens
+3. Read rules in `.claude/rules/`
+
+### Phase 1 — Create Component
+
+**UI Component** (atomic):
+- `forwardRef` for composition
+- `cn()` for class merging
+- Props interface with `className?`
+- `displayName` set
+- Skeleton companion for loading
+
+**Feature Component** (domain):
+- Typed props with dedicated interface
+- Receives data via props (no fetch)
+- Handles states: loading, error, empty, success
+- Responsive (mobile-first)
+
+**Page Component** (route):
+- Thin shell (~40-60 lines)
+- Uses compositor hook for data
+- Feature component composition
+- Layout and routing
+
+### Phase 2 — Tests
+- Renders without crash
+- Displays correct content based on props
+- Click/interaction handlers
+- States: loading, error, empty
+
+### Phase 3 — Validation
+- Run tests
+- Check lint
+
+## Checklist
+- [ ] All visual states (loading/error/empty/success)
+- [ ] Responsive (mobile-first)
+- [ ] No hardcoded colors (uses tokens)
+- [ ] Dark mode functional
+- [ ] Typed props interface
+- [ ] Basic accessibility (labels, contrast, keyboard)
+- [ ] Tests covering main scenarios
+- [ ] No business logic in component
+{{/if}}

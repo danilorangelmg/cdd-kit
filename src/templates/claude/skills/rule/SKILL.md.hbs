@@ -1,0 +1,141 @@
+---
+name: rule
+{{#if (eq project.language "pt-BR")}}
+description: Criar regra deterministica completa (Protocol + implementacao + testes)
+{{else}}
+description: Create complete deterministic rule (Protocol + implementation + tests)
+{{/if}}
+user-invocable: true
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash
+model: sonnet
+---
+
+{{#if (eq project.language "pt-BR")}}
+# /rule — Criar Regra Deterministica
+
+## Uso
+```
+/rule [nome]
+```
+
+## Conceito
+
+Regras sao funcoes **puras e deterministicas** que avaliam dados e retornam um resultado padronizado. Sem I/O, sem side effects, sem banco de dados.
+
+**Resultado padrao**: `ok | alerta | erro | skip | desabilitado`
+
+## Fases
+
+### Fase 0 — Reconhecimento
+1. Ler regras existentes para entender o padrao (Protocol, implementacao)
+2. Verificar padroes em `.claude/rules/`
+3. Identificar entidades de dominio envolvidas
+
+### Fase 1 — Protocol (Contrato)
+Definir interface/protocol da regra:
+
+```
+Protocol/Interface:
+  - evaluate(dados) → RuleResult
+  - nome: string (identificador unico)
+  - descricao: string
+```
+
+**RuleResult**:
+```
+{
+  status: "ok" | "alerta" | "erro" | "skip" | "desabilitado",
+  mensagem: string,
+  detalhes?: Record<string, unknown>
+}
+```
+
+### Fase 2 — Implementacao
+- Funcao pura: recebe dados, retorna resultado
+- Sem I/O (sem banco, sem HTTP, sem filesystem)
+- Early return para validacoes
+- Parametros configuraveis (thresholds, limites)
+- Documentacao no metodo principal
+
+### Fase 3 — Testes
+- Testar todos os resultados possiveis (ok, alerta, erro, skip, desabilitado)
+- Edge cases: dados vazios, nulls, limites
+- Parametros diferentes (thresholds)
+- Sem mocks (funcoes puras)
+
+### Fase 4 — Registro
+- Registrar regra no dispatcher/registry
+- Documentar parametros configuraveis
+
+## Checklist
+- [ ] Regra e funcao pura (sem I/O)
+- [ ] Retorna RuleResult padrao
+- [ ] Todos os status testados
+- [ ] Parametros configuraveis documentados
+- [ ] Registrada no dispatcher
+- [ ] Edge cases cobertos
+{{else}}
+# /rule — Create Deterministic Rule
+
+## Usage
+```
+/rule [name]
+```
+
+## Concept
+
+Rules are **pure, deterministic functions** that evaluate data and return a standardized result. No I/O, no side effects, no database.
+
+**Standard result**: `ok | alert | error | skip | disabled`
+
+## Phases
+
+### Phase 0 — Reconnaissance
+1. Read existing rules to understand the pattern (Protocol, implementation)
+2. Check patterns in `.claude/rules/`
+3. Identify involved domain entities
+
+### Phase 1 — Protocol (Contract)
+Define rule interface/protocol:
+
+```
+Protocol/Interface:
+  - evaluate(data) → RuleResult
+  - name: string (unique identifier)
+  - description: string
+```
+
+**RuleResult**:
+```
+{
+  status: "ok" | "alert" | "error" | "skip" | "disabled",
+  message: string,
+  details?: Record<string, unknown>
+}
+```
+
+### Phase 2 — Implementation
+- Pure function: receives data, returns result
+- No I/O (no database, no HTTP, no filesystem)
+- Early return for validations
+- Configurable parameters (thresholds, limits)
+- Documentation on main method
+
+### Phase 3 — Tests
+- Test all possible results (ok, alert, error, skip, disabled)
+- Edge cases: empty data, nulls, boundaries
+- Different parameters (thresholds)
+- No mocks (pure functions)
+
+### Phase 4 — Registration
+- Register rule in dispatcher/registry
+- Document configurable parameters
+
+## Checklist
+- [ ] Rule is a pure function (no I/O)
+- [ ] Returns standard RuleResult
+- [ ] All statuses tested
+- [ ] Configurable parameters documented
+- [ ] Registered in dispatcher
+- [ ] Edge cases covered
+{{/if}}

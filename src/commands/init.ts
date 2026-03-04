@@ -6,6 +6,7 @@ import { generateOrchestrator } from "../generators/orchestrator.js";
 import { generateAllModules } from "../generators/module.js";
 import { generateClaudeInfra } from "../generators/claude-infra.js";
 import { generateDocs } from "../generators/docs.js";
+import { generateGit } from "../generators/git.js";
 import { fileExists } from "../utils/fs.js";
 
 export async function initCommand(directory?: string): Promise<void> {
@@ -50,6 +51,14 @@ export async function initCommand(directory?: string): Promise<void> {
   allFiles.push(...docFiles);
   spinner.stop("Documentation structure generated");
 
+  // Generate git files (submodules, gitignore)
+  if (config.git?.submodules) {
+    spinner.start("Generating git submodule configuration...");
+    const gitFiles = await generateGit(projectDir, config);
+    allFiles.push(...gitFiles);
+    spinner.stop("Git submodule configuration generated");
+  }
+
   // Summary
   p.log.success(chalk.bold(`Project ${config.project.name} created!`));
   p.note(
@@ -57,10 +66,22 @@ export async function initCommand(directory?: string): Promise<void> {
     "Generated files"
   );
 
+  const nextSteps = [
+    `cd ${config.project.name}`,
+    `git init && git add -A && git commit -m "chore: init cdd project"`,
+  ];
+
+  if (config.git?.submodules) {
+    nextSteps.push(
+      `# Create repos for each submodule, then:`,
+      `git submodule update --init --recursive`
+    );
+  }
+
+  nextSteps.push(`claude  ${chalk.dim("# Open with Claude Code")}`);
+
   p.outro(
     `${chalk.bold("Next steps:")}\n` +
-      `  cd ${config.project.name}\n` +
-      `  git init && git add -A && git commit -m "chore: init cdd project"\n` +
-      `  claude  ${chalk.dim("# Open with Claude Code")}`
+      nextSteps.map((s) => `  ${s}`).join("\n")
   );
 }

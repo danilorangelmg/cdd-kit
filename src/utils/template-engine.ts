@@ -6,7 +6,11 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const TEMPLATES_DIR = path.resolve(__dirname, "..", "templates");
+// In source (src/utils/) → ../templates = src/templates
+// In bundled dist (dist/) → templates = dist/templates
+const TEMPLATES_DIR = fs.existsSync(path.resolve(__dirname, "..", "templates"))
+  ? path.resolve(__dirname, "..", "templates")
+  : path.resolve(__dirname, "templates");
 
 // Register custom helpers
 Handlebars.registerHelper("eq", (a, b) => a === b);

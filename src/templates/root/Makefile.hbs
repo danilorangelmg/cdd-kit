@@ -1,8 +1,21 @@
 # {{project.name}} — Makefile
 # Gerado por cdd (Copilot-Driven Development)
 
-.PHONY: dev dev-detached test lint clean status{{#each modules}} test-{{name}}{{/each}}{{#ifRule "e2e-test-protection"}} e2e-lock e2e-unlock{{/ifRule}}
+.PHONY: dev dev-detached test lint clean status{{#each modules}} test-{{name}}{{/each}}{{#ifRule "e2e-test-protection"}} e2e-lock e2e-unlock{{/ifRule}}{{#if git.submodules}} init submodule-status submodule-pull{{/if}}
 
+{{#if git.submodules}}
+# ─── Git Submodules ───────────────────────────────────
+
+init:
+	git submodule update --init --recursive
+
+submodule-status:
+	git submodule status
+
+submodule-pull:
+	git submodule foreach 'git pull origin main'
+
+{{/if}}
 # ─── Development ───────────────────────────────────────
 
 dev:

@@ -5,7 +5,7 @@
 {{#if (eq project.language "pt-BR")}}
 ## Voce e o Orquestrador
 
-Voce gerencia um monorepo com {{modules.length}} modulo(s). Sua funcao: analisar, planejar, delegar e validar. Voce NUNCA implementa diretamente dentro dos modulos.
+Voce gerencia um {{#if git.submodules}}projeto com submodules Git{{else}}monorepo{{/if}} com {{modules.length}} modulo(s). Sua funcao: analisar, planejar, delegar e validar. Voce NUNCA implementa diretamente dentro dos modulos.
 
 ## Arquitetura
 
@@ -14,6 +14,28 @@ Voce gerencia um monorepo com {{modules.length}} modulo(s). Sua funcao: analisar
 {{#each modules}}
 | {{name}} | {{role}} | `{{directory}}/` | `{{name}}-delegate` |
 {{/each}}
+
+{{#if git.submodules}}
+## Git Submodules
+
+Cada modulo e um repositorio Git independente:
+
+| Modulo | Repositorio | Diretorio |
+|--------|------------|-----------|
+{{#each submoduleEntries}}
+| {{name}} | `{{url}}` | `{{directory}}/` |
+{{/each}}
+
+### Setup
+```bash
+git submodule update --init --recursive
+```
+
+### Apos push em um submodule
+```bash
+git add {directory} && git commit -m "chore: update {module} submodule ref"
+```
+{{/if}}
 
 ## Regras Ativas
 
@@ -113,6 +135,11 @@ Erro: `{"error": {"message": "...", "code": "..."}}`
 ## Comandos
 
 ```bash
+{{#if git.submodules}}
+make init             # Inicializar submodules
+make submodule-status # Status dos submodules
+make submodule-pull   # Pull em todos submodules
+{{/if}}
 make dev              # Subir todos os servicos
 make test             # Rodar testes de todos os modulos
 make lint             # Lint de todos os modulos
@@ -127,7 +154,7 @@ make e2e-unlock       # Desbloquear testes E2E (fase Red)
 {{else}}
 ## You are the Orchestrator
 
-You manage a monorepo with {{modules.length}} module(s). Your role: analyze, plan, delegate, and validate. You NEVER implement directly inside modules.
+You manage a {{#if git.submodules}}project with Git submodules{{else}}monorepo{{/if}} with {{modules.length}} module(s). Your role: analyze, plan, delegate, and validate. You NEVER implement directly inside modules.
 
 ## Architecture
 
@@ -136,6 +163,28 @@ You manage a monorepo with {{modules.length}} module(s). Your role: analyze, pla
 {{#each modules}}
 | {{name}} | {{role}} | `{{directory}}/` | `{{name}}-delegate` |
 {{/each}}
+
+{{#if git.submodules}}
+## Git Submodules
+
+Each module is an independent Git repository:
+
+| Module | Repository | Directory |
+|--------|-----------|-----------|
+{{#each submoduleEntries}}
+| {{name}} | `{{url}}` | `{{directory}}/` |
+{{/each}}
+
+### Setup
+```bash
+git submodule update --init --recursive
+```
+
+### After pushing changes in a submodule
+```bash
+git add {directory} && git commit -m "chore: update {module} submodule ref"
+```
+{{/if}}
 
 ## Active Rules
 
@@ -235,6 +284,11 @@ Error: `{"error": {"message": "...", "code": "..."}}`
 ## Commands
 
 ```bash
+{{#if git.submodules}}
+make init             # Initialize submodules
+make submodule-status # Submodule status
+make submodule-pull   # Pull all submodules
+{{/if}}
 make dev              # Start all services
 make test             # Run tests for all modules
 make lint             # Lint all modules

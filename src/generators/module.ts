@@ -31,11 +31,13 @@ export async function generateModule(
   await writeFile(path.join(moduleDir, "CLAUDE.md"), claudeMd);
   generatedFiles.push(`${mod.directory}/CLAUDE.md`);
 
-  // Module src/ and tests/ directories
-  await ensureDir(path.join(moduleDir, "src"));
-  await ensureDir(path.join(moduleDir, "tests"));
-  await writeFile(path.join(moduleDir, "src", ".gitkeep"), "");
-  await writeFile(path.join(moduleDir, "tests", ".gitkeep"), "");
+  // Module src/ and tests/ directories (skip for submodules — separate repos)
+  if (!config.git?.submodules) {
+    await ensureDir(path.join(moduleDir, "src"));
+    await ensureDir(path.join(moduleDir, "tests"));
+    await writeFile(path.join(moduleDir, "src", ".gitkeep"), "");
+    await writeFile(path.join(moduleDir, "tests", ".gitkeep"), "");
+  }
 
   return generatedFiles;
 }

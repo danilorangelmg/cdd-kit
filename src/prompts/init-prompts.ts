@@ -3,7 +3,11 @@ import chalk from "chalk";
 import { PRESETS } from "../methodology/presets.js";
 import { ROLES } from "../methodology/roles.js";
 import { RULES } from "../methodology/rules.js";
-import type { ModuleConfig, ProjectConfig } from "../utils/validation.js";
+import type {
+  ModuleConfig,
+  GitConfig,
+  ProjectConfig,
+} from "../utils/validation.js";
 
 export async function runInitPrompts(
   targetDir?: string
@@ -112,6 +116,82 @@ export async function runInitPrompts(
     modules.push({ name: "app", role: "generic", directory: "app" });
   }
 
+  // Step 2.5: Git submodules
+  let gitConfig: GitConfig | undefined;
+
+  const useSubmodules = await p.confirm({
+    message: "Use git submodules? (each module as independent repo)",
+    initialValue: false,
+  });
+
+  if (p.isCancel(useSubmodules)) {
+    p.cancel("Operation cancelled.");
+    process.exit(0);
+  }
+
+  if (useSubmodules) {
+    const gitGroup = await p.group(
+      {
+        org: () =>
+          p.text({
+            message: "Git organization/owner:",
+            placeholder: "my-org",
+            validate: (v) => {
+              if (!v.trim()) return "Organization is required";
+            },
+          }),
+        provider: () =>
+          p.select({
+            message: "Git provider:",
+            options: [
+              { value: "github", label: "GitHub" },
+              { value: "gitlab", label: "GitLab" },
+              { value: "bitbucket", label: "Bitbucket" },
+            ],
+          }),
+        prefix: () =>
+          p.text({
+            message: "Repository prefix (leave blank for none):",
+            placeholder: `${projectGroup.name}-`,
+            initialValue: `${projectGroup.name}-`,
+          }),
+      },
+      {
+        onCancel: () => {
+          p.cancel("Operation cancelled.");
+          process.exit(0);
+        },
+      }
+    );
+
+    gitConfig = {
+      submodules: true,
+      org: gitGroup.org as string,
+      provider: gitGroup.provider as GitConfig["provider"],
+      prefix: (gitGroup.prefix as string) || "",
+    };
+
+    // Override module directories with prefix
+    for (const mod of modules) {
+      mod.directory = `${gitConfig.prefix}${mod.name}`;
+    }
+
+    // Show computed repos
+    const providerDomain =
+      gitConfig.provider === "github"
+        ? "github.com"
+        : gitConfig.provider === "gitlab"
+          ? "gitlab.com"
+          : "bitbucket.org";
+
+    p.log.info(chalk.bold("Submodule repositories:"));
+    for (const mod of modules) {
+      p.log.message(
+        `  ${mod.name} → git@${providerDomain}:${gitConfig.org}/${mod.directory}.git`
+      );
+    }
+  }
+
   // Step 3: Methodology preset
   const presetChoice = await p.select({
     message: "Methodology preset:",
@@ -172,14 +252,17 @@ export async function runInitPrompts(
     (r) => r.alwaysActive || rules[r.id]
   ).map((r) => `#${r.number} ${r.name}`);
 
-  p.note(
-    [
-      `Project: ${chalk.bold(projectGroup.name)}`,
-      `Modules: ${modules.map((m) => `${m.name} (${m.role})`).join(", ")}`,
-      `Rules: ${activeRuleNames.join(", ")}`,
-    ].join("\n"),
-    "Summary"
-  );
+  const summaryLines = [
+    `Project: ${chalk.bold(projectGroup.name)}`,
+    `Modules: ${modules.map((m) => `${m.name} (${m.role})`).join(", ")}`,
+    `Rules: ${activeRuleNames.join(", ")}`,
+  ];
+
+  if (gitConfig) {
+    summaryLines.push(`Git: submodules (${gitConfig.provider}, org: ${gitConfig.org})`);
+  }
+
+  p.note(summaryLines.join("\n"), "Summary");
 
   const confirmed = await p.confirm({
     message: "Confirm and generate project?",
@@ -202,5 +285,6 @@ export async function runInitPrompts(
       preset: presetId,
       rules,
     },
+    ...(gitConfig ? { git: gitConfig } : {}),
   };
 }

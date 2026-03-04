@@ -5,6 +5,7 @@ import type { ProjectConfig } from "../utils/validation.js";
 import { getActiveRules } from "../methodology/rules.js";
 import { getRoleById } from "../methodology/roles.js";
 import { getPathMap } from "../utils/paths.js";
+import { getSubmoduleUrl } from "./git.js";
 
 export async function generateOrchestrator(
   projectDir: string,
@@ -49,11 +50,25 @@ function buildContext(config: ProjectConfig): Record<string, unknown> {
   }));
   const paths = getPathMap(config.project.language);
 
+  // Compute submodule entries for templates
+  const submoduleEntries = config.git?.submodules
+    ? config.modules.map((m) => ({
+        name: m.name,
+        directory: m.directory,
+        url: getSubmoduleUrl(
+          config.git!.provider,
+          config.git!.org,
+          m.directory
+        ),
+      }))
+    : [];
+
   return {
     ...config,
     activeRules,
     modulesWithRoles,
     paths,
+    submoduleEntries,
     hasBackend: config.modules.some(
       (m) => m.role === "backend" || m.role === "agent-ai"
     ),

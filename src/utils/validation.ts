@@ -19,6 +19,13 @@ export const MethodologySchema = z.object({
   rules: z.record(z.string(), z.boolean()),
 });
 
+export const GitConfigSchema = z.object({
+  submodules: z.boolean(),
+  org: z.string().min(1),
+  provider: z.enum(["github", "gitlab", "bitbucket"]),
+  prefix: z.string(),
+});
+
 export const ProjectConfigSchema = z.object({
   version: z.string(),
   project: z.object({
@@ -28,10 +35,12 @@ export const ProjectConfigSchema = z.object({
   }),
   modules: z.array(ModuleSchema),
   methodology: MethodologySchema,
+  git: GitConfigSchema.optional(),
 });
 
 export type ModuleConfig = z.infer<typeof ModuleSchema>;
 export type MethodologyConfig = z.infer<typeof MethodologySchema>;
+export type GitConfig = z.infer<typeof GitConfigSchema>;
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
 
 export function validateConfig(data: unknown): ProjectConfig {

@@ -5,6 +5,7 @@ import { generateOrchestrator } from "../../src/generators/orchestrator.js";
 import { generateAllModules } from "../../src/generators/module.js";
 import { generateClaudeInfra } from "../../src/generators/claude-infra.js";
 import { generateDocs } from "../../src/generators/docs.js";
+import { generateGit } from "../../src/generators/git.js";
 import type { ProjectConfig } from "../../src/utils/validation.js";
 
 const TEST_DIR = path.join(process.cwd(), "tests", ".tmp-test-project");
@@ -310,5 +311,140 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     );
     expect(claude).toContain("Voce e o Orquestrador");
     expect(claude).not.toContain("You are the Orchestrator");
+  });
+});
+
+describe("Project Generation (with git submodules)", () => {
+  const submoduleConfig: ProjectConfig = {
+    version: "1.0.0",
+    project: {
+      name: "my-app",
+      description: "App with submodules",
+      language: "en",
+    },
+    modules: [
+      { name: "front", role: "frontend", directory: "my-app-front" },
+      { name: "bff", role: "backend", directory: "my-app-bff" },
+      { name: "db", role: "database", directory: "my-app-db" },
+    ],
+    methodology: {
+      preset: "standard",
+      rules: {
+        "absolute-delegation": true,
+        "changelog-by-date": true,
+        "conditional-mermaid": false,
+        "feature-planning-gate": true,
+        "api-response-contract": true,
+        "scope-of-responsibility": true,
+        "e2e-test-protection": false,
+        "post-dev-e2e-validation": false,
+        "tdd-enforcement": true,
+      },
+    },
+    git: {
+      submodules: true,
+      org: "myorg",
+      provider: "github",
+      prefix: "my-app-",
+    },
+  };
+
+  beforeEach(async () => {
+    await fs.remove(TEST_DIR);
+    await fs.ensureDir(TEST_DIR);
+  });
+
+  afterEach(async () => {
+    await fs.remove(TEST_DIR);
+  });
+
+  it("generates .gitmodules with correct URLs", async () => {
+    const files = await generateGit(TEST_DIR, submoduleConfig);
+
+    expect(files).toContain(".gitmodules");
+    expect(files).toContain(".gitignore");
+
+    const gitmodules = await fs.readFile(
+      path.join(TEST_DIR, ".gitmodules"),
+      "utf-8"
+    );
+    expect(gitmodules).toContain('[submodule "my-app-front"]');
+    expect(gitmodules).toContain("path = my-app-front");
+    expect(gitmodules).toContain(
+      "url = git@github.com:myorg/my-app-front.git"
+    );
+    expect(gitmodules).toContain('[submodule "my-app-bff"]');
+    expect(gitmodules).toContain(
+      "url = git@github.com:myorg/my-app-bff.git"
+    );
+    expect(gitmodules).toContain('[submodule "my-app-db"]');
+  });
+
+  it("does NOT generate .gitmodules without git config", async () => {
+    const noGitConfig: ProjectConfig = {
+      ...submoduleConfig,
+      git: undefined,
+    };
+    const files = await generateGit(TEST_DIR, noGitConfig);
+    expect(files).toHaveLength(0);
+    expect(
+      await fs.pathExists(path.join(TEST_DIR, ".gitmodules"))
+    ).toBe(false);
+  });
+
+  it("generates Makefile with submodule targets", async () => {
+    await generateOrchestrator(TEST_DIR, submoduleConfig);
+    const makefile = await fs.readFile(
+      path.join(TEST_DIR, "Makefile"),
+      "utf-8"
+    );
+    expect(makefile).toContain("git submodule update --init --recursive");
+    expect(makefile).toContain("submodule-status");
+    expect(makefile).toContain("submodule-pull");
+  });
+
+  it("generates CLAUDE.md with submodule section", async () => {
+    await generateOrchestrator(TEST_DIR, submoduleConfig);
+    const claude = await fs.readFile(
+      path.join(TEST_DIR, "CLAUDE.md"),
+      "utf-8"
+    );
+    expect(claude).toContain("Git Submodules");
+    expect(claude).toContain("git@github.com:myorg/my-app-front.git");
+    expect(claude).toContain("git@github.com:myorg/my-app-bff.git");
+    expect(claude).toContain("git submodule update --init --recursive");
+  });
+
+  it("skips src/ and tests/ dirs for submodule modules", async () => {
+    await generateAllModules(TEST_DIR, submoduleConfig);
+
+    // CLAUDE.md should still be created
+    expect(
+      await fs.pathExists(
+        path.join(TEST_DIR, "my-app-front", "CLAUDE.md")
+      )
+    ).toBe(true);
+
+    // src/ and tests/ should NOT be created
+    expect(
+      await fs.pathExists(path.join(TEST_DIR, "my-app-front", "src"))
+    ).toBe(false);
+    expect(
+      await fs.pathExists(path.join(TEST_DIR, "my-app-front", "tests"))
+    ).toBe(false);
+  });
+
+  it("Makefile has NO submodule targets without git config", async () => {
+    const noGitConfig: ProjectConfig = {
+      ...submoduleConfig,
+      git: undefined,
+    };
+    await generateOrchestrator(TEST_DIR, noGitConfig);
+    const makefile = await fs.readFile(
+      path.join(TEST_DIR, "Makefile"),
+      "utf-8"
+    );
+    expect(makefile).not.toContain("submodule-status");
+    expect(makefile).not.toContain("submodule-pull");
   });
 });

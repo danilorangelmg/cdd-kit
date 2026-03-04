@@ -24,7 +24,7 @@ export const ProjectConfigSchema = z.object({
   project: z.object({
     name: z.string().min(1),
     description: z.string(),
-    language: z.enum(["pt-BR", "en"]),
+    language: z.string().min(2),
   }),
   modules: z.array(ModuleSchema),
   methodology: MethodologySchema,

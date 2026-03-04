@@ -15,31 +15,32 @@ export async function runInitPrompts(
     {
       name: () =>
         p.text({
-          message: "Nome do projeto:",
-          placeholder: "meu-projeto",
+          message: "Project name:",
+          placeholder: "my-project",
           validate: (v) => {
-            if (!v.trim()) return "Nome obrigatorio";
+            if (!v.trim()) return "Name is required";
             if (!/^[a-z0-9-]+$/.test(v))
-              return "Use apenas letras minusculas, numeros e hifens";
+              return "Use only lowercase letters, numbers and hyphens";
           },
         }),
       description: () =>
         p.text({
-          message: "Descricao curta:",
-          placeholder: "Sistema de gestao de pedidos",
+          message: "Short description:",
+          placeholder: "Order management system",
         }),
       language: () =>
         p.select({
-          message: "Idioma da documentacao:",
+          message: "Documentation language:",
           options: [
+            { value: "en", label: "English (default)" },
             { value: "pt-BR", label: "Portugues BR" },
-            { value: "en", label: "English" },
+            { value: "es", label: "Español" },
           ],
         }),
     },
     {
       onCancel: () => {
-        p.cancel("Operacao cancelada.");
+        p.cancel("Operation cancelled.");
         process.exit(0);
       },
     }
@@ -49,9 +50,9 @@ export async function runInitPrompts(
   const modules: ModuleConfig[] = [];
   let addMore = true;
 
-  p.log.info(chalk.bold("Modulos do projeto"));
+  p.log.info(chalk.bold("Project modules"));
   p.log.message(
-    "Adicione os modulos (submicro-servicos) do seu projeto. Cada modulo tera seu proprio CLAUDE.md e agente delegado."
+    "Add your project modules (sub-services). Each module gets its own CLAUDE.md and delegate agent."
   );
 
   while (addMore) {
@@ -59,17 +60,17 @@ export async function runInitPrompts(
       {
         name: () =>
           p.text({
-            message: `Nome do modulo ${modules.length + 1}:`,
+            message: `Module ${modules.length + 1} name:`,
             placeholder: "frontend",
             validate: (v) => {
-              if (!v.trim()) return "Nome obrigatorio";
+              if (!v.trim()) return "Name is required";
               if (modules.some((m) => m.name === v))
-                return "Ja existe um modulo com esse nome";
+                return "A module with this name already exists";
             },
           }),
         role: () =>
           p.select({
-            message: "Role do modulo:",
+            message: "Module role:",
             options: ROLES.map((r) => ({
               value: r.id,
               label: r.label,
@@ -79,7 +80,7 @@ export async function runInitPrompts(
       },
       {
         onCancel: () => {
-          p.cancel("Operacao cancelada.");
+          p.cancel("Operation cancelled.");
           process.exit(0);
         },
       }
@@ -91,15 +92,15 @@ export async function runInitPrompts(
       directory: mod.name as string,
     });
 
-    p.log.success(`Modulo ${chalk.bold(mod.name)} (${mod.role}) adicionado.`);
+    p.log.success(`Module ${chalk.bold(mod.name)} (${mod.role}) added.`);
 
     const continueAdding = await p.confirm({
-      message: "Adicionar outro modulo?",
+      message: "Add another module?",
       initialValue: modules.length < 2,
     });
 
     if (p.isCancel(continueAdding)) {
-      p.cancel("Operacao cancelada.");
+      p.cancel("Operation cancelled.");
       process.exit(0);
     }
 
@@ -107,13 +108,13 @@ export async function runInitPrompts(
   }
 
   if (modules.length === 0) {
-    p.log.warn("Nenhum modulo adicionado. Adicionando modulo generico.");
+    p.log.warn("No modules added. Adding a generic module.");
     modules.push({ name: "app", role: "generic", directory: "app" });
   }
 
   // Step 3: Methodology preset
   const presetChoice = await p.select({
-    message: "Preset de metodologia:",
+    message: "Methodology preset:",
     options: [
       ...PRESETS.map((preset) => ({
         value: preset.id,
@@ -123,13 +124,13 @@ export async function runInitPrompts(
       {
         value: "custom",
         label: "Custom",
-        hint: "Escolher regra por regra",
+        hint: "Pick rules individually",
       },
     ],
   });
 
   if (p.isCancel(presetChoice)) {
-    p.cancel("Operacao cancelada.");
+    p.cancel("Operation cancelled.");
     process.exit(0);
   }
 
@@ -141,17 +142,17 @@ export async function runInitPrompts(
     const customizableRules = RULES.filter((r) => !r.alwaysActive);
 
     const selectedRules = await p.multiselect({
-      message: "Quais componentes de metodologia ativar?",
+      message: "Which methodology components to enable?",
       options: customizableRules.map((r) => ({
         value: r.id,
-        label: `Regra #${r.number} — ${r.name}`,
+        label: `Rule #${r.number} — ${r.name}`,
         hint: r.description,
       })),
       required: false,
     });
 
     if (p.isCancel(selectedRules)) {
-      p.cancel("Operacao cancelada.");
+      p.cancel("Operation cancelled.");
       process.exit(0);
     }
 
@@ -173,19 +174,19 @@ export async function runInitPrompts(
 
   p.note(
     [
-      `Projeto: ${chalk.bold(projectGroup.name)}`,
-      `Modulos: ${modules.map((m) => `${m.name} (${m.role})`).join(", ")}`,
-      `Regras: ${activeRuleNames.join(", ")}`,
+      `Project: ${chalk.bold(projectGroup.name)}`,
+      `Modules: ${modules.map((m) => `${m.name} (${m.role})`).join(", ")}`,
+      `Rules: ${activeRuleNames.join(", ")}`,
     ].join("\n"),
-    "Resumo"
+    "Summary"
   );
 
   const confirmed = await p.confirm({
-    message: "Confirmar e gerar projeto?",
+    message: "Confirm and generate project?",
   });
 
   if (p.isCancel(confirmed) || !confirmed) {
-    p.cancel("Operacao cancelada.");
+    p.cancel("Operation cancelled.");
     process.exit(0);
   }
 
@@ -194,7 +195,7 @@ export async function runInitPrompts(
     project: {
       name: projectGroup.name as string,
       description: (projectGroup.description as string) || "",
-      language: projectGroup.language as "pt-BR" | "en",
+      language: projectGroup.language as string,
     },
     modules,
     methodology: {

@@ -447,4 +447,71 @@ describe("Project Generation (with git submodules)", () => {
     expect(makefile).not.toContain("submodule-status");
     expect(makefile).not.toContain("submodule-pull");
   });
+
+  it("generates per-module .claude/ infrastructure", async () => {
+    const files = await generateClaudeInfra(TEST_DIR, submoduleConfig);
+
+    // Each module should have its own .claude/ with settings, hooks, agents, skills
+    for (const mod of submoduleConfig.modules) {
+      const dir = mod.directory;
+
+      // Settings
+      expect(files).toContain(`${dir}/.claude/settings.json`);
+      expect(
+        await fs.pathExists(
+          path.join(TEST_DIR, dir, ".claude", "settings.json")
+        )
+      ).toBe(true);
+
+      // TDD hooks (TDD is enabled in submoduleConfig)
+      expect(files).toContain(`${dir}/.claude/hooks/tdd-guard.sh`);
+      expect(files).toContain(`${dir}/.claude/hooks/auto-test.sh`);
+      expect(files).toContain(`${dir}/.claude/hooks/tdd-eval.sh`);
+
+      // Hooks should be executable
+      const hookStat = await fs.stat(
+        path.join(TEST_DIR, dir, ".claude", "hooks", "tdd-guard.sh")
+      );
+      expect(hookStat.mode & 0o111).toBeGreaterThan(0);
+
+      // Rules
+      expect(files).toContain(`${dir}/.claude/rules/anti-patterns.md`);
+      expect(files).toContain(`${dir}/.claude/rules/scope-responsibilities.md`);
+
+      // Agents
+      expect(files).toContain(`${dir}/.claude/agents/${mod.name}-delegate.md`);
+      expect(files).toContain(`${dir}/.claude/agents/tdd-test-writer.md`);
+      expect(files).toContain(`${dir}/.claude/agents/tdd-implementer.md`);
+      expect(files).toContain(`${dir}/.claude/agents/product-owner.md`);
+
+      // Skills
+      expect(files).toContain(`${dir}/.claude/skills/tdd/SKILL.md`);
+      expect(files).toContain(`${dir}/.claude/skills/plan-feature/SKILL.md`);
+
+      // Agent memory dir
+      expect(
+        await fs.pathExists(
+          path.join(TEST_DIR, dir, ".claude", "agent-memory")
+        )
+      ).toBe(true);
+    }
+  });
+
+  it("does NOT generate per-module .claude/ without submodules", async () => {
+    const noGitConfig: ProjectConfig = {
+      ...submoduleConfig,
+      git: undefined,
+    };
+    const files = await generateClaudeInfra(TEST_DIR, noGitConfig);
+
+    // Root .claude/ should exist
+    expect(files).toContain(".claude/settings.json");
+
+    // Module .claude/ should NOT exist
+    expect(
+      await fs.pathExists(
+        path.join(TEST_DIR, "my-app-front", ".claude")
+      )
+    ).toBe(false);
+  });
 });

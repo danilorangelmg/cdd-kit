@@ -1,0 +1,102 @@
+---
+description: "{{#if (eq project.language "pt-BR")}}Protocolo de delegacao multi-agente. Aplica SEMPRE que uma tarefa envolve multiplos modulos.{{else}}Multi-agent delegation protocol. Applies ALWAYS when a task involves multiple modules.{{/if}}"
+globs: ["**/*"]
+---
+
+{{#if (eq project.language "pt-BR")}}
+# Protocolo de Delegacao Multi-Agente
+
+## Principio Standalone-First
+
+Modulos nunca referenciam o orquestrador. Contexto injetado em runtime via Task tool.
+
+## Formato de Prompt para Delegates
+
+Max ~50 linhas. Referenciar arquivos por caminho.
+
+```
+## Tarefa
+{1-3 frases: O QUE fazer}
+
+## Docs de referencia
+- `documentos/regras/{modulo}/regras-negocio/{feature}.md`
+- `documentos/regras/{modulo}/plano-testes/{feature}.md`
+- `documentos/regras/{modulo}/plano-desenvolvimento/{feature}.md`
+
+## Arquivos de referencia
+- `src/path/to/similar_file` — padrao para {o que}
+
+## Especificacao
+- Endpoints/Componentes: {lista}
+- Validacoes: {lista}
+
+## Contrato de saida
+Retornar: ARQUIVOS_ALTERADOS, RESUMO, VALIDACAO_LOCAL, DEPENDENCIAS_EXTERNAS
+```
+
+## Fluxo de Orquestracao
+
+{{#ifRule "feature-planning-gate"}}
+0. **Gate (Regra #3)** — Feature? → verificar docs → `/plan-feature` se necessario
+{{/ifRule}}
+1. **Analisar** — Explore agents para entender escopo
+2. **Decompor** — Tarefas atomicas por modulo
+3. **Ordenar** — Sequencia pelo grafo de dependencias
+{{#ifRule "tdd-enforcement"}}
+4. **Testar (Red)** — `tdd-test-writer` escreve testes falhando
+5. **Implementar (Green)** — `tdd-implementer` implementa minimo
+{{else}}
+4. **Implementar** — Delegar ao agente correto
+{{/ifRule}}
+6. **Integrar** — Verificar DEPENDENCIAS_EXTERNAS
+7. **Validar** — Apenas modulos afetados
+8. **Reportar** — Consolidar resultado
+{{else}}
+# Multi-Agent Delegation Protocol
+
+## Standalone-First Principle
+
+Modules never reference the orchestrator. Context injected at runtime via Task tool.
+
+## Prompt Format for Delegates
+
+Max ~50 lines. Reference files by path.
+
+```
+## Task
+{1-3 sentences: WHAT to do}
+
+## Reference docs
+- `documentos/regras/{module}/regras-negocio/{feature}.md`
+- `documentos/regras/{module}/plano-testes/{feature}.md`
+- `documentos/regras/{module}/plano-desenvolvimento/{feature}.md`
+
+## Reference files
+- `src/path/to/similar_file` — pattern for {what}
+
+## Specification
+- Endpoints/Components: {list}
+- Validations: {list}
+
+## Output contract
+Return: FILES_CHANGED, SUMMARY, LOCAL_VALIDATION, EXTERNAL_DEPENDENCIES
+```
+
+## Orchestration Flow
+
+{{#ifRule "feature-planning-gate"}}
+0. **Gate (Rule #3)** — Feature? → check docs → `/plan-feature` if needed
+{{/ifRule}}
+1. **Analyze** — Explore agents to understand scope
+2. **Decompose** — Atomic tasks per module
+3. **Order** — Sequence by dependency graph
+{{#ifRule "tdd-enforcement"}}
+4. **Test (Red)** — `tdd-test-writer` writes failing tests
+5. **Implement (Green)** — `tdd-implementer` implements minimum
+{{else}}
+4. **Implement** — Delegate to the correct agent
+{{/ifRule}}
+6. **Integrate** — Verify EXTERNAL_DEPENDENCIES
+7. **Validate** — Only affected modules
+8. **Report** — Consolidate result
+{{/if}}

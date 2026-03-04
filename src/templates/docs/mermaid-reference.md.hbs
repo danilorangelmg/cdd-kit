@@ -1,0 +1,83 @@
+{{#if (eq project.language "pt-BR")}}
+# Referencia: Diagramas Mermaid (Regra #2)
+
+## Quando Usar
+
+| Tipo de Mudanca | Diagrama | Obrigatorio? |
+|----------------|----------|-------------|
+| Novo endpoint | sequenceDiagram | Sim |
+| Mudanca de schema | erDiagram | Sim |
+| Nova integracao | flowchart | Sim |
+| Bug fix | — | Nao |
+| Config/refactoring | — | Nao |
+| CRUD basico | — | Nao |
+
+## Exemplos
+
+### Sequence Diagram (novo endpoint)
+```mermaid
+sequenceDiagram
+    Frontend->>Backend: POST /api/v1/resource
+    Backend->>Database: INSERT INTO resource
+    Database-->>Backend: OK
+    Backend-->>Frontend: 201 Created
+```
+
+### ER Diagram (mudanca de schema)
+```mermaid
+erDiagram
+    RESOURCE {
+        uuid id PK
+        string name
+        timestamp created_at
+    }
+```
+
+### Flowchart (nova integracao)
+```mermaid
+flowchart LR
+    A[Service A] --> B[Service B]
+    B --> C[Database]
+```
+{{else}}
+# Reference: Mermaid Diagrams (Rule #2)
+
+## When to Use
+
+| Change Type | Diagram | Required? |
+|------------|---------|-----------|
+| New endpoint | sequenceDiagram | Yes |
+| Schema change | erDiagram | Yes |
+| New integration | flowchart | Yes |
+| Bug fix | — | No |
+| Config/refactoring | — | No |
+| Basic CRUD | — | No |
+
+## Examples
+
+### Sequence Diagram (new endpoint)
+```mermaid
+sequenceDiagram
+    Frontend->>Backend: POST /api/v1/resource
+    Backend->>Database: INSERT INTO resource
+    Database-->>Backend: OK
+    Backend-->>Frontend: 201 Created
+```
+
+### ER Diagram (schema change)
+```mermaid
+erDiagram
+    RESOURCE {
+        uuid id PK
+        string name
+        timestamp created_at
+    }
+```
+
+### Flowchart (new integration)
+```mermaid
+flowchart LR
+    A[Service A] --> B[Service B]
+    B --> C[Database]
+```
+{{/if}}

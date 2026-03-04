@@ -1,0 +1,41 @@
+# {{module.name}}
+
+> {{#if (eq project.language "pt-BR")}}Modulo E2E — testes end-to-end{{else}}E2E module — end-to-end tests{{/if}}
+
+## {{#if (eq project.language "pt-BR")}}Escopo Restrito{{else}}Restricted Scope{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Trabalhe EXCLUSIVAMENTE dentro do diretorio `{{module.directory}}/`. NUNCA modifique arquivos fora deste diretorio.
+{{else}}
+Work EXCLUSIVELY within the `{{module.directory}}/` directory. NEVER modify files outside this directory.
+{{/if}}
+
+## Stack
+
+<!-- {{#if (eq project.language "pt-BR")}}Preencha com sua stack{{else}}Fill in your stack{{/if}}: ex. Playwright, Cypress, Cucumber + Playwright, Selenium -->
+
+## {{#if (eq project.language "pt-BR")}}Escopo (Regra #5){{else}}Scope (Rule #5){{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+**PERMITIDO**: feature files (BDD/Gherkin), step definitions, page objects, fixtures, mock server, screenshots e reports.
+
+**PROIBIDO**: codigo de aplicacao, logica de negocio. NUNCA modifique testes para fazer codigo passar — o codigo sob teste deve mudar.
+{{else}}
+**ALLOWED**: feature files (BDD/Gherkin), step definitions, page objects, fixtures, mock server, screenshots and reports.
+
+**FORBIDDEN**: application code, business logic. NEVER modify tests to make code pass — the code under test must change.
+{{/if}}
+
+## {{#if (eq project.language "pt-BR")}}Padrao Arquitetural Sugerido{{else}}Suggested Architecture{{/if}}
+
+{{role.suggestedArchitecture}}
+
+{{#ifRule "e2e-test-protection"}}
+## {{#if (eq project.language "pt-BR")}}Protecao (Regra #6){{else}}Protection (Rule #6){{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Testes sao protegidos por `chmod 555/444`. Apenas desbloqueados na fase Red (`make e2e-unlock`). Auto-bloqueados apos uso (`make e2e-lock`).
+{{else}}
+Tests are protected by `chmod 555/444`. Only unlocked during Red phase (`make e2e-unlock`). Auto-locked after use (`make e2e-lock`).
+{{/if}}
+{{/ifRule}}

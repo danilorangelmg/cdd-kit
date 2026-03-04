@@ -1,0 +1,69 @@
+{{#if (eq project.language "pt-BR")}}
+# Template: Planejamento de Feature
+
+## Classificacao
+
+- **SIMPLES**: Max 2 modulos, CRUD, padroes claros, sem conceitos novos
+- **COMPLEXA**: 3+ modulos, logica nova, integracoes, conceitos novos
+
+## Documentos por Modulo
+
+Para cada modulo afetado:
+
+### regras-negocio/{feature}.md
+- Contexto (1-3 linhas)
+- Regras aplicaveis (tabela)
+- Casos de uso (cenarios)
+- Dados (tabelas/campos)
+- Diagramas (se aplicavel)
+
+### plano-testes/{feature}.md
+- Cenarios BDD: Dado/Quando/Entao
+- Cenarios de erro
+- Edge cases
+
+### plano-desenvolvimento/{feature}.md
+- Componentes afetados
+- Tarefas atomicas (ordenadas)
+- Criterios de validacao
+
+## Modulos do Projeto
+
+{{#each modules}}
+- `{{name}}` ({{role}})
+{{/each}}
+{{else}}
+# Template: Feature Planning
+
+## Classification
+
+- **SIMPLE**: Max 2 modules, CRUD, clear patterns, no new concepts
+- **COMPLEX**: 3+ modules, new logic, integrations, new concepts
+
+## Documents per Module
+
+For each affected module:
+
+### regras-negocio/{feature}.md
+- Context (1-3 lines)
+- Applicable rules (table)
+- Use cases (scenarios)
+- Data (tables/fields)
+- Diagrams (if applicable)
+
+### plano-testes/{feature}.md
+- BDD scenarios: Given/When/Then
+- Error scenarios
+- Edge cases
+
+### plano-desenvolvimento/{feature}.md
+- Affected components
+- Atomic tasks (ordered)
+- Validation criteria
+
+## Project Modules
+
+{{#each modules}}
+- `{{name}}` ({{role}})
+{{/each}}
+{{/if}}

@@ -1,0 +1,65 @@
+{
+{{#ifRule "tdd-enforcement"}}
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/tdd-guard.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/auto-test.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/tdd-eval.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if the agent just completed code changes in any module ({{#each modules}}{{name}}{{#unless @last}}, {{/unless}}{{/each}}). If yes, verify: 1) Were tests written BEFORE implementation? 2) Do all tests pass? If any check fails, respond with {\"ok\": false, \"reason\": \"description\"}. If all pass or no code changed, respond with {\"ok\": true}."
+          }
+        ]
+      }
+    ]
+  },
+{{/ifRule}}
+  "permissions": {
+    "allow": [],
+    "deny": [
+{{#ifRule "e2e-test-protection"}}
+{{#modulesOfRole "e2e"}}
+      "Edit(/{{directory}}/features/**)",
+      "Write(/{{directory}}/features/**)",
+      "Edit(/{{directory}}/step-definitions/**)",
+      "Write(/{{directory}}/step-definitions/**)",
+      "Edit(/{{directory}}/support/**)",
+      "Write(/{{directory}}/support/**)"{{#unless @last}},{{/unless}}
+{{/modulesOfRole}}
+{{/ifRule}}
+    ]
+  }
+}

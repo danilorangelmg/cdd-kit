@@ -1,0 +1,80 @@
+---
+description: "{{#if (eq project.language "pt-BR")}}Anti-patterns de orquestracao multi-agente.{{else}}Multi-agent orchestration anti-patterns.{{/if}}"
+globs: ["**/*"]
+---
+
+{{#if (eq project.language "pt-BR")}}
+# Anti-Patterns de Orquestracao
+
+## 1. Instrucoes de delegacao no modulo
+
+**Errado**: Adicionar "quando chamado pelo orquestrador, faca X" no CLAUDE.md de um modulo.
+**Correto**: Toda logica de delegacao fica no repo root. Modulos sao auto-contidos.
+
+## 2. Criterios de validacao genericos
+
+**Errado**: "Verifique se esta tudo funcionando."
+**Correto**: Validacao em 3 niveis — Sintaxe (lint), Funcional (testes), Integracao (contratos).
+
+## 3. Tudo sequencial
+
+**Errado**: Executar todos os modulos em sequencia mesmo quando independentes.
+**Correto**: Paralelizar quando nao ha dependencia de dados.
+
+## 4. Orquestrador implementa em modulos (VIOLACAO CRITICA)
+
+**Errado**: O orquestrador edita arquivos dentro de modulos diretamente.
+**Correto**: SEMPRE delegar via Task tool. Mesmo tarefas "triviais".
+
+## 5. Validacao apenas no final
+
+**Errado**: Implementar tudo e so validar no fim.
+**Correto**: Validar cada modulo ao termino. Validacao cross-project ao final.
+
+## 6. Sub-agentes sem restricao de diretorio
+
+**Errado**: Dar acesso total ao repositorio.
+**Correto**: Cada sub-agente trabalha EXCLUSIVAMENTE dentro do seu diretorio.
+
+## 7. Logica de negocio no frontend (VIOLACAO DE ESCOPO)
+
+**Errado**: Validacoes de dominio, calculos de negocio no frontend.
+**Correto**: Toda logica no backend. Frontends consomem dados ja processados via API.
+{{else}}
+# Orchestration Anti-Patterns
+
+## 1. Delegation instructions in module
+
+**Wrong**: Adding "when called by orchestrator, do X" in a module's CLAUDE.md.
+**Correct**: All delegation logic stays in root repo. Modules are self-contained.
+
+## 2. Generic validation criteria
+
+**Wrong**: "Check if everything is working."
+**Correct**: 3-level validation — Syntax (lint), Functional (tests), Integration (contracts).
+
+## 3. Everything sequential
+
+**Wrong**: Running all modules sequentially even when independent.
+**Correct**: Parallelize when there's no data dependency.
+
+## 4. Orchestrator implements in modules (CRITICAL VIOLATION)
+
+**Wrong**: The orchestrator edits files inside modules directly.
+**Correct**: ALWAYS delegate via Task tool. Even "trivial" tasks.
+
+## 5. Validation only at the end
+
+**Wrong**: Implement everything and only validate at the end.
+**Correct**: Validate each module on completion. Cross-project validation at the end.
+
+## 6. Sub-agents without directory restriction
+
+**Wrong**: Giving full repository access.
+**Correct**: Each sub-agent works EXCLUSIVELY within its directory.
+
+## 7. Business logic in frontend (SCOPE VIOLATION)
+
+**Wrong**: Domain validations, business calculations in frontend.
+**Correct**: All logic in backend. Frontends consume pre-processed data via API.
+{{/if}}

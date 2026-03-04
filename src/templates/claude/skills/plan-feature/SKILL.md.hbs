@@ -1,0 +1,144 @@
+---
+name: plan-feature
+description: "{{#if (eq project.language "pt-BR")}}Planejamento estruturado de nova feature com docs por modulo (Regra #3).{{else}}Structured planning for new features with per-module docs (Rule #3).{{/if}}"
+user-invocable: true
+argument-hint: "[feature-name] [optional context]"
+allowed-tools: Read, Write, Glob, Grep, Task, WebSearch
+model: opus
+---
+
+# {{#if (eq project.language "pt-BR")}}Planejamento Estruturado de Feature (Regra #3){{else}}Structured Feature Planning (Rule #3){{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+## Entrada
+
+Argumento recebido: **$ARGUMENTS**
+
+Formato: `[nome-da-feature] [contexto opcional]`
+
+## Diretorio de Output
+
+Docs gerados por modulo:
+```
+documentos/regras/{modulo}/regras-negocio/{feature}.md
+documentos/regras/{modulo}/plano-testes/{feature}.md
+documentos/regras/{modulo}/plano-desenvolvimento/{feature}.md
+```
+
+## Fluxo
+
+### Etapa 1 — Classificar e Identificar Modulos
+
+1. Classificar: SIMPLES (max 2 modulos, CRUD, padroes claros) ou COMPLEXA
+2. Identificar quais modulos a feature afeta
+3. Validar escopo (Regra #5):
+   - Logica de negocio → backend
+   - Visual/UX → frontend
+   - Motor/pipeline/AI → agent-ai
+   - Schema → database
+
+### Etapa 2 — Regras de Negocio por Modulo
+
+Para CADA modulo afetado, delegue ao `product-owner`:
+- Documento focado APENAS no escopo do modulo
+- Salvar em: `documentos/regras/{modulo}/regras-negocio/{feature}.md`
+
+### Etapa 3 — Plano de Testes por Modulo
+
+Para CADA modulo, criar cenarios de teste:
+```markdown
+# {Feature} — Plano de Testes ({Modulo})
+- [ ] Dado {contexto} Quando {acao} Entao {resultado}
+```
+Salvar em: `documentos/regras/{modulo}/plano-testes/{feature}.md`
+
+### Etapa 4 — Plano de Desenvolvimento por Modulo
+
+Para CADA modulo, criar tarefas atomicas:
+```markdown
+# {Feature} — Plano de Desenvolvimento ({Modulo})
+## Componentes Afetados
+## Tarefas Atomicas
+## Validacao
+```
+Salvar em: `documentos/regras/{modulo}/plano-desenvolvimento/{feature}.md`
+
+### Etapa 5 — Resumo
+
+Apresentar ao usuario:
+- Visao geral da feature
+- Modulos afetados e docs gerados
+- Riscos identificados
+
+## Modulos Disponiveis
+
+{{#each modules}}
+- `{{name}}` ({{role}}) → `{{directory}}/`
+{{/each}}
+{{else}}
+## Input
+
+Argument received: **$ARGUMENTS**
+
+Format: `[feature-name] [optional context]`
+
+## Output Directory
+
+Docs generated per module:
+```
+documentos/regras/{module}/regras-negocio/{feature}.md
+documentos/regras/{module}/plano-testes/{feature}.md
+documentos/regras/{module}/plano-desenvolvimento/{feature}.md
+```
+
+## Flow
+
+### Step 1 — Classify and Identify Modules
+
+1. Classify: SIMPLE (max 2 modules, CRUD, clear patterns) or COMPLEX
+2. Identify which modules the feature affects
+3. Validate scope (Rule #5):
+   - Business logic → backend
+   - Visual/UX → frontend
+   - Engine/pipeline/AI → agent-ai
+   - Schema → database
+
+### Step 2 — Business Rules per Module
+
+For EACH affected module, delegate to `product-owner`:
+- Document focused ONLY on the module's scope
+- Save to: `documentos/regras/{module}/regras-negocio/{feature}.md`
+
+### Step 3 — Test Plan per Module
+
+For EACH module, create test scenarios:
+```markdown
+# {Feature} — Test Plan ({Module})
+- [ ] Given {context} When {action} Then {result}
+```
+Save to: `documentos/regras/{module}/plano-testes/{feature}.md`
+
+### Step 4 — Development Plan per Module
+
+For EACH module, create atomic tasks:
+```markdown
+# {Feature} — Development Plan ({Module})
+## Affected Components
+## Atomic Tasks
+## Validation
+```
+Save to: `documentos/regras/{module}/plano-desenvolvimento/{feature}.md`
+
+### Step 5 — Summary
+
+Present to user:
+- Feature overview
+- Affected modules and generated docs
+- Identified risks
+
+## Available Modules
+
+{{#each modules}}
+- `{{name}}` ({{role}}) → `{{directory}}/`
+{{/each}}
+{{/if}}

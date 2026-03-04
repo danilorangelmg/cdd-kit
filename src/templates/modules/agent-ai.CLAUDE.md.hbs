@@ -1,0 +1,47 @@
+# {{module.name}}
+
+> {{#if (eq project.language "pt-BR")}}Modulo Agent AI — motor de regras, LLM, pipelines, schedulers{{else}}Agent AI module — rules engine, LLM, pipelines, schedulers{{/if}}
+
+## {{#if (eq project.language "pt-BR")}}Escopo Restrito{{else}}Restricted Scope{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Trabalhe EXCLUSIVAMENTE dentro do diretorio `{{module.directory}}/`. NUNCA modifique arquivos fora deste diretorio.
+{{else}}
+Work EXCLUSIVELY within the `{{module.directory}}/` directory. NEVER modify files outside this directory.
+{{/if}}
+
+## Stack
+
+<!-- {{#if (eq project.language "pt-BR")}}Preencha com sua stack{{else}}Fill in your stack{{/if}}: ex. LangChain, CrewAI, AutoGen, custom rules engine -->
+
+## {{#if (eq project.language "pt-BR")}}Escopo de Negocio (Regra #5){{else}}Business Scope (Rule #5){{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+**PERMITIDO**: regras deterministicas (engine sem LLM), pipelines de processamento, integracao com LLMs, schedulers e jobs, alertas e notificacoes.
+
+**PROIBIDO**: logica de API/frontend, extracao de dados de sistemas externos (modulo dedicado), auditoria (modulo dedicado).
+{{else}}
+**ALLOWED**: deterministic rules (engine without LLM), processing pipelines, LLM integration, schedulers and jobs, alerts and notifications.
+
+**FORBIDDEN**: API/frontend logic, external data extraction (dedicated module), auditing (dedicated module).
+{{/if}}
+
+## {{#if (eq project.language "pt-BR")}}Padrao Arquitetural Sugerido{{else}}Suggested Architecture{{/if}}
+
+{{role.suggestedArchitecture}}
+
+## {{#if (eq project.language "pt-BR")}}Contrato de Resposta{{else}}Response Contract{{/if}}
+
+```
+{{#if (eq project.language "pt-BR")}}
+ARQUIVOS_ALTERADOS: [lista de arquivos criados/modificados]
+RESUMO: [o que foi feito em 1-2 frases]
+VALIDACAO_LOCAL: [resultado de lint e/ou testes]
+DEPENDENCIAS_EXTERNAS: [mudancas necessarias em outros modulos]
+{{else}}
+FILES_CHANGED: [list of files created/modified]
+SUMMARY: [what was done in 1-2 sentences]
+LOCAL_VALIDATION: [lint and/or test results]
+EXTERNAL_DEPENDENCIES: [changes needed in other modules]
+{{/if}}
+```

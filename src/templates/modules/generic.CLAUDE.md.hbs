@@ -1,0 +1,35 @@
+# {{module.name}}
+
+> {{#if (eq project.language "pt-BR")}}Modulo customizado{{else}}Custom module{{/if}}
+
+## {{#if (eq project.language "pt-BR")}}Escopo Restrito{{else}}Restricted Scope{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Trabalhe EXCLUSIVAMENTE dentro do diretorio `{{module.directory}}/`. NUNCA modifique arquivos fora deste diretorio.
+{{else}}
+Work EXCLUSIVELY within the `{{module.directory}}/` directory. NEVER modify files outside this directory.
+{{/if}}
+
+## Stack
+
+<!-- {{#if (eq project.language "pt-BR")}}Preencha com sua stack{{else}}Fill in your stack{{/if}} -->
+
+## {{#if (eq project.language "pt-BR")}}Escopo{{else}}Scope{{/if}}
+
+<!-- {{#if (eq project.language "pt-BR")}}Defina o escopo deste modulo: o que PODE e NAO PODE conter{{else}}Define this module's scope: what it CAN and CANNOT contain{{/if}} -->
+
+## {{#if (eq project.language "pt-BR")}}Contrato de Resposta{{else}}Response Contract{{/if}}
+
+```
+{{#if (eq project.language "pt-BR")}}
+ARQUIVOS_ALTERADOS: [lista de arquivos criados/modificados]
+RESUMO: [o que foi feito em 1-2 frases]
+VALIDACAO_LOCAL: [resultado de lint e/ou testes]
+DEPENDENCIAS_EXTERNAS: [mudancas necessarias em outros modulos]
+{{else}}
+FILES_CHANGED: [list of files created/modified]
+SUMMARY: [what was done in 1-2 sentences]
+LOCAL_VALIDATION: [lint and/or test results]
+EXTERNAL_DEPENDENCIES: [changes needed in other modules]
+{{/if}}
+```

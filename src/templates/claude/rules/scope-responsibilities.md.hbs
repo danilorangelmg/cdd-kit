@@ -1,0 +1,79 @@
+---
+globs: ["**/*"]
+---
+
+{{#if (eq project.language "pt-BR")}}
+# Regra #5 — Escopo de Responsabilidade por Modulo
+
+> **Principio**: Cada modulo tem fronteiras bem definidas. Frontends sao camada visual pura. Toda logica de negocio pertence ao backend.
+
+## Mapa de Responsabilidades
+
+| Modulo | Role | Responsabilidade | NAO PODE conter |
+|--------|------|-----------------|-----------------|
+{{#each modules}}
+{{#if (eq role "frontend")}}
+| {{name}} | frontend | Layout, UX, formatacao, estados visuais, chamadas API | Calculos de dominio, validacoes de negocio, decisoes de workflow |
+{{else if (eq role "backend")}}
+| {{name}} | backend | Validacoes, calculos, transformacoes, regras de dominio, APIs | Logica de UI, motor/pipeline (→ agent-ai), DDL (→ database) |
+{{else if (eq role "database")}}
+| {{name}} | database | DDL, migrations, indices, constraints, contratos | Logica de negocio, ORM com metodos, codigo de aplicacao |
+{{else if (eq role "agent-ai")}}
+| {{name}} | agent-ai | Regras deterministicas, pipelines, LLM, schedulers | Logica de API/frontend, extracao de dados externos |
+{{else if (eq role "mobile")}}
+| {{name}} | mobile | Layout, UX nativa, GPS, fotos, push notifications | Calculos de dominio, logica de sincronizacao complexa |
+{{else if (eq role "e2e")}}
+| {{name}} | e2e | Features BDD, step definitions, page objects, fixtures | Codigo de aplicacao, logica de negocio |
+{{else}}
+| {{name}} | {{role}} | Conforme definido no CLAUDE.md | Conforme definido no CLAUDE.md |
+{{/if}}
+{{/each}}
+
+## Roteamento de Escopo
+
+```
+Nova logica identificada
+    ├─ Visual/UX? → Frontend
+    ├─ Regra de negocio? → Backend
+    ├─ Motor/pipeline/AI? → Agent-AI
+    ├─ Schema/DDL? → Database
+    └─ Duvida? → Backend (default seguro)
+```
+{{else}}
+# Rule #5 — Scope of Responsibility per Module
+
+> **Principle**: Each module has well-defined boundaries. Frontends are pure visual layer. All business logic belongs to the backend.
+
+## Responsibility Map
+
+| Module | Role | Responsibility | CANNOT contain |
+|--------|------|---------------|----------------|
+{{#each modules}}
+{{#if (eq role "frontend")}}
+| {{name}} | frontend | Layout, UX, formatting, visual states, API calls | Domain calculations, business validations, workflow decisions |
+{{else if (eq role "backend")}}
+| {{name}} | backend | Validations, calculations, transformations, domain rules, APIs | UI logic, engine/pipeline (→ agent-ai), DDL (→ database) |
+{{else if (eq role "database")}}
+| {{name}} | database | DDL, migrations, indexes, constraints, contracts | Business logic, ORM with methods, application code |
+{{else if (eq role "agent-ai")}}
+| {{name}} | agent-ai | Deterministic rules, pipelines, LLM, schedulers | API/frontend logic, external data extraction |
+{{else if (eq role "mobile")}}
+| {{name}} | mobile | Layout, native UX, GPS, photos, push notifications | Domain calculations, complex sync logic |
+{{else if (eq role "e2e")}}
+| {{name}} | e2e | BDD features, step definitions, page objects, fixtures | Application code, business logic |
+{{else}}
+| {{name}} | {{role}} | As defined in CLAUDE.md | As defined in CLAUDE.md |
+{{/if}}
+{{/each}}
+
+## Scope Routing
+
+```
+New logic identified
+    ├─ Visual/UX? → Frontend
+    ├─ Business rule? → Backend
+    ├─ Engine/pipeline/AI? → Agent-AI
+    ├─ Schema/DDL? → Database
+    └─ Uncertain? → Backend (safe default)
+```
+{{/if}}

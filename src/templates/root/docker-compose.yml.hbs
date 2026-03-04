@@ -1,0 +1,19 @@
+# {{project.name}} — Docker Compose
+# Gerado por cdd (Copilot-Driven Development)
+# Customize os services conforme sua stack.
+
+services:
+{{#each modules}}
+  {{name}}:
+    build:
+      context: ./{{directory}}
+      dockerfile: Dockerfile
+    # ports:
+    #   - "XXXX:XXXX"
+    env_file:
+      - .env
+    {{#if @first}}
+    # restart: unless-stopped
+    {{/if}}
+
+{{/each}}

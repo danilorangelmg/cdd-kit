@@ -1,0 +1,60 @@
+# {{project.name}} — Makefile
+# Gerado por cdd (Copilot-Driven Development)
+
+.PHONY: dev dev-detached test lint clean status{{#each modules}} test-{{name}}{{/each}}{{#ifRule "e2e-test-protection"}} e2e-lock e2e-unlock{{/ifRule}}
+
+# ─── Development ───────────────────────────────────────
+
+dev:
+	docker compose up --build
+
+dev-detached:
+	docker compose up --build -d
+
+clean:
+	docker compose down -v
+
+# ─── Testing ───────────────────────────────────────────
+
+test:{{#each modules}} test-{{name}}{{/each}}
+
+{{#each modules}}
+test-{{name}}:
+	cd {{directory}} && make test
+
+{{/each}}
+
+# ─── Linting ──────────────────────────────────────────
+
+lint:
+{{#each modules}}
+	cd {{directory}} && make lint
+{{/each}}
+
+{{#ifRule "e2e-test-protection"}}
+# ─── E2E Protection (Regra #6) ────────────────────────
+
+e2e-lock:
+{{#modulesOfRole "e2e"}}
+	find {{directory}}/features {{directory}}/step-definitions {{directory}}/support -type d -exec chmod 555 {} \;
+	find {{directory}}/features {{directory}}/step-definitions {{directory}}/support -type f -exec chmod 444 {} \;
+{{/modulesOfRole}}
+	@echo "E2E tests locked (chmod 555/444)"
+
+e2e-unlock:
+{{#modulesOfRole "e2e"}}
+	find {{directory}}/features {{directory}}/step-definitions {{directory}}/support -type d -exec chmod 755 {} \;
+	find {{directory}}/features {{directory}}/step-definitions {{directory}}/support -type f -exec chmod 644 {} \;
+{{/modulesOfRole}}
+	@echo "E2E tests unlocked — Red phase"
+{{/ifRule}}
+
+# ─── Status ───────────────────────────────────────────
+
+status:
+	@echo "=== Project Status ==="
+{{#each modules}}
+	@echo "--- {{name}} ({{role}}) ---"
+	@test -d {{directory}} && echo "  Directory: OK" || echo "  Directory: MISSING"
+	@test -f {{directory}}/CLAUDE.md && echo "  CLAUDE.md: OK" || echo "  CLAUDE.md: MISSING"
+{{/each}}

@@ -1,0 +1,47 @@
+# {{module.name}}
+
+> {{#if (eq project.language "pt-BR")}}Modulo database — Schema Registry (DDL e migrations){{else}}Database module — Schema Registry (DDL and migrations){{/if}}
+
+## {{#if (eq project.language "pt-BR")}}Escopo Restrito{{else}}Restricted Scope{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Trabalhe EXCLUSIVAMENTE dentro do diretorio `{{module.directory}}/`. NUNCA modifique arquivos fora deste diretorio.
+{{else}}
+Work EXCLUSIVELY within the `{{module.directory}}/` directory. NEVER modify files outside this directory.
+{{/if}}
+
+## Stack
+
+<!-- {{#if (eq project.language "pt-BR")}}Preencha com sua stack{{else}}Fill in your stack{{/if}}: ex. Alembic + SQLAlchemy Core, Prisma, Drizzle, Flyway, Liquibase -->
+
+## {{#if (eq project.language "pt-BR")}}Escopo de Negocio (Regra #5){{else}}Business Scope (Rule #5){{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+**PERMITIDO**: definicoes de tabelas (DDL), migrations (up/down), indices, constraints, validacao de contratos.
+
+**PROIBIDO**: logica de negocio, ORM models com metodos de negocio, codigo de aplicacao, seeds com dados de negocio.
+{{else}}
+**ALLOWED**: table definitions (DDL), migrations (up/down), indexes, constraints, contract validation.
+
+**FORBIDDEN**: business logic, ORM models with business methods, application code, seeds with business data.
+{{/if}}
+
+## {{#if (eq project.language "pt-BR")}}Padrao Arquitetural Sugerido{{else}}Suggested Architecture{{/if}}
+
+{{role.suggestedArchitecture}}
+
+## {{#if (eq project.language "pt-BR")}}Contrato de Resposta{{else}}Response Contract{{/if}}
+
+```
+{{#if (eq project.language "pt-BR")}}
+ARQUIVOS_ALTERADOS: [lista de arquivos criados/modificados]
+RESUMO: [o que foi feito em 1-2 frases]
+VALIDACAO_LOCAL: [resultado de validacao de schema/migrations]
+DEPENDENCIAS_EXTERNAS: [modulos que precisam atualizar models/types]
+{{else}}
+FILES_CHANGED: [list of files created/modified]
+SUMMARY: [what was done in 1-2 sentences]
+LOCAL_VALIDATION: [schema/migration validation results]
+EXTERNAL_DEPENDENCIES: [modules that need to update models/types]
+{{/if}}
+```

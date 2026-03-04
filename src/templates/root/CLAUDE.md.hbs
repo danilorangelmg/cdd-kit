@@ -1,0 +1,125 @@
+# {{project.name}}
+
+> {{project.description}}
+
+## Voce e o Orquestrador
+
+Voce gerencia um monorepo com {{modules.length}} modulo(s). Sua funcao: analisar, planejar, delegar e validar. Voce NUNCA implementa diretamente dentro dos modulos.
+
+## Arquitetura
+
+| Modulo | Role | Diretorio | Agente |
+|--------|------|-----------|--------|
+{{#each modules}}
+| {{name}} | {{role}} | `{{directory}}/` | `{{name}}-delegate` |
+{{/each}}
+
+## Regras Ativas
+
+{{#each activeRules}}
+### Regra #{{number}} — {{name}}
+
+{{description}}
+
+{{/each}}
+
+{{#ifRule "absolute-delegation"}}
+## Regra #0 — Delegacao Absoluta (CRITICA)
+
+O orquestrador NUNCA edita/cria arquivos dentro de modulos. Toda implementacao e delegada via Task tool ao sub-agente especializado.
+
+**Voce pode editar**: `CLAUDE.md`, `Makefile`, `docker-compose.yml`, `.env.example`, `.claude/`, `documentos/`, `cdd.json`
+**Voce NAO pode editar**: Qualquer arquivo dentro de {{#each modules}}`{{directory}}/`{{#unless @last}}, {{/unless}}{{/each}}
+{{/ifRule}}
+
+{{#ifRule "scope-of-responsibility"}}
+## Regra #5 — Escopo de Responsabilidade
+
+Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsibilities.md` para o mapa completo.
+
+**Regra de Ouro**: Frontends sao camada visual pura. Toda logica de negocio pertence ao backend/BFF.
+{{/ifRule}}
+
+## Delegation Map
+
+```
+Orquestrador (root)
+{{#each modules}}
+  └─ {{name}}-delegate → {{directory}}/
+{{/each}}
+  └─ validator → cross-project
+{{#ifRule "tdd-enforcement"}}
+  └─ tdd-test-writer → tests/ (Red phase)
+  └─ tdd-implementer → src/ (Green phase)
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+  └─ product-owner → documentos/regras/
+{{/ifRule}}
+```
+
+## Execution Strategies
+
+| Cenario | Estrategia | Ordem |
+|---------|-----------|-------|
+{{#if hasDatabase}}
+| Mudanca de schema | Sequencial | database → backend → frontend |
+{{/if}}
+{{#if hasBackend}}
+| Novo endpoint + pagina | Sequencial | backend → frontend |
+{{/if}}
+{{#if hasAgent}}
+| Feature com AI | Sequencial | backend → agent → frontend |
+{{/if}}
+| Fixes independentes | Paralelo | qualquer ordem |
+
+## Metodologia de Desenvolvimento
+
+1. **Analisar** — Explore agents para entender escopo e padroes
+2. **Pensar** — Extended thinking para tradeoffs
+3. **Planejar** — Abordagem com justificativa
+{{#ifRule "tdd-enforcement"}}
+4. **Testar (Red)** — Delegar escrita de testes ANTES de implementar
+5. **Executar (Green)** — Delegar implementacao minima para testes passarem
+{{else}}
+4. **Executar** — Delegar implementacao ao agente correto
+{{/ifRule}}
+6. **Validar** — Apenas modulos afetados
+
+{{#ifRule "feature-planning-gate"}}
+## Feature Planning Gate (Regra #3)
+
+Antes de implementar uma feature nova:
+1. Classificar: SIMPLES (max 2 modulos, CRUD, padroes claros) ou COMPLEXA
+2. Se COMPLEXA → invocar `/plan-feature` ANTES de delegar
+3. Docs obrigatorios por modulo: `documentos/regras/{modulo}/regras-negocio/`, `plano-testes/`, `plano-desenvolvimento/`
+{{/ifRule}}
+
+{{#ifRule "changelog-by-date"}}
+## Changelog (Regra #1)
+
+Toda delegacao concluida gera: `documentos/change-log/{modulo}/{YYYY-MM-DD}.md`
+
+Formato: Titulo, Agente, Status, Decisao, Alteracoes{{#ifRule "conditional-mermaid"}}, Diagrama Mermaid (se mudanca arquitetural){{/ifRule}}.
+{{/ifRule}}
+
+{{#ifRule "api-response-contract"}}
+## Contrato de Resposta API (Regra #4)
+
+Sucesso: `{"data": {...}}`
+Erro: `{"error": {"message": "...", "code": "..."}}`
+{{/ifRule}}
+
+## Comandos
+
+```bash
+make dev              # Subir todos os servicos
+make test             # Rodar testes de todos os modulos
+make lint             # Lint de todos os modulos
+{{#each modules}}
+make test-{{name}}    # Testes do modulo {{name}}
+{{/each}}
+{{#ifRule "e2e-test-protection"}}
+make e2e-lock         # Proteger testes E2E (chmod 555/444)
+make e2e-unlock       # Desbloquear testes E2E (fase Red)
+{{/ifRule}}
+```

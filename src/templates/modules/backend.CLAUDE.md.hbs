@@ -1,0 +1,93 @@
+# {{module.name}}
+
+> {{#if (eq project.language "pt-BR")}}Modulo backend — logica de negocio e APIs{{else}}Backend module — business logic and APIs{{/if}}
+
+## {{#if (eq project.language "pt-BR")}}Metodologia{{else}}Methodology{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+**SEMPRE planeje antes de executar.** Antes de escrever qualquer codigo:
+1. Leia o codigo existente e entenda o contexto
+2. Pense sobre tradeoffs e alternativas
+3. Defina a abordagem com justificativa clara
+4. Implemente
+5. Valide contra o planejado
+{{else}}
+**ALWAYS plan before executing.** Before writing any code:
+1. Read existing code and understand context
+2. Think about tradeoffs and alternatives
+3. Define approach with clear justification
+4. Implement
+5. Validate against the plan
+{{/if}}
+
+## {{#if (eq project.language "pt-BR")}}Escopo Restrito{{else}}Restricted Scope{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Trabalhe EXCLUSIVAMENTE dentro do diretorio `{{module.directory}}/`. NUNCA modifique arquivos fora deste diretorio.
+{{else}}
+Work EXCLUSIVELY within the `{{module.directory}}/` directory. NEVER modify files outside this directory.
+{{/if}}
+
+## Stack
+
+<!-- {{#if (eq project.language "pt-BR")}}Preencha com sua stack{{else}}Fill in your stack{{/if}}: ex. FastAPI, NestJS, Go/Gin, Spring Boot, Django, Express -->
+
+## {{#if (eq project.language "pt-BR")}}Escopo de Negocio (Regra #5){{else}}Business Scope (Rule #5){{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Este modulo e dono de **toda logica de negocio** voltada aos frontends.
+
+**RESPONSABILIDADE**: validacoes de dominio, calculos, transformacoes de dados, regras condicionais, agregacoes e metricas, decisoes de workflow, autenticacao/autorizacao.
+
+**FORA DO ESCOPO**:
+- Logica de motor/pipeline/scheduler → modulo agent-ai
+- Logica de apresentacao/UI → modulos frontend
+- DDL/schema → modulo database
+{{else}}
+This module owns **all business logic** serving the frontends.
+
+**RESPONSIBILITY**: domain validations, calculations, data transformations, conditional rules, aggregations and metrics, workflow decisions, authentication/authorization.
+
+**OUT OF SCOPE**:
+- Engine/pipeline/scheduler logic → agent-ai module
+- Presentation/UI logic → frontend modules
+- DDL/schema → database module
+{{/if}}
+
+## {{#if (eq project.language "pt-BR")}}Padrao Arquitetural Sugerido{{else}}Suggested Architecture{{/if}}
+
+{{role.suggestedArchitecture}}
+
+## {{#if (eq project.language "pt-BR")}}Contrato de Resposta{{else}}Response Contract{{/if}}
+
+```
+{{#if (eq project.language "pt-BR")}}
+ARQUIVOS_ALTERADOS: [lista de arquivos criados/modificados]
+RESUMO: [o que foi feito em 1-2 frases]
+VALIDACAO_LOCAL: [resultado de lint, type check e/ou testes]
+DEPENDENCIAS_EXTERNAS: [mudancas necessarias em outros modulos]
+{{else}}
+FILES_CHANGED: [list of files created/modified]
+SUMMARY: [what was done in 1-2 sentences]
+LOCAL_VALIDATION: [lint, type check and/or test results]
+EXTERNAL_DEPENDENCIES: [changes needed in other modules]
+{{/if}}
+```
+
+## Checklist
+
+{{#if (eq project.language "pt-BR")}}
+- [ ] Endpoints com schemas de validacao
+- [ ] Injecao de dependencia
+- [ ] HTTP status codes corretos
+- [ ] Error handling estruturado
+- [ ] Type hints/annotations em todos os parametros
+- [ ] Testes unitarios em tests/
+{{else}}
+- [ ] Endpoints with validation schemas
+- [ ] Dependency injection
+- [ ] Correct HTTP status codes
+- [ ] Structured error handling
+- [ ] Type hints/annotations on all parameters
+- [ ] Unit tests in tests/
+{{/if}}

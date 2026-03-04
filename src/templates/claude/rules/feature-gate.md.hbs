@@ -1,0 +1,70 @@
+---
+description: "{{#if (eq project.language "pt-BR")}}Gate de documentacao obrigatorio (Regra #3). Aplica SEMPRE antes de implementar nova feature.{{else}}Mandatory documentation gate (Rule #3). Applies ALWAYS before implementing a new feature.{{/if}}"
+globs: ["**/*"]
+---
+
+{{#if (eq project.language "pt-BR")}}
+# Gate de Documentacao — Regra #3
+
+> **BLOQUEIO ABSOLUTO.** Sem docs por modulo em disco = sem implementacao.
+
+## Checklist Pre-Implementacao
+
+1. Classificar: feature nova ou bug fix/refactoring?
+2. Se feature → identificar modulos afetados
+3. Validar escopo (Regra #5): logica no projeto correto?
+4. Verificar docs em `documentos/regras/{modulo}/regras-negocio/{feature}.md`
+5. Se NAO existem → `/plan-feature` ANTES de implementar
+6. Se existem → usar como guia
+{{#ifRule "tdd-enforcement"}}
+7. TDD (Red): testes escritos e falhando? Se NAO → escrever ANTES
+8. TDD (Green): so implementar apos testes existirem e falharem
+{{/ifRule}}
+
+## Estrutura de Docs por Feature
+
+```
+documentos/regras/{modulo}/
+  regras-negocio/{feature}.md
+  plano-testes/{feature}.md
+  plano-desenvolvimento/{feature}.md
+```
+
+## Auto-Deteccao
+
+**Trigga**: implementar, criar, adicionar, nova feature, novo modulo
+**NAO trigga**: bug fix, refactoring, config, infra
+**Na duvida → tratar como feature.**
+{{else}}
+# Documentation Gate — Rule #3
+
+> **ABSOLUTE BLOCK.** No per-module docs on disk = no implementation.
+
+## Pre-Implementation Checklist
+
+1. Classify: new feature or bug fix/refactoring?
+2. If feature → identify affected modules
+3. Validate scope (Rule #5): logic in the correct project?
+4. Check docs in `documentos/regras/{module}/regras-negocio/{feature}.md`
+5. If NOT present → `/plan-feature` BEFORE implementing
+6. If present → use as guide
+{{#ifRule "tdd-enforcement"}}
+7. TDD (Red): tests written and failing? If NO → write BEFORE
+8. TDD (Green): only implement after tests exist and fail
+{{/ifRule}}
+
+## Docs Structure per Feature
+
+```
+documentos/regras/{module}/
+  regras-negocio/{feature}.md
+  plano-testes/{feature}.md
+  plano-desenvolvimento/{feature}.md
+```
+
+## Auto-Detection
+
+**Triggers**: implement, create, add, new feature, new module
+**Does NOT trigger**: bug fix, refactoring, config, infra
+**When in doubt → treat as feature.**
+{{/if}}

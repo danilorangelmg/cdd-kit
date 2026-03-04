@@ -1,0 +1,120 @@
+---
+name: tdd
+description: "{{#if (eq project.language "pt-BR")}}Orquestra ciclo TDD completo com context isolation: Test Writer (Red) → Implementer (Green) → Validacao.{{else}}Orchestrates complete TDD cycle with context isolation: Test Writer (Red) → Implementer (Green) → Validation.{{/if}}"
+user-invocable: true
+argument-hint: "[module] [feature-or-task] [optional context]"
+allowed-tools: Read, Glob, Grep, Task, Bash
+model: opus
+---
+
+# {{#if (eq project.language "pt-BR")}}Ciclo TDD Orquestrado com Context Isolation{{else}}Orchestrated TDD Cycle with Context Isolation{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Orquestre um ciclo TDD completo usando subagentes isolados.
+
+## Entrada
+
+Argumento recebido: **$ARGUMENTS**
+
+Formato: `[modulo] [feature-ou-tarefa] [contexto opcional]`
+- **modulo**: {{#each modules}}`{{name}}`{{#unless @last}}, {{/unless}}{{/each}}
+- **feature-ou-tarefa**: nome da feature ou descricao da tarefa
+
+## Ciclo TDD
+
+### Fase 1 — Red (Test Writer)
+
+Delegue ao `tdd-test-writer` via Task tool:
+
+```
+Leia as specs em documentos/regras/{modulo}/regras-negocio/{feature}.md e
+documentos/regras/{modulo}/plano-testes/{feature}.md.
+Escreva testes unitarios em {modulo}/tests/ que verifiquem os cenarios.
+Os testes DEVEM falhar (Red phase).
+Retorne: TESTES_CRIADOS, CENARIOS_COBERTOS, RESULTADO_RED, DEPENDENCIAS.
+```
+
+**Validacao Red**: Testes devem estar falhando. Se passam de primeira → REJEITAR.
+
+### Fase 2 — Green (Implementer)
+
+Delegue ao `tdd-implementer` via Task tool:
+
+```
+Os seguintes testes estao falhando em {modulo}/tests/:
+{lista de testes falhando}
+{mensagens de erro}
+Implemente o MINIMO em {modulo}/src/ para todos passarem.
+NAO modifique os testes.
+Retorne: ARQUIVOS_ALTERADOS, RESUMO, RESULTADO_GREEN, VALIDACAO_LOCAL, DEPENDENCIAS_EXTERNAS.
+```
+
+**Validacao Green**: Todos os testes devem passar. Se algum falha apos 3 iteracoes → escalar ao usuario.
+
+### Fase 3 — Validacao
+
+1. **Lint**: `cd {modulo} && make lint`
+2. **Coverage**: Verificar cobertura
+3. **E2E** (se aplicavel): `make test-e2e`
+
+## Regras
+
+- NUNCA modifique testes na fase Green
+- NUNCA pule a fase Red
+- NUNCA delegue Red e Green ao mesmo agente — context isolation e obrigatoria
+- Max 3 iteracoes Green → escalar ao usuario
+{{else}}
+Orchestrate a complete TDD cycle using isolated subagents.
+
+## Input
+
+Argument received: **$ARGUMENTS**
+
+Format: `[module] [feature-or-task] [optional context]`
+- **module**: {{#each modules}}`{{name}}`{{#unless @last}}, {{/unless}}{{/each}}
+- **feature-or-task**: feature name or task description
+
+## TDD Cycle
+
+### Phase 1 — Red (Test Writer)
+
+Delegate to `tdd-test-writer` via Task tool:
+
+```
+Read specs in documentos/regras/{module}/regras-negocio/{feature}.md and
+documentos/regras/{module}/plano-testes/{feature}.md.
+Write unit tests in {module}/tests/ that verify the scenarios.
+Tests MUST fail (Red phase).
+Return: TESTS_CREATED, SCENARIOS_COVERED, RED_RESULT, DEPENDENCIES.
+```
+
+**Red Validation**: Tests must be failing. If they pass on first run → REJECT.
+
+### Phase 2 — Green (Implementer)
+
+Delegate to `tdd-implementer` via Task tool:
+
+```
+The following tests are failing in {module}/tests/:
+{list of failing tests}
+{error messages}
+Implement the MINIMUM in {module}/src/ for all to pass.
+DO NOT modify the tests.
+Return: FILES_CHANGED, SUMMARY, GREEN_RESULT, LOCAL_VALIDATION, EXTERNAL_DEPENDENCIES.
+```
+
+**Green Validation**: All tests must pass. If any fail after 3 iterations → escalate to user.
+
+### Phase 3 — Validation
+
+1. **Lint**: `cd {module} && make lint`
+2. **Coverage**: Check coverage
+3. **E2E** (if applicable): `make test-e2e`
+
+## Rules
+
+- NEVER modify tests in Green phase
+- NEVER skip Red phase
+- NEVER delegate Red and Green to the same agent — context isolation is mandatory
+- Max 3 Green iterations → escalate to user
+{{/if}}

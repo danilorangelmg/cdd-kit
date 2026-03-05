@@ -1,0 +1,110 @@
+---
+description: "{{#if (eq project.language "pt-BR")}}TDD Sequential Enforcement: delegates NAO podem criar testes E implementacao na mesma invocacao.{{else}}TDD Sequential Enforcement: delegates CANNOT create tests AND implementation in the same invocation.{{/if}}"
+globs: ["**/*"]
+---
+
+{{#if (eq project.language "pt-BR")}}
+# Regra #9 — TDD Sequential Enforcement para Delegates
+
+## Problema
+
+Quando um delegate (ex: `front-delegate`, `bff-delegate`) cria testes e implementacao na mesma invocacao:
+- Hooks nao detectam violacao (timestamps identicos)
+- Testes refletem a implementacao planejada, nao os requisitos
+- TDD compliance cai de ~84% para ~20%
+- Testes confirmam codigo, nao validam comportamento
+
+## Regra
+
+**BLOQUEIO ABSOLUTO**: Nenhum delegate pode escrever testes E implementacao na mesma invocacao.
+
+Toda feature/tarefa com logica de negocio DEVE usar 2 invocacoes separadas:
+
+| Fase | Agente | Input | Output | Validacao |
+|------|--------|-------|--------|-----------|
+| **Red** | `tdd-test-writer` | Specs/regras de negocio, `tests/` existentes | Testes que FALHAM | Rodar testes → confirmar FALHA |
+| **Green** | `tdd-implementer` | Testes falhando + `src/` existente | Implementacao minima | Rodar testes → confirmar PASS |
+
+## Context Isolation
+
+- **tdd-test-writer**: Ve APENAS specs de negocio e testes existentes. NUNCA ve codigo em `src/`
+- **tdd-implementer**: Ve APENAS testes falhando e codigo existente. NUNCA ve specs de negocio
+
+Isso impede contaminacao de contexto — testes refletem requisitos, implementacao reflete testes.
+
+## Excecoes (delegate direto permitido)
+
+| Excecao | Condicao | Exemplo |
+|---------|----------|---------|
+| Bug fix | < 3 arquivos afetados | Corrigir calculo de SLA |
+| Refactoring | Testes ja existem e passam | Extrair funcao utilitaria |
+| Config/ajuste | Sem logica de negocio | Ajustar timeout, CORS |
+| Migracao visual | Sem logica nova | Mover componente de pasta |
+
+## Deteccao de Violacao
+
+Se um delegate cria ou modifica arquivos em **ambos** `tests/` e `src/` na mesma invocacao:
+1. Identificar se e uma excecao listada acima
+2. Se NAO for excecao → **REJEITAR** a entrega
+3. Solicitar refazer com invocacoes separadas (Red → Green)
+
+## Skill `/tdd`
+
+Use a skill `/tdd` para orquestrar o ciclo completo automaticamente:
+```
+/tdd [modulo] [feature] [contexto]
+```
+A skill garante context isolation, validacao Red/Green, e report consolidado.
+{{else}}
+# Rule #9 — TDD Sequential Enforcement for Delegates
+
+## Problem
+
+When a delegate (e.g., `front-delegate`, `bff-delegate`) creates tests and implementation in the same invocation:
+- Hooks don't detect violation (identical timestamps)
+- Tests reflect planned implementation, not requirements
+- TDD compliance drops from ~84% to ~20%
+- Tests confirm code instead of validating behavior
+
+## Rule
+
+**ABSOLUTE BLOCK**: No delegate can write tests AND implementation in the same invocation.
+
+Every feature/task with business logic MUST use 2 separate invocations:
+
+| Phase | Agent | Input | Output | Validation |
+|-------|-------|-------|--------|------------|
+| **Red** | `tdd-test-writer` | Business specs/rules, existing `tests/` | Tests that FAIL | Run tests → confirm FAILURE |
+| **Green** | `tdd-implementer` | Failing tests + existing `src/` | Minimum implementation | Run tests → confirm PASS |
+
+## Context Isolation
+
+- **tdd-test-writer**: Sees ONLY business specs and existing tests. NEVER sees code in `src/`
+- **tdd-implementer**: Sees ONLY failing tests and existing code. NEVER sees business specs
+
+This prevents context contamination — tests reflect requirements, implementation reflects tests.
+
+## Exceptions (direct delegate allowed)
+
+| Exception | Condition | Example |
+|-----------|-----------|---------|
+| Bug fix | < 3 files affected | Fix SLA calculation |
+| Refactoring | Tests already exist and pass | Extract utility function |
+| Config/adjustment | No business logic | Adjust timeout, CORS |
+| Visual migration | No new logic | Move component to different folder |
+
+## Violation Detection
+
+If a delegate creates or modifies files in **both** `tests/` and `src/` in the same invocation:
+1. Check if it's an exception listed above
+2. If NOT an exception → **REJECT** the delivery
+3. Request redo with separate invocations (Red → Green)
+
+## Skill `/tdd`
+
+Use the `/tdd` skill to orchestrate the complete cycle automatically:
+```
+/tdd [module] [feature] [context]
+```
+The skill ensures context isolation, Red/Green validation, and consolidated report.
+{{/if}}

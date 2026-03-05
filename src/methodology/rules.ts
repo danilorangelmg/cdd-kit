@@ -99,6 +99,16 @@ export const RULES: Rule[] = [
     requires: [],
     category: "testing",
   },
+  {
+    id: "tdd-sequential-enforcement",
+    number: 9,
+    name: "TDD Sequential Enforcement",
+    description:
+      "Delegates CANNOT write tests AND implementation in the same invocation. Red phase (tdd-test-writer) and Green phase (tdd-implementer) must be separate invocations with context isolation. Exceptions: bug fix < 3 files, refactoring with existing tests, config without business logic.",
+    alwaysActive: false,
+    requires: ["tdd-enforcement"],
+    category: "testing",
+  },
 ];
 
 export function getRuleById(id: string): Rule | undefined {

@@ -51,6 +51,25 @@ Retornar: ARQUIVOS_ALTERADOS, RESUMO, VALIDACAO_LOCAL, DEPENDENCIAS_EXTERNAS
 6. **Integrar** — Verificar DEPENDENCIAS_EXTERNAS
 7. **Validar** — Apenas modulos afetados
 8. **Reportar** — Consolidar resultado
+
+{{#ifRule "tdd-sequential-enforcement"}}
+### Context Isolation (Regra #9)
+
+**BLOQUEIO ABSOLUTO**: Delegates NAO podem criar testes E implementacao na mesma invocacao.
+
+| Fase | Agente | Input | Output | Validacao |
+|------|--------|-------|--------|-----------|
+| Red | `tdd-test-writer` | Specs, `tests/` existentes | Testes que FALHAM | Confirmar FALHA |
+| Green | `tdd-implementer` | Testes falhando + `src/` | Implementacao minima | Confirmar PASS |
+
+**Excecoes** (delegate direto permitido):
+- Bug fix < 3 arquivos
+- Refactoring com testes ja existentes
+- Config/ajuste sem logica de negocio
+- Migracao visual sem logica nova
+
+**Deteccao de violacao**: Se um delegate cria arquivos em `tests/` E `src/` na mesma invocacao → REJEITAR a entrega.
+{{/ifRule}}
 {{else}}
 # Multi-Agent Delegation Protocol
 
@@ -99,4 +118,23 @@ Return: FILES_CHANGED, SUMMARY, LOCAL_VALIDATION, EXTERNAL_DEPENDENCIES
 6. **Integrate** — Verify EXTERNAL_DEPENDENCIES
 7. **Validate** — Only affected modules
 8. **Report** — Consolidate result
+
+{{#ifRule "tdd-sequential-enforcement"}}
+### Context Isolation (Rule #9)
+
+**ABSOLUTE BLOCK**: Delegates CANNOT create tests AND implementation in the same invocation.
+
+| Phase | Agent | Input | Output | Validation |
+|-------|-------|-------|--------|------------|
+| Red | `tdd-test-writer` | Specs, existing `tests/` | Tests that FAIL | Confirm FAILURE |
+| Green | `tdd-implementer` | Failing tests + `src/` | Minimum implementation | Confirm PASS |
+
+**Exceptions** (direct delegate allowed):
+- Bug fix < 3 files
+- Refactoring with existing tests
+- Config/adjustment without business logic
+- Visual migration without new logic
+
+**Violation detection**: If a delegate creates files in `tests/` AND `src/` in the same invocation → REJECT the delivery.
+{{/ifRule}}
 {{/if}}

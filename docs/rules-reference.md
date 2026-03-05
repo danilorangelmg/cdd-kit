@@ -1,6 +1,6 @@
 # CDD Rules Reference
 
-CDD defines 9 governance rules. Rules #0 and #5 are always active. The rest are opt-in.
+CDD defines 10 governance rules. Rules #0 and #5 are always active. The rest are opt-in.
 
 ---
 
@@ -304,6 +304,42 @@ Without enforcement, AI agents skip tests or write tests after implementation (w
 
 ---
 
+## Rule #9 — TDD Sequential Enforcement
+
+| | |
+|---|---|
+| **Category** | Testing |
+| **Always Active** | No |
+| **Requires** | Rule #8 (TDD Enforcement) |
+
+Delegates cannot write tests AND implementation in the same invocation. Every feature with business logic must use two separate invocations:
+
+1. **Red phase** — `tdd-test-writer` writes failing tests based on business specs (never sees `src/`)
+2. **Green phase** — `tdd-implementer` writes minimum code to pass tests (never sees business specs)
+
+### Context Isolation
+
+The test writer and implementer operate with deliberately restricted context:
+
+| Agent | Can Read | Cannot Read |
+|-------|----------|-------------|
+| `tdd-test-writer` | Business specs, test plans, existing tests, models/DTOs | `src/services/`, `src/repositories/`, `src/api/routes/` |
+| `tdd-implementer` | Failing tests, existing `src/`, config files | Business rules docs, domain docs, changelogs |
+
+### Exceptions
+
+Direct delegate (without separation) is allowed for:
+- Bug fixes affecting < 3 files
+- Refactoring where tests already exist and pass
+- Configuration changes without business logic
+- Visual migrations without new logic
+
+### Why
+
+When the same agent writes tests and implementation together, tests confirm the code rather than validate behavior. Context isolation raises TDD compliance from ~20% to ~84%. This rule was born from a real incident where 6 test files were created simultaneously with their implementation, producing tests that merely reflected the planned code.
+
+---
+
 ## Rule Dependency Graph
 
 ```
@@ -318,6 +354,7 @@ Without enforcement, AI agents skip tests or write tests after implementation (w
 #4 API Response Contract
 
 #8 TDD Enforcement
+  ├── #9 TDD Sequential Enforcement (requires #8)
   └── #6 E2E Protection (requires #8)
       └── #7 Post-dev E2E Validation (requires #6)
 ```
@@ -335,3 +372,4 @@ Without enforcement, AI agents skip tests or write tests after implementation (w
 | #6 E2E Protection | — | — | Yes |
 | #7 Post-dev E2E Validation | — | — | Yes |
 | #8 TDD Enforcement | — | Yes | Yes |
+| #9 TDD Sequential Enforcement | — | Yes | Yes |

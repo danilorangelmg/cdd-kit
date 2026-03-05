@@ -34,6 +34,7 @@ const standardConfig: ProjectConfig = {
       "e2e-test-protection": false,
       "post-dev-e2e-validation": false,
       "tdd-enforcement": true,
+      "tdd-sequential-enforcement": true,
     },
   },
 };
@@ -166,6 +167,30 @@ describe("Project Generation (Standard preset, English)", () => {
     );
     expect(testWriter).toContain("docs/rules/");
     expect(testWriter).not.toContain("documentos/regras/");
+
+    // TDD agents should have access restrictions
+    expect(testWriter).toContain("ALLOWED to read");
+    expect(testWriter).toContain("PROHIBITED from reading");
+    expect(testWriter).toContain("Anti-Patterns");
+
+    const implementer = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "agents", "tdd-implementer.md"),
+      "utf-8"
+    );
+    expect(implementer).toContain("ALLOWED to read");
+    expect(implementer).toContain("PROHIBITED from reading");
+    expect(implementer).toContain("CONTEXT CONTAMINATION");
+    expect(implementer).toContain("Prohibitions");
+
+    // Rule #9: TDD Sequential Enforcement
+    expect(files).toContain(".claude/rules/tdd/sequential-enforcement.md");
+    const seqEnforcement = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "rules", "tdd", "sequential-enforcement.md"),
+      "utf-8"
+    );
+    expect(seqEnforcement).toContain("context isolation");
+    expect(seqEnforcement).toContain("tdd-test-writer");
+    expect(seqEnforcement).toContain("tdd-implementer");
   });
 
   it("generates English documentation structure", async () => {
@@ -224,6 +249,7 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
         "e2e-test-protection": false,
         "post-dev-e2e-validation": false,
         "tdd-enforcement": false,
+        "tdd-sequential-enforcement": false,
       },
     },
   };
@@ -245,6 +271,7 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     expect(files).not.toContain(".claude/skills/tdd/SKILL.md");
     expect(files).not.toContain(".claude/agents/tdd-test-writer.md");
     expect(files).not.toContain(".claude/agents/tdd-implementer.md");
+    expect(files).not.toContain(".claude/rules/tdd/sequential-enforcement.md");
   });
 
   it("does NOT generate feature gate when disabled", async () => {
@@ -339,6 +366,7 @@ describe("Project Generation (with git submodules)", () => {
         "e2e-test-protection": false,
         "post-dev-e2e-validation": false,
         "tdd-enforcement": true,
+        "tdd-sequential-enforcement": true,
       },
     },
     git: {
@@ -492,6 +520,14 @@ describe("Project Generation (with git submodules)", () => {
       expect(
         await fs.pathExists(
           path.join(TEST_DIR, dir, ".claude", "agent-memory")
+        )
+      ).toBe(true);
+
+      // Rule #9: TDD Sequential Enforcement per module
+      expect(files).toContain(`${dir}/.claude/rules/tdd/sequential-enforcement.md`);
+      expect(
+        await fs.pathExists(
+          path.join(TEST_DIR, dir, ".claude", "rules", "tdd", "sequential-enforcement.md")
         )
       ).toBe(true);
     }

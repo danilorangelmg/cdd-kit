@@ -103,9 +103,18 @@ Orquestrador (root)
 {{#ifRule "tdd-enforcement"}}
 4. **Testar (Red)** — Delegar escrita de testes ANTES de implementar
 5. **Executar (Green)** — Delegar implementacao minima para testes passarem
-{{else}}
-4. **Executar** — Delegar implementacao ao agente correto
 {{/ifRule}}
+{{#ifRule "tdd-sequential-enforcement"}}
+
+### TDD Sequential Enforcement (Regra #9)
+
+Delegates NAO podem escrever testes E implementacao na mesma invocacao. Use `tdd-test-writer` (Red) e `tdd-implementer` (Green) como invocacoes separadas com context isolation.
+
+**Excecoes**: bug fix < 3 arquivos, refactoring com testes existentes, config sem logica de negocio.
+{{/ifRule}}
+{{#unless (lookup methodology.rules "tdd-enforcement")}}
+4. **Executar** — Delegar implementacao ao agente correto
+{{/unless}}
 6. **Validar** — Apenas modulos afetados
 
 {{#ifRule "feature-planning-gate"}}
@@ -252,9 +261,18 @@ Orchestrator (root)
 {{#ifRule "tdd-enforcement"}}
 4. **Test (Red)** — Delegate test writing BEFORE implementation
 5. **Execute (Green)** — Delegate minimum implementation to pass tests
-{{else}}
-4. **Execute** — Delegate implementation to the correct agent
 {{/ifRule}}
+{{#ifRule "tdd-sequential-enforcement"}}
+
+### TDD Sequential Enforcement (Rule #9)
+
+Delegates CANNOT write tests AND implementation in the same invocation. Use `tdd-test-writer` (Red) and `tdd-implementer` (Green) as separate invocations with context isolation.
+
+**Exceptions**: bug fix < 3 files, refactoring with existing tests, config without business logic.
+{{/ifRule}}
+{{#unless (lookup methodology.rules "tdd-enforcement")}}
+4. **Execute** — Delegate implementation to the correct agent
+{{/unless}}
 6. **Validate** — Only affected modules
 
 {{#ifRule "feature-planning-gate"}}

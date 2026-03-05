@@ -20,6 +20,7 @@ export const PRESETS: Preset[] = [
       "e2e-test-protection": false,
       "post-dev-e2e-validation": false,
       "tdd-enforcement": false,
+      "tdd-sequential-enforcement": false,
     },
   },
   {
@@ -36,6 +37,7 @@ export const PRESETS: Preset[] = [
       "e2e-test-protection": false,
       "post-dev-e2e-validation": false,
       "tdd-enforcement": true,
+      "tdd-sequential-enforcement": true,
     },
   },
   {
@@ -52,6 +54,7 @@ export const PRESETS: Preset[] = [
       "e2e-test-protection": true,
       "post-dev-e2e-validation": true,
       "tdd-enforcement": true,
+      "tdd-sequential-enforcement": true,
     },
   },
 ];

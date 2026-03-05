@@ -89,6 +89,10 @@ export async function generateClaudeInfra(
     ruleFiles.push("feature-gate.md");
   }
 
+  if (config.methodology.rules["tdd-sequential-enforcement"]) {
+    ruleFiles.push("tdd/sequential-enforcement.md");
+  }
+
   for (const ruleFile of ruleFiles) {
     const content = renderTemplate(`claude/rules/${ruleFile}.hbs`, context);
     await writeFile(path.join(claudeDir, "rules", ruleFile), content);
@@ -220,6 +224,20 @@ async function generatePerModuleClaudeInfra(
       const content = renderTemplate(`claude/rules/${ruleFile}.hbs`, modContext);
       await writeFile(path.join(modClaudeDir, "rules", ruleFile), content);
       generatedFiles.push(`${prefix}/rules/${ruleFile}`);
+    }
+
+    // Rules — TDD sequential enforcement (if enabled)
+    if (config.methodology.rules["tdd-sequential-enforcement"]) {
+      const content = renderTemplate(
+        "claude/rules/tdd/sequential-enforcement.md.hbs",
+        modContext
+      );
+      await ensureDir(path.join(modClaudeDir, "rules", "tdd"));
+      await writeFile(
+        path.join(modClaudeDir, "rules", "tdd", "sequential-enforcement.md"),
+        content
+      );
+      generatedFiles.push(`${prefix}/rules/tdd/sequential-enforcement.md`);
     }
 
     // Rules — core rules (architecture, code, auto-invoke, post-implementation)

@@ -66,9 +66,25 @@ export async function generateClaudeInfra(
   await writeFile(path.join(claudeDir, "settings.json"), settings);
   generatedFiles.push(".claude/settings.json");
 
-  // Hooks (only if TDD enforcement is enabled)
+  // Hooks (TDD enforcement)
   if (config.methodology.rules["tdd-enforcement"]) {
     const hooks = ["tdd-guard.sh", "auto-test.sh", "tdd-eval.sh"];
+    for (const hook of hooks) {
+      const content = renderTemplate(`claude/hooks/${hook}.hbs`, context);
+      const hookPath = path.join(claudeDir, "hooks", hook);
+      await writeFile(hookPath, content);
+      await makeExecutable(hookPath);
+      generatedFiles.push(`.claude/hooks/${hook}`);
+    }
+  }
+
+  // Hooks (Planning enforcement — Rule #3)
+  if (config.methodology.rules["feature-planning-gate"]) {
+    const hooks = [
+      "planning-gate.sh",
+      "planning-validator.sh",
+      "planning-eval.sh",
+    ];
     for (const hook of hooks) {
       const content = renderTemplate(`claude/hooks/${hook}.hbs`, context);
       const hookPath = path.join(claudeDir, "hooks", hook);
@@ -166,6 +182,33 @@ export async function generateClaudeInfra(
     generatedFiles.push(".claude/skills/plan-feature/SKILL.md");
   }
 
+  // Verify pipeline
+  const verifyPipeline = renderTemplate(
+    "claude/verify/pipeline.yaml.hbs",
+    context
+  );
+  await writeFile(
+    path.join(claudeDir, "verify", "pipeline.yaml"),
+    verifyPipeline
+  );
+  generatedFiles.push(".claude/verify/pipeline.yaml");
+
+  const verifyRunner = renderTemplate("claude/verify/run.sh.hbs", context);
+  const runnerPath = path.join(claudeDir, "verify", "run.sh");
+  await writeFile(runnerPath, verifyRunner);
+  await makeExecutable(runnerPath);
+  generatedFiles.push(".claude/verify/run.sh");
+
+  // Post-dev verify hook
+  const postDevVerify = renderTemplate(
+    "claude/hooks/post-dev-verify.sh.hbs",
+    context
+  );
+  const postDevPath = path.join(claudeDir, "hooks", "post-dev-verify.sh");
+  await writeFile(postDevPath, postDevVerify);
+  await makeExecutable(postDevPath);
+  generatedFiles.push(".claude/hooks/post-dev-verify.sh");
+
   // Agent memory directories
   await ensureDir(path.join(claudeDir, "agent-memory"));
   await ensureDir(path.join(claudeDir, "project-memory"));
@@ -209,6 +252,22 @@ async function generatePerModuleClaudeInfra(
     // Hooks (if TDD enabled)
     if (config.methodology.rules["tdd-enforcement"]) {
       const hooks = ["tdd-guard.sh", "auto-test.sh", "tdd-eval.sh"];
+      for (const hook of hooks) {
+        const content = renderTemplate(`claude/hooks/${hook}.hbs`, modContext);
+        const hookPath = path.join(modClaudeDir, "hooks", hook);
+        await writeFile(hookPath, content);
+        await makeExecutable(hookPath);
+        generatedFiles.push(`${prefix}/hooks/${hook}`);
+      }
+    }
+
+    // Hooks (Planning enforcement — Rule #3)
+    if (config.methodology.rules["feature-planning-gate"]) {
+      const hooks = [
+        "planning-gate.sh",
+        "planning-validator.sh",
+        "planning-eval.sh",
+      ];
       for (const hook of hooks) {
         const content = renderTemplate(`claude/hooks/${hook}.hbs`, modContext);
         const hookPath = path.join(modClaudeDir, "hooks", hook);

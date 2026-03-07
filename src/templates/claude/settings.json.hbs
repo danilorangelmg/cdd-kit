@@ -1,7 +1,8 @@
 {
-{{#ifRule "tdd-enforcement"}}
   "hooks": {
+{{#if (or (lookup methodology.rules "tdd-enforcement") (lookup methodology.rules "feature-planning-gate"))}}
     "PreToolUse": [
+{{#ifRule "tdd-enforcement"}}
       {
         "matcher": "Edit|Write",
         "hooks": [
@@ -10,9 +11,22 @@
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/tdd-guard.sh"
           }
         ]
+      }{{#ifRule "feature-planning-gate"}},{{/ifRule}}
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/planning-gate.sh"
+          }
+        ]
       }
+{{/ifRule}}
     ],
     "PostToolUse": [
+{{#ifRule "tdd-enforcement"}}
       {
         "matcher": "Edit|Write",
         "hooks": [
@@ -21,9 +35,22 @@
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/auto-test.sh"
           }
         ]
+      }{{#ifRule "feature-planning-gate"}},{{/ifRule}}
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/planning-validator.sh"
+          }
+        ]
       }
+{{/ifRule}}
     ],
     "UserPromptSubmit": [
+{{#ifRule "tdd-enforcement"}}
       {
         "matcher": "",
         "hooks": [
@@ -32,9 +59,23 @@
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/tdd-eval.sh"
           }
         ]
+      }{{#ifRule "feature-planning-gate"}},{{/ifRule}}
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/planning-eval.sh"
+          }
+        ]
       }
+{{/ifRule}}
     ],
+{{/if}}
     "Stop": [
+{{#ifRule "tdd-enforcement"}}
       {
         "matcher": "",
         "hooks": [
@@ -43,10 +84,19 @@
             "prompt": "Check if the agent just completed code changes in any module ({{#each modules}}{{name}}{{#unless @last}}, {{/unless}}{{/each}}). If yes, verify: 1) Were tests written BEFORE implementation? 2) Do all tests pass? If any check fails, respond with {\"ok\": false, \"reason\": \"description\"}. If all pass or no code changed, respond with {\"ok\": true}."
           }
         ]
+      },
+{{/ifRule}}
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-dev-verify.sh"
+          }
+        ]
       }
     ]
   },
-{{/ifRule}}
   "permissions": {
     "allow": [],
     "deny": [

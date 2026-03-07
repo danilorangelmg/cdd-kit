@@ -1,20 +1,24 @@
 ---
 name: plan-feature
-description: "{{#if (eq project.language "pt-BR")}}Planejamento estruturado de nova feature com docs por modulo (Regra #3).{{else}}Structured planning for new features with per-module docs (Rule #3).{{/if}}"
+description: "{{#if (eq project.language "pt-BR")}}Planejamento outside-in por componente (Regra #3): UI -> contratos -> rotas -> motor de dados. Gera docs por modulo.{{else}}Outside-in per-component planning (Rule #3): UI -> contracts -> routes -> data engine. Generates docs per module.{{/if}}"
 user-invocable: true
 argument-hint: "[feature-name] [optional context]"
 allowed-tools: Read, Write, Glob, Grep, Task, WebSearch
 model: opus
 ---
 
-# {{#if (eq project.language "pt-BR")}}Planejamento Estruturado de Feature (Regra #3){{else}}Structured Feature Planning (Rule #3){{/if}}
-
 {{#if (eq project.language "pt-BR")}}
+# Planejamento Outside-In por Componente (Regra #3)
+
+Planeje uma nova feature de FORA para DENTRO: comece pela UI (o que o usuario ve), derive contratos, rotas e fontes de dados. O ciclo completo roda POR COMPONENTE, nao por fase — evita colapso de contexto em telas grandes.
+
 ## Entrada
 
 Argumento recebido: **$ARGUMENTS**
 
-Formato: `[nome-da-feature] [contexto opcional]`
+Formato esperado: `[nome-da-feature] [contexto opcional]`
+
+Se o nome nao for fornecido, pergunte ao usuario.
 
 ## Diretorio de Output
 
@@ -25,108 +29,251 @@ Docs gerados por modulo:
 {{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.devPlans}}/{feature}.md
 ```
 
-Checkpoint: `.claude/project-memory/features/{feature}-checkpoint.md`
+Contratos de API (integrado ao ciclo):
+```
+{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{feature}-contratos-api.md
+```
+
+State file de progresso:
+```
+.claude/project-memory/planning-state/{feature}.json
+```
+
+Checkpoint de memoria:
+```
+.claude/project-memory/features/{feature}-checkpoint.md
+```
 
 ## Gestao de Contexto (CRITICO)
 
-Esta skill pode consumir contexto significativo. Siga estas regras:
-1. Apos cada etapa, salve progresso no checkpoint
-2. Se contexto estiver grande, salve resultados intermediarios e use `Read` para recuperar
-3. Cada delegacao ao sub-agente (PO) deve ser auto-contida
+A janela de contexto do Claude tem limite. O enfileiramento por componente RESOLVE isso:
 
-### Formato do Checkpoint
+1. **Cada componente e uma unidade completa** — ciclo inteiro (UI->contrato->rota->dados) antes de avancar
+2. **Salvar em disco ao concluir CADA componente** — atualizar state file + checkpoint
+3. **Reler checkpoint antes do proximo componente** se necessario
+4. **Delegar ao PO** os `{{paths.businessRules}}` (evita poluir contexto do orquestrador)
+5. **Usar Explore agents** para analise de codigo existente
 
-```markdown
-# {Feature} — Planning Checkpoint
-## Status: Etapa {N} de 6
-## Classificacao: SIMPLES|COMPLEXA
-## Modulos Afetados: [lista]
-## Etapas Concluidas:
-- [x] Etapa 1: Classificacao
-- [ ] Etapa 2: Regras de Negocio
-- [ ] Etapa 3: Plano de Testes
-- [ ] Etapa 4: Plano de Desenvolvimento
-- [ ] Etapa 5: Atualizar Indices
-- [ ] Etapa 6: Resumo Executivo
-## Notas: {contexto necessario para retomada}
+## Principio: Agente Inquisitivo
+
+O agente de planejamento DEVE fazer perguntas proativas em cada fase para maximizar contexto. NAO avance com suposicoes — pergunte.
+
+**Categorias de perguntas obrigatorias:**
+- **UX**: Como o usuario interage? Tem filtros? Paginacao? Tempo real? Responsivo?
+- **Estados visuais**: Loading, empty, error — tem tratamento especial? Skeleton? Toast?
+- **Dados**: Volume esperado? Frequencia de atualizacao? Precisa de cache? Polling?
+- **Permissoes**: Quem pode ver/usar? Varia por perfil?
+- **Edge cases**: O que acontece se nao tem dado? Se o servico cai? Se demora?
+- **Prioridade**: Quais componentes sao MVP e quais sao nice-to-have?
+- **Referencia visual**: Tem prototipo, wireframe, tela similar no sistema?
+
+## Fluxo de Planejamento
+
+### Fase 0 — Decomposicao Inicial (unica vez)
+
+**Objetivo**: Mapear a tela inteira, quebrar em componentes, definir ordem e dependencias.
+
+1. **Classificar**: Simples (max 2 modulos, CRUD) ou Complexa (3+ modulos, logica nova)
+2. **Explorar**: Use Glob/Grep para analisar padroes existentes no codebase
+3. **Validar escopo (Regra #5)** — rotear automaticamente:
+   - Logica de negocio → backend obrigatorio
+   - Logica de motor/pipeline → agent-ai obrigatorio
+   - Frontends → APENAS regras visuais
+4. **PERGUNTAR ao usuario** (categorias obrigatorias acima)
+5. **Decompor em componentes**: Para cada componente identificar:
+   - Nome e descricao curta
+   - Dependencias entre componentes (qual depende de qual)
+   - Prioridade (MVP / nice-to-have)
+   - Se consome API ou nao
+6. **Criar state file**:
+
+```json
+{
+  "feature": "{slug}",
+  "classification": "simples|complexa",
+  "modules": [{{#each modules}}"{{name}}"{{#unless @last}}, {{/unless}}{{/each}}],
+  "components": [
+    {
+      "name": "ComponenteA",
+      "priority": "mvp",
+      "depends_on": [],
+      "has_api": true,
+      "status": "pending"
+    }
+  ],
+  "current_component": null,
+  "current_steps": {
+    "ui": "PENDENTE",
+    "contract": "PENDENTE",
+    "route": "PENDENTE",
+    "data": "PENDENTE"
+  }
+}
 ```
 
-## Fluxo
+Salvar em: `.claude/project-memory/planning-state/{feature}.json`
 
-### Etapa 1 — Classificar e Identificar Modulos
+### Ciclo por Componente (repete para cada componente)
 
-1. **Explorar**: Use Glob/Grep para analisar padroes existentes no codebase
-   - Buscar features similares ja implementadas
-   - Identificar padroes arquiteturais em cada modulo
-   - Verificar docs existentes em `{{rulesDir}}/`
-2. Classificar: SIMPLES (max 2 modulos, CRUD, padroes claros) ou COMPLEXA
-3. Identificar quais modulos a feature afeta
-4. Validar escopo (Regra #5):
-   - Logica de negocio → backend
-   - Visual/UX → frontend
-   - Motor/pipeline/AI → agent-ai
-   - Schema → database
+**IMPORTANTE**: Completar o ciclo inteiro de um componente ANTES de iniciar o proximo. Atualizar o state file a cada etapa concluida.
 
-### Etapa 2 — Regras de Negocio por Modulo (OBRIGATORIO — SEMPRE PRIMEIRO)
+Para cada componente na fila (ordem: MVP primeiro, dependencias resolvidas):
 
-Para CADA modulo afetado, delegue ao `product-owner` via Task tool:
+#### Etapa 1 — UI Design do Componente
+
+Mapear o componente visual:
+
+- **Props/dados**: O que o componente recebe e exibe
+- **Estados**: default, loading, empty, error, success (obrigatorio)
+- **Interacoes**: click, filter, sort, submit, hover, etc.
+- **Referencia**: Tela similar no sistema ou descricao visual
+- **Responsividade**: Como se comporta em telas menores (se aplicavel)
+
+**Output mental** (nao gera arquivo separado — consolida na Fase Final)
+
+Atualizar state: `current_steps.ui = "OK"`
+
+#### Etapa 2 — Contrato do Componente
+
+Se o componente consome API (`has_api: true`):
+
+- **Endpoint(s)**: metodo, path, query params
+- **DTO TypeScript**: interface com campos tipados
+{{#ifRule "api-response-contract"}}
+- **Response JSON**: seguindo Regra #4 (envelope `{ "data": ... }` / `{ "error": ... }`)
+{{else}}
+- **Response JSON**: schema de resposta
+{{/ifRule}}
+- **Mapeamento**: campo → uso no componente (tabela)
+- **Cenarios de erro**: HTTP status, codigo, acao no frontend
+
+Se NAO consome API: pular para proximo componente.
+
+Atualizar state: `current_steps.contract = "OK"`
+
+#### Etapa 3 — Rota Backend
+
+Para cada endpoint identificado na Etapa 2:
+
+- **Path completo**: `{metodo} /api/v1/{recurso}`
+- **Query params / body**: parametros esperados
+- **Regras de negocio**: validacoes, transformacoes, calculos
+{{#ifRule "api-response-contract"}}
+- **Response schema**: campos retornados, envelope Regra #4
+{{else}}
+- **Response schema**: campos retornados
+{{/ifRule}}
+- **Autenticacao**: Bearer JWT (padrao)
+
+Atualizar state: `current_steps.route = "OK"`
+
+#### Etapa 4 — Motor de Dados
+
+Para cada rota definida na Etapa 3, responder: **"De onde vem esse dado?"**
+
+- **Fonte**: banco direto (tabela/join) | API externa | Agent pipeline
+- **Tabelas/campos**: quais existem, quais precisam ser criados
+- **Necessidade de migration**: novo campo, nova tabela, novo index
+- **Performance**: volume esperado, necessidade de index, cache
+
+Atualizar state: `current_steps.data = "OK"`
+
+#### Validacao e Avanco
+
+Apos as 4 etapas:
+1. Marcar componente como `"status": "completed"` no state file
+2. Resetar `current_steps` para o proximo componente
+3. Atualizar `current_component` para o proximo na fila
+
+Se TODOS os componentes concluidos → avancar para Fase Final.
+
+### Fase Final — Composicao e Geracao de Docs
+
+Apos todos os componentes planejados:
+
+#### 1. Consolidar Regras de Negocio por Modulo
+
+Para CADA modulo afetado, delegar ao `product-owner` agent:
 
 ```
-Gere regras de negocio para a feature "{feature}" no modulo "{modulo}".
-Escopo: {descricao do role do modulo}
-Salvar em: {{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{feature}.md
-Use o formato definido nas suas instrucoes.
-```
+Crie o documento de regras de negocio da feature "{nome}" para {modulo}.
 
-**Importante por role**:
+IMPORTANTE — Regra #5 (Escopo):
 {{#each modules}}
-- **{{name}}** ({{role}}): {{#if (eq role "frontend")}}APENAS regras visuais (componentes, estados, UX){{else if (eq role "backend")}}logica de negocio real (validacoes, calculos){{else if (eq role "database")}}schema e migrations{{else if (eq role "agent-ai")}}regras de motor/pipeline/AI{{else}}conforme CLAUDE.md{{/if}}
+- Se {modulo} e {{name}} ({{role}}) → {{#if (eq role "frontend")}}APENAS regras VISUAIS (componentes, estados, UX){{else if (eq role "backend")}}logica de negocio real (validacoes, calculos, transformacoes){{else if (eq role "database")}}schema e migrations{{else if (eq role "agent-ai")}}logica de motor/pipeline{{else}}conforme CLAUDE.md{{/if}}
 {{/each}}
 
-Pode paralelizar PO agents para modulos independentes.
+Componentes planejados (consolidar):
+{lista de componentes com UI design, contratos, rotas e motor de dados}
 
-### Etapa 3 — Plano de Testes por Modulo
+Salve em: {{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{slug}.md
+```
 
-Para CADA modulo, criar cenarios de teste:
+**PO agents em PARALELO** para modulos independentes.
+
+#### 2. Gerar Contratos de API (se frontend)
+
+Consolidar todos os contratos dos componentes em:
+`{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{slug}-contratos-api.md`
+
+#### 3. Gerar Plano de Testes por Modulo
+
+Para CADA modulo afetado:
+
 ```markdown
 # {Feature} — Plano de Testes ({Modulo})
-## Regras de Negocio (formato Gherkin)
+
+## Regras de Negocio
 - [ ] Dado {contexto} Quando {acao} Entao {resultado}
-## Cenarios de Erro
-## Edge Cases
+
+## API/Endpoints (se backend)
+- [ ] {metodo} {path} retorna {status} quando {condicao}
+
+## UI/Componentes (se frontend)
+- [ ] {componente} exibe {dados} quando {condicao}
 ```
-Salvar em: `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.testPlans}}/{feature}.md`
 
-### Etapa 4 — Plano de Desenvolvimento por Modulo
+Salvar em: `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.testPlans}}/{slug}.md`
 
-Use Explore agents para analisar o codigo. Para CADA modulo:
+#### 4. Gerar Plano de Desenvolvimento por Modulo
+
+Para CADA modulo afetado:
+
 ```markdown
 # {Feature} — Plano de Desenvolvimento ({Modulo})
+
 ## Componentes Afetados
-| Componente | Tipo | Impacto |
+| Componente | Impacto | Arquivos | Reuso |
+
+## Grupos de Composicao (paralelismo)
+| Grupo | Componentes | Sub-agente | Independente? |
+
 ## Tarefas Atomicas
-1. [tarefa especifica e pequena]
+1. {tarefa}
+2. {tarefa}
+
 ## Validacao
-- [ ] Criterio de aceite
+- [ ] {criterio}
 ```
-Salvar em: `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.devPlans}}/{feature}.md`
 
-### Etapa 5 — Atualizar Indices
+Salvar em: `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.devPlans}}/{slug}.md`
 
-Para cada modulo que recebeu docs novos:
-1. Verificar se `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/_index.md` existe
-2. Se sim → adicionar link da nova feature
-3. Se nao → criar indice com a feature como primeira entrada
+#### 5. Atualizar Indices e Checkpoint
 
-### Etapa 6 — Resumo Executivo
+- Atualizar `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/_index.md` por modulo
+- Atualizar checkpoint em `.claude/project-memory/features/{slug}-checkpoint.md`
+- Deletar state file de `.claude/project-memory/planning-state/{slug}.json`
 
-Apresentar ao usuario:
+## Finalizacao
 
-**Feature**: {nome}
-**Classificacao**: SIMPLES|COMPLEXA
-**Modulos afetados**: {quantidade} ({lista})
-**Complexidade estimada**: Baixa|Media|Alta
-**Docs gerados**: {quantidade} arquivos
+Apos concluir todos os docs:
+
+1. Apresentar **resumo executivo** com:
+   - Visao geral da feature (1 paragrafo)
+   - Componentes planejados (MVP vs nice-to-have)
+   - Modulos afetados e docs gerados
+   - Grupos de composicao (o que pode ser construido em paralelo)
+   - Riscos identificados
 
 | Modulo | Regras de Negocio | Plano de Testes | Plano de Dev |
 |--------|-------------------|-----------------|--------------|
@@ -134,10 +281,31 @@ Apresentar ao usuario:
 | {{name}} | {status} | {status} | {status} |
 {{/each}}
 
-**Riscos**: {lista}
-**Dependencias cross-module**: {lista}
+2. Perguntar ao usuario se deseja ajustar algo antes da implementacao
 
-Pergunte ao usuario se ha ajustes antes de prosseguir para implementacao.
+## Templates (Profundidade por Classificacao)
+
+### Feature Complexa (Full)
+- `{{paths.businessRules}}`: 6 secoes ricas (~100-200L por modulo)
+- `{{paths.testPlans}}`: 10-20+ criterios Gherkin
+- `{{paths.devPlans}}`: componentes + grupos + tarefas + validacao
+
+### Feature Simples (Lite)
+- `{{paths.businessRules}}`: 3 secoes (~30-50L por modulo)
+- `{{paths.testPlans}}`: 3-8 criterios essenciais
+- `{{paths.devPlans}}`: tarefas + validacao
+
+## Hooks de Enforcement
+
+3 hooks protegem o fluxo de planejamento (configurados em `.claude/settings.json`):
+
+| Hook | Tipo | Funcao |
+|------|------|--------|
+| `planning-eval.sh` | UserPromptSubmit | Injeta fase/componente atual antes de cada resposta |
+| `planning-gate.sh` | PreToolUse | Bloqueia escrita em {{paths.devPlans}}/{{paths.testPlans}} se componentes pendentes |
+| `planning-validator.sh` | PostToolUse | Valida qualidade dos docs (secoes obrigatorias) |
+
+State file: `.claude/project-memory/planning-state/{feature}.json`
 
 ## Modulos Disponiveis
 
@@ -145,11 +313,17 @@ Pergunte ao usuario se ha ajustes antes de prosseguir para implementacao.
 - `{{name}}` ({{role}}) → `{{directory}}/`
 {{/each}}
 {{else}}
+# Outside-In Per-Component Planning (Rule #3)
+
+Plan a new feature from OUTSIDE to INSIDE: start with the UI (what the user sees), derive contracts, routes, and data sources. The full cycle runs PER COMPONENT, not per phase — avoids context collapse on large screens.
+
 ## Input
 
 Argument received: **$ARGUMENTS**
 
-Format: `[feature-name] [optional context]`
+Expected format: `[feature-name] [optional context]`
+
+If no name is provided, ask the user.
 
 ## Output Directory
 
@@ -160,108 +334,251 @@ Docs generated per module:
 {{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.devPlans}}/{feature}.md
 ```
 
-Checkpoint: `.claude/project-memory/features/{feature}-checkpoint.md`
+API Contracts (integrated into cycle):
+```
+{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{feature}-api-contracts.md
+```
+
+Progress state file:
+```
+.claude/project-memory/planning-state/{feature}.json
+```
+
+Memory checkpoint:
+```
+.claude/project-memory/features/{feature}-checkpoint.md
+```
 
 ## Context Management (CRITICAL)
 
-This skill may consume significant context. Follow these rules:
-1. After each step, save progress to the checkpoint file
-2. If context is growing large, save intermediate results and use `Read` to recover
-3. Each delegation to sub-agent (PO) should be self-contained
+Claude's context window has limits. Per-component queuing SOLVES this:
 
-### Checkpoint Format
+1. **Each component is a complete unit** — full cycle (UI->contract->route->data) before advancing
+2. **Save to disk after completing EACH component** — update state file + checkpoint
+3. **Re-read checkpoint before next component** if needed
+4. **Delegate to PO** the `{{paths.businessRules}}` (avoids polluting orchestrator context)
+5. **Use Explore agents** for existing code analysis
 
-```markdown
-# {Feature} — Planning Checkpoint
-## Status: Step {N} of 6
-## Classification: SIMPLE|COMPLEX
-## Affected Modules: [list]
-## Completed Steps:
-- [x] Step 1: Classification
-- [ ] Step 2: Business Rules
-- [ ] Step 3: Test Plans
-- [ ] Step 4: Development Plans
-- [ ] Step 5: Update Indices
-- [ ] Step 6: Executive Summary
-## Notes: {any context needed for resumption}
+## Principle: Inquisitive Agent
+
+The planning agent MUST ask proactive questions at each phase to maximize context. Do NOT advance with assumptions — ask.
+
+**Mandatory question categories:**
+- **UX**: How does the user interact? Filters? Pagination? Real-time? Responsive?
+- **Visual states**: Loading, empty, error — special treatment? Skeleton? Toast?
+- **Data**: Expected volume? Update frequency? Needs caching? Polling?
+- **Permissions**: Who can see/use? Varies by profile?
+- **Edge cases**: What happens with no data? Service down? Timeout?
+- **Priority**: Which components are MVP and which are nice-to-have?
+- **Visual reference**: Any prototype, wireframe, similar screen in the system?
+
+## Planning Flow
+
+### Phase 0 — Initial Decomposition (once)
+
+**Goal**: Map the entire screen, break into components, define order and dependencies.
+
+1. **Classify**: Simple (max 2 modules, CRUD) or Complex (3+ modules, new logic)
+2. **Explore**: Use Glob/Grep to analyze existing codebase patterns
+3. **Validate scope (Rule #5)** — route automatically:
+   - Business logic → backend mandatory
+   - Engine/pipeline logic → agent-ai mandatory
+   - Frontends → ONLY visual rules
+4. **ASK the user** (mandatory categories above)
+5. **Decompose into components**: For each component identify:
+   - Name and short description
+   - Dependencies between components
+   - Priority (MVP / nice-to-have)
+   - Whether it consumes API or not
+6. **Create state file**:
+
+```json
+{
+  "feature": "{slug}",
+  "classification": "simple|complex",
+  "modules": [{{#each modules}}"{{name}}"{{#unless @last}}, {{/unless}}{{/each}}],
+  "components": [
+    {
+      "name": "ComponentA",
+      "priority": "mvp",
+      "depends_on": [],
+      "has_api": true,
+      "status": "pending"
+    }
+  ],
+  "current_component": null,
+  "current_steps": {
+    "ui": "PENDING",
+    "contract": "PENDING",
+    "route": "PENDING",
+    "data": "PENDING"
+  }
+}
 ```
 
-## Flow
+Save to: `.claude/project-memory/planning-state/{feature}.json`
 
-### Step 1 — Classify and Identify Modules
+### Per-Component Cycle (repeats for each component)
 
-1. **Explore**: Use Glob/Grep to analyze existing codebase patterns
-   - Search for similar features already implemented
-   - Identify architectural patterns in each module
-   - Check for existing docs in `{{rulesDir}}/`
-2. Classify: SIMPLE (max 2 modules, CRUD, clear patterns) or COMPLEX
-3. Identify which modules the feature affects
-4. Validate scope (Rule #5):
-   - Business logic → backend
-   - Visual/UX → frontend
-   - Engine/pipeline/AI → agent-ai
-   - Schema → database
+**IMPORTANT**: Complete the full cycle for one component BEFORE starting the next. Update the state file after each step.
 
-### Step 2 — Business Rules per Module (MANDATORY — ALWAYS FIRST)
+For each component in queue (order: MVP first, dependencies resolved):
 
-For EACH affected module, delegate to `product-owner` via Task tool:
+#### Step 1 — UI Design
+
+Map the visual component:
+
+- **Props/data**: What the component receives and displays
+- **States**: default, loading, empty, error, success (mandatory)
+- **Interactions**: click, filter, sort, submit, hover, etc.
+- **Reference**: Similar screen in the system or visual description
+- **Responsiveness**: Behavior on smaller screens (if applicable)
+
+**Mental output** (no separate file — consolidated in Final Phase)
+
+Update state: `current_steps.ui = "OK"`
+
+#### Step 2 — Component Contract
+
+If the component consumes API (`has_api: true`):
+
+- **Endpoint(s)**: method, path, query params
+- **TypeScript DTO**: interface with typed fields
+{{#ifRule "api-response-contract"}}
+- **Response JSON**: following Rule #4 (envelope `{ "data": ... }` / `{ "error": ... }`)
+{{else}}
+- **Response JSON**: response schema
+{{/ifRule}}
+- **Mapping**: field → component usage (table)
+- **Error scenarios**: HTTP status, code, frontend action
+
+If NOT consuming API: skip to next component.
+
+Update state: `current_steps.contract = "OK"`
+
+#### Step 3 — Backend Route
+
+For each endpoint identified in Step 2:
+
+- **Full path**: `{method} /api/v1/{resource}`
+- **Query params / body**: expected parameters
+- **Business rules**: validations, transformations, calculations
+{{#ifRule "api-response-contract"}}
+- **Response schema**: fields returned, Rule #4 envelope
+{{else}}
+- **Response schema**: fields returned
+{{/ifRule}}
+- **Authentication**: Bearer JWT (default)
+
+Update state: `current_steps.route = "OK"`
+
+#### Step 4 — Data Engine
+
+For each route defined in Step 3, answer: **"Where does this data come from?"**
+
+- **Source**: direct DB (table/join) | external API | Agent pipeline
+- **Tables/fields**: which exist, which need to be created
+- **Migration needed**: new field, new table, new index
+- **Performance**: expected volume, index needs, caching
+
+Update state: `current_steps.data = "OK"`
+
+#### Validation and Advance
+
+After all 4 steps:
+1. Mark component as `"status": "completed"` in state file
+2. Reset `current_steps` for the next component
+3. Update `current_component` to the next in queue
+
+If ALL components completed → advance to Final Phase.
+
+### Final Phase — Composition and Doc Generation
+
+After all components are planned:
+
+#### 1. Consolidate Business Rules per Module
+
+For EACH affected module, delegate to `product-owner` agent:
 
 ```
-Generate business rules for feature "{feature}" in module "{module}".
-Scope: {module role description}
-Save to: {{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{feature}.md
-Use the document format defined in your instructions.
-```
+Create the business rules document for feature "{name}" in module "{module}".
 
-**Important per role**:
+IMPORTANT — Rule #5 (Scope):
 {{#each modules}}
-- **{{name}}** ({{role}}): {{#if (eq role "frontend")}}ONLY visual rules (components, states, UX){{else if (eq role "backend")}}real business logic (validations, calculations){{else if (eq role "database")}}schema and migrations{{else if (eq role "agent-ai")}}engine/pipeline/AI rules{{else}}as defined in CLAUDE.md{{/if}}
+- If module is {{name}} ({{role}}) → {{#if (eq role "frontend")}}ONLY visual rules (components, states, UX){{else if (eq role "backend")}}real business logic (validations, calculations, transformations){{else if (eq role "database")}}schema and migrations{{else if (eq role "agent-ai")}}engine/pipeline logic{{else}}as defined in CLAUDE.md{{/if}}
 {{/each}}
 
-Can parallelize PO agents for independent modules.
+Planned components (consolidate):
+{list of components with UI design, contracts, routes and data engine}
 
-### Step 3 — Test Plan per Module
+Save to: {{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{slug}.md
+```
 
-For EACH module, create test scenarios:
+**PO agents in PARALLEL** for independent modules.
+
+#### 2. Generate API Contracts (if frontend)
+
+Consolidate all component contracts into:
+`{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{slug}-api-contracts.md`
+
+#### 3. Generate Test Plan per Module
+
+For EACH affected module:
+
 ```markdown
 # {Feature} — Test Plan ({Module})
-## Business Rules (Gherkin format)
+
+## Business Rules
 - [ ] Given {context} When {action} Then {result}
-## Error Scenarios
-## Edge Cases
+
+## API/Endpoints (if backend)
+- [ ] {method} {path} returns {status} when {condition}
+
+## UI/Components (if frontend)
+- [ ] {component} displays {data} when {condition}
 ```
-Save to: `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.testPlans}}/{feature}.md`
 
-### Step 4 — Development Plan per Module
+Save to: `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.testPlans}}/{slug}.md`
 
-Use Explore agents to analyze code. For EACH module:
+#### 4. Generate Development Plan per Module
+
+For EACH affected module:
+
 ```markdown
 # {Feature} — Development Plan ({Module})
+
 ## Affected Components
-| Component | Type | Impact |
+| Component | Impact | Files | Reuse |
+
+## Composition Groups (parallelism)
+| Group | Components | Sub-agent | Independent? |
+
 ## Atomic Tasks
-1. [specific, small task]
+1. {task}
+2. {task}
+
 ## Validation
-- [ ] Acceptance criteria
+- [ ] {criteria}
 ```
-Save to: `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.devPlans}}/{feature}.md`
 
-### Step 5 — Update Indices
+Save to: `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.devPlans}}/{slug}.md`
 
-For each module that received new docs:
-1. Check if `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/_index.md` exists
-2. If yes → append new feature link
-3. If no → create index with the feature as first entry
+#### 5. Update Indices and Checkpoint
 
-### Step 6 — Executive Summary
+- Update `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/_index.md` per module
+- Update checkpoint at `.claude/project-memory/features/{slug}-checkpoint.md`
+- Delete state file from `.claude/project-memory/planning-state/{slug}.json`
 
-Present to user:
+## Finalization
 
-**Feature**: {name}
-**Classification**: SIMPLE|COMPLEX
-**Modules affected**: {count} ({list})
-**Estimated complexity**: Low|Medium|High
-**Docs generated**: {count} files
+After completing all docs:
+
+1. Present **executive summary** with:
+   - Feature overview (1 paragraph)
+   - Planned components (MVP vs nice-to-have)
+   - Affected modules and generated docs
+   - Composition groups (what can be built in parallel)
+   - Identified risks
 
 | Module | Business Rules | Test Plan | Dev Plan |
 |--------|---------------|-----------|----------|
@@ -269,10 +586,31 @@ Present to user:
 | {{name}} | {status} | {status} | {status} |
 {{/each}}
 
-**Risks**: {list}
-**Cross-module dependencies**: {list}
+2. Ask the user for adjustments before proceeding to implementation
 
-Ask user for adjustments before proceeding to implementation.
+## Templates (Depth by Classification)
+
+### Complex Feature (Full)
+- `{{paths.businessRules}}`: 6 rich sections (~100-200L per module)
+- `{{paths.testPlans}}`: 10-20+ Gherkin criteria
+- `{{paths.devPlans}}`: components + groups + tasks + validation
+
+### Simple Feature (Lite)
+- `{{paths.businessRules}}`: 3 sections (~30-50L per module)
+- `{{paths.testPlans}}`: 3-8 essential criteria
+- `{{paths.devPlans}}`: tasks + validation
+
+## Enforcement Hooks
+
+3 hooks protect the planning flow (configured in `.claude/settings.json`):
+
+| Hook | Type | Function |
+|------|------|----------|
+| `planning-eval.sh` | UserPromptSubmit | Injects current phase/component before each response |
+| `planning-gate.sh` | PreToolUse | Blocks writing to {{paths.devPlans}}/{{paths.testPlans}} if components pending |
+| `planning-validator.sh` | PostToolUse | Validates doc quality (required sections) |
+
+State file: `.claude/project-memory/planning-state/{feature}.json`
 
 ## Available Modules
 

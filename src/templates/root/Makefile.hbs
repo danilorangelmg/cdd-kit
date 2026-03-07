@@ -1,7 +1,7 @@
 # {{project.name}} — Makefile
 # Gerado por cdd (Copilot-Driven Development)
 
-.PHONY: dev dev-detached test lint clean status{{#each modules}} test-{{name}}{{/each}}{{#ifRule "e2e-test-protection"}} e2e-lock e2e-unlock{{/ifRule}}{{#if git.submodules}} init submodule-status submodule-pull{{/if}}
+.PHONY: dev dev-detached test lint clean status verify{{#each modules}} test-{{name}} verify-{{name}}{{/each}}{{#ifRule "e2e-test-protection"}} e2e-lock e2e-unlock{{/ifRule}}{{#if git.submodules}} init submodule-status submodule-pull{{/if}}
 
 {{#if git.submodules}}
 # ─── Git Submodules ───────────────────────────────────
@@ -61,6 +61,16 @@ e2e-unlock:
 {{/modulesOfRole}}
 	@echo "E2E tests unlocked — Red phase"
 {{/ifRule}}
+
+# ─── Verify ──────────────────────────────────────────
+
+verify:{{#each modules}} verify-{{name}}{{/each}}
+
+{{#each modules}}
+verify-{{name}}:
+	.claude/verify/run.sh {{directory}}
+
+{{/each}}
 
 # ─── Status ───────────────────────────────────────────
 

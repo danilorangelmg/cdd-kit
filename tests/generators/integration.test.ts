@@ -76,6 +76,9 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(makefile).toContain("test-frontend");
     expect(makefile).toContain("test-api");
     expect(makefile).toContain("test-database");
+    expect(makefile).toContain("verify-frontend");
+    expect(makefile).toContain("verify-api");
+    expect(makefile).toContain("verify:");
   });
 
   it("generates module CLAUDE.md files", async () => {
@@ -191,6 +194,46 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(seqEnforcement).toContain("context isolation");
     expect(seqEnforcement).toContain("tdd-test-writer");
     expect(seqEnforcement).toContain("tdd-implementer");
+
+    // Planning hooks (feature-planning-gate enabled in standard)
+    expect(files).toContain(".claude/hooks/planning-gate.sh");
+    expect(files).toContain(".claude/hooks/planning-validator.sh");
+    expect(files).toContain(".claude/hooks/planning-eval.sh");
+
+    // Planning hooks should be executable
+    const planningHookStat = await fs.stat(
+      path.join(TEST_DIR, ".claude", "hooks", "planning-gate.sh")
+    );
+    expect(planningHookStat.mode & 0o111).toBeGreaterThan(0);
+
+    // Settings should reference planning hooks
+    expect(settings).toContain("planning-gate");
+    expect(settings).toContain("planning-validator");
+    expect(settings).toContain("planning-eval");
+
+    // Planning gate should use English paths
+    const planningGate = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "hooks", "planning-gate.sh"),
+      "utf-8"
+    );
+    expect(planningGate).toContain("docs/rules/");
+    expect(planningGate).toContain("dev-plans");
+    expect(planningGate).toContain("test-plans");
+    expect(planningGate).not.toContain("documentos/");
+
+    // Verify pipeline
+    expect(files).toContain(".claude/verify/pipeline.yaml");
+    expect(files).toContain(".claude/verify/run.sh");
+    expect(files).toContain(".claude/hooks/post-dev-verify.sh");
+
+    // Verify runner should be executable
+    const verifyRunnerStat = await fs.stat(
+      path.join(TEST_DIR, ".claude", "verify", "run.sh")
+    );
+    expect(verifyRunnerStat.mode & 0o111).toBeGreaterThan(0);
+
+    // Settings should reference post-dev-verify hook
+    expect(settings).toContain("post-dev-verify");
   });
 
   it("generates English documentation structure", async () => {
@@ -280,6 +323,9 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     expect(files).not.toContain(".claude/rules/feature-gate.md");
     expect(files).not.toContain(".claude/skills/plan-feature/SKILL.md");
     expect(files).not.toContain(".claude/agents/product-owner.md");
+    expect(files).not.toContain(".claude/hooks/planning-gate.sh");
+    expect(files).not.toContain(".claude/hooks/planning-validator.sh");
+    expect(files).not.toContain(".claude/hooks/planning-eval.sh");
   });
 
   it("generates Portuguese content for pt-BR", async () => {
@@ -495,6 +541,11 @@ describe("Project Generation (with git submodules)", () => {
       expect(files).toContain(`${dir}/.claude/hooks/tdd-guard.sh`);
       expect(files).toContain(`${dir}/.claude/hooks/auto-test.sh`);
       expect(files).toContain(`${dir}/.claude/hooks/tdd-eval.sh`);
+
+      // Planning hooks (feature-planning-gate enabled in submoduleConfig)
+      expect(files).toContain(`${dir}/.claude/hooks/planning-gate.sh`);
+      expect(files).toContain(`${dir}/.claude/hooks/planning-validator.sh`);
+      expect(files).toContain(`${dir}/.claude/hooks/planning-eval.sh`);
 
       // Hooks should be executable
       const hookStat = await fs.stat(

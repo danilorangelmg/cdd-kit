@@ -23,8 +23,16 @@
     "scaffolding",
     "cli"
   ],
-  "author": "",
+  "author": "Danilo Rangel <danilorangelmg@gmail.com>",
   "license": "MIT",
+  "homepage": "https://github.com/danilorangelmg/cdd-kit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danilorangelmg/cdd-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/danilorangelmg/cdd-kit/issues"
+  },
   "engines": {
     "node": ">=18.0.0"
   },

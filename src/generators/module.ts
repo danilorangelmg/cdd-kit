@@ -1,6 +1,6 @@
 import path from "path";
 import { renderTemplate } from "../utils/template-engine.js";
-import { writeFile, ensureDir } from "../utils/fs.js";
+import { writeFile, ensureDir, directoryHasContent } from "../utils/fs.js";
 import type { ProjectConfig, ModuleConfig } from "../utils/validation.js";
 import { getRoleById } from "../methodology/roles.js";
 import { getPathMap } from "../utils/paths.js";
@@ -31,8 +31,8 @@ export async function generateModule(
   await writeFile(path.join(moduleDir, "CLAUDE.md"), claudeMd);
   generatedFiles.push(`${mod.directory}/CLAUDE.md`);
 
-  // Module src/ and tests/ directories (skip for submodules — separate repos)
-  if (!config.git?.submodules) {
+  // Module src/ and tests/ directories (skip for submodules or existing dirs with content)
+  if (!config.git?.submodules && !(await directoryHasContent(moduleDir))) {
     await ensureDir(path.join(moduleDir, "src"));
     await ensureDir(path.join(moduleDir, "tests"));
     await writeFile(path.join(moduleDir, "src", ".gitkeep"), "");

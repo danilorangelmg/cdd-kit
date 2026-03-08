@@ -21,6 +21,16 @@ export async function fileExists(filePath: string): Promise<boolean> {
   return fs.pathExists(filePath);
 }
 
+export async function directoryHasContent(dir: string): Promise<boolean> {
+  if (!(await fs.pathExists(dir))) return false;
+  const entries = await fs.readdir(dir);
+  return entries.some((e) => e !== ".git");
+}
+
+export async function readFile(filePath: string): Promise<string> {
+  return fs.readFile(filePath, "utf-8");
+}
+
 export async function readJson<T>(filePath: string): Promise<T> {
   return fs.readJson(filePath) as Promise<T>;
 }

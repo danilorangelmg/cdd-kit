@@ -54,6 +54,19 @@ export {
   writeFile,
   makeExecutable,
   fileExists,
+  readFile,
   readJson,
   writeJson,
+  directoryHasContent,
 } from "./utils/fs.js";
+
+// Git Modules Parser
+export {
+  parseGitmodules,
+  parseGitUrl,
+  detectCommonPrefix,
+} from "./utils/gitmodules-parser.js";
+export type {
+  GitmoduleEntry,
+  ParsedGitUrl,
+} from "./utils/gitmodules-parser.js";

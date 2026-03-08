@@ -24,7 +24,8 @@ export function getSubmoduleUrl(
 
 export async function generateGit(
   projectDir: string,
-  config: ProjectConfig
+  config: ProjectConfig,
+  options?: { skipGitmodules?: boolean }
 ): Promise<string[]> {
   const generatedFiles: string[] = [];
 
@@ -32,7 +33,15 @@ export async function generateGit(
     return generatedFiles;
   }
 
-  // Generate .gitmodules
+  // Generate .gitmodules (skip when adopting existing project)
+  if (options?.skipGitmodules) {
+    // Only generate .gitignore
+    const gitignore = renderTemplate("root/.gitignore.hbs", config);
+    await writeFile(path.join(projectDir, ".gitignore"), gitignore);
+    generatedFiles.push(".gitignore");
+    return generatedFiles;
+  }
+
   const entries = config.modules.map((mod) => ({
     name: mod.directory,
     path: mod.directory,

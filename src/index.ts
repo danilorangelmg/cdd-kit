@@ -10,7 +10,7 @@ program
   .description(
     "Copilot-Driven Development — Metodologia para desenvolvimento AI-augmented com Claude Code"
   )
-  .version("0.1.1");
+  .version("0.2.0");
 
 program
   .command("init")

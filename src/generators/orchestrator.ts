@@ -43,7 +43,12 @@ export async function generateOrchestrator(
 }
 
 function buildContext(config: ProjectConfig): Record<string, unknown> {
-  const activeRules = getActiveRules(config.methodology.rules);
+  const isPtBr = config.project.language === "pt-BR";
+  const activeRules = getActiveRules(config.methodology.rules).map((rule) => ({
+    ...rule,
+    name: isPtBr ? rule.namePtBr : rule.name,
+    description: isPtBr ? rule.descriptionPtBr : rule.description,
+  }));
   const modulesWithRoles = config.modules.map((m) => ({
     ...m,
     roleInfo: getRoleById(m.role),

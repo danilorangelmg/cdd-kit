@@ -1,7 +1,7 @@
 # {{project.name}} — Makefile
 # Gerado por cdd (Copilot-Driven Development)
 
-.PHONY: dev dev-detached test lint clean status verify{{#each modules}} test-{{name}} verify-{{name}}{{/each}}{{#ifRule "e2e-test-protection"}} e2e-lock e2e-unlock{{/ifRule}}{{#if git.submodules}} init submodule-status submodule-pull{{/if}}
+.PHONY: dev dev-detached stop test lint clean status verify{{#each modules}} test-{{name}} verify-{{name}}{{/each}}{{#ifRule "e2e-test-protection"}} e2e-lock e2e-unlock test-e2e test-e2e-report{{/ifRule}}{{#if git.submodules}} init submodule-status submodule-pull{{/if}}
 
 {{#if git.submodules}}
 # ─── Git Submodules ───────────────────────────────────
@@ -24,8 +24,11 @@ dev:
 dev-detached:
 	docker compose up --build -d
 
+stop:
+	docker compose down
+
 clean:
-	docker compose down -v
+	docker compose down -v --remove-orphans
 
 # ─── Testing ───────────────────────────────────────────
 
@@ -60,6 +63,16 @@ e2e-unlock:
 	find {{directory}}/features {{directory}}/step-definitions {{directory}}/support -type f -exec chmod 644 {} \;
 {{/modulesOfRole}}
 	@echo "E2E tests unlocked — Red phase"
+
+test-e2e:
+{{#modulesOfRole "e2e"}}
+	cd {{directory}} && npm test
+{{/modulesOfRole}}
+
+test-e2e-report:
+{{#modulesOfRole "e2e"}}
+	cd {{directory}} && npm run test:report
+{{/modulesOfRole}}
 {{/ifRule}}
 
 # ─── Verify ──────────────────────────────────────────

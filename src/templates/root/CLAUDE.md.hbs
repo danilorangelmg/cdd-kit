@@ -216,9 +216,28 @@ Para features que envolvem frontend + backend, siga a ordem Outside-In:
 ## Feature Planning Gate (Regra #3)
 
 Antes de implementar uma feature nova:
-1. Classificar: SIMPLES (max 2 modulos, CRUD, padroes claros) ou COMPLEXA
+1. Classificar: SIMPLES ou COMPLEXA
 2. Se COMPLEXA → invocar `/plan-feature` ANTES de delegar
 3. Docs obrigatorios por modulo: `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/`, `{{paths.testPlans}}/`, `{{paths.devPlans}}/`
+
+### Auto-Deteccao
+
+O orquestrador DEVE detectar "nova feature" e invocar `/plan-feature` automaticamente.
+
+**Palavras-chave trigger**: implementar, criar, adicionar, novo modulo, nova funcionalidade
+**NAO e feature**: bug fix, refactoring, config/ajuste, correcao de layout
+
+### Criterios SIMPLES
+
+SIMPLES quando TODOS os criterios:
+- Max 2 modulos afetados
+- CRUD padrao
+- Sem novo conceito de dominio
+- Padrao claro existente
+- Sem integracao nova
+- Sem regras de negocio complexas
+
+**Qualquer falha → COMPLEXA** → `/plan-feature` obrigatorio.
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}
@@ -226,15 +245,30 @@ Antes de implementar uma feature nova:
 
 Toda delegacao concluida gera: `{{paths.docsRoot}}/{{paths.changelog}}/{modulo}/{YYYY-MM-DD}.md`
 
+### Estrutura de Diretorios
+
+```
+{{paths.docsRoot}}/{{paths.changelog}}/
+  {modulo}/
+    {modulo}.md          ← historico (entradas anteriores)
+    {YYYY-MM-DD}.md      ← entradas do dia
+```
+
 ### Formato de Entrada
 
 ```
-**Data**: {YYYY-MM-DD}
+### Titulo curto
 **Agente**: {sub-agente} | **Status**: Concluido/Falhou
 **Decisao**: {justificativa da abordagem}
 **Alteracoes**: {lista de arquivos criados/modificados}
 {{#ifRule "conditional-mermaid"}}**Diagrama**: Mermaid (se mudanca arquitetural){{/ifRule}}
 ```
+
+### Regras
+- Se ja existir arquivo da data atual → **APPEND** da nova entrada no topo
+- Se nao existir → criar novo arquivo com a entrada
+- A data NAO vai no titulo da entrada (redundante — ja esta no nome do arquivo)
+- **Responsabilidade do orquestrador** (nao do sub-agente), pois ele tem visao das decisoes
 {{/ifRule}}
 
 {{#ifRule "conditional-mermaid"}}
@@ -322,6 +356,9 @@ make submodule-status # Status dos submodules
 make submodule-pull   # Pull em todos submodules
 {{/if}}
 make dev              # Subir todos os servicos
+make stop             # Parar todos os servicos
+make clean            # Limpar containers e volumes
+make status           # Status dos servicos e modulos
 make test             # Rodar testes de todos os modulos
 make lint             # Lint de todos os modulos
 make verify           # Validacao completa (lint + test + build)
@@ -335,6 +372,8 @@ make verify-{{name}}  # Validacao completa do modulo {{name}}
 
 # Validacao
 {{#ifRule "e2e-test-protection"}}
+make test-e2e         # Executar testes E2E
+make test-e2e-report  # Testes E2E com relatorio HTML
 make e2e-lock         # Proteger testes E2E (chmod 555/444)
 make e2e-unlock       # Desbloquear testes E2E (fase Red)
 {{/ifRule}}
@@ -554,9 +593,28 @@ For features involving frontend + backend, follow the Outside-In order:
 ## Feature Planning Gate (Rule #3)
 
 Before implementing a new feature:
-1. Classify: SIMPLE (max 2 modules, CRUD, clear patterns) or COMPLEX
+1. Classify: SIMPLE or COMPLEX
 2. If COMPLEX → invoke `/plan-feature` BEFORE delegating
 3. Required docs per module: `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/`, `{{paths.testPlans}}/`, `{{paths.devPlans}}/`
+
+### Auto-Detection
+
+The orchestrator MUST detect "new feature" and invoke `/plan-feature` automatically.
+
+**Trigger keywords**: implement, create, add, new module, new feature
+**NOT a feature**: bug fix, refactoring, config/adjustment, layout fix
+
+### SIMPLE Criteria
+
+SIMPLE when ALL criteria met:
+- Max 2 affected modules
+- Standard CRUD
+- No new domain concept
+- Clear existing pattern
+- No new integration
+- No complex business rules
+
+**Any failure → COMPLEX** → `/plan-feature` mandatory.
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}
@@ -564,15 +622,30 @@ Before implementing a new feature:
 
 Every completed delegation generates: `{{paths.docsRoot}}/{{paths.changelog}}/{module}/{YYYY-MM-DD}.md`
 
+### Directory Structure
+
+```
+{{paths.docsRoot}}/{{paths.changelog}}/
+  {module}/
+    {module}.md          ← historical (previous entries)
+    {YYYY-MM-DD}.md      ← daily entries
+```
+
 ### Entry Format
 
 ```
-**Date**: {YYYY-MM-DD}
+### Short title
 **Agent**: {sub-agent} | **Status**: Completed/Failed
 **Decision**: {approach justification}
 **Changes**: {list of files created/modified}
 {{#ifRule "conditional-mermaid"}}**Diagram**: Mermaid (if architectural change){{/ifRule}}
 ```
+
+### Rules
+- If file for current date already exists → **APPEND** new entry at the top
+- If not → create new file with the entry
+- Date does NOT go in entry title (redundant — already in filename)
+- **Orchestrator's responsibility** (not sub-agent's), as it has decision visibility
 {{/ifRule}}
 
 {{#ifRule "conditional-mermaid"}}
@@ -660,6 +733,9 @@ make submodule-status # Submodule status
 make submodule-pull   # Pull all submodules
 {{/if}}
 make dev              # Start all services
+make stop             # Stop all services
+make clean            # Clean containers and volumes
+make status           # Service and module status
 make test             # Run tests for all modules
 make lint             # Lint all modules
 make verify           # Full validation (lint + test + build)
@@ -673,6 +749,8 @@ make verify-{{name}}  # Full validation for {{name}} module
 
 # Validation
 {{#ifRule "e2e-test-protection"}}
+make test-e2e         # Run E2E tests
+make test-e2e-report  # E2E tests with HTML report
 make e2e-lock         # Protect E2E tests (chmod 555/444)
 make e2e-unlock       # Unlock E2E tests (Red phase)
 {{/ifRule}}

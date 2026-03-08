@@ -110,9 +110,22 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(claude).toContain("**Agent**:");
     expect(claude).toContain("**Decision**:");
 
+    // Phase 15: Expanded Rule #1 (changelog directory tree, append, ownership)
+    expect(claude).toContain("APPEND");
+    expect(claude).toContain("Orchestrator's responsibility");
+
+    // Phase 16: Expanded Rule #3 (planning gate auto-detection, SIMPLE criteria)
+    expect(claude).toContain("Auto-Detection");
+    expect(claude).toContain("SIMPLE");
+    expect(claude).toContain("NOT a feature");
+
     // Phase 9: Expanded Rule #4 (API envelope examples)
     expect(claude).toContain("VALIDATION_ERROR");
     expect(claude).toContain("No exceptions");
+
+    // Phase 14: English rule descriptions (project.language = "en")
+    expect(claude).toContain("Absolute Delegation");
+    expect(claude).not.toContain("Delegacao Absoluta");
 
     // Phase 12: Per-Module skills section
     expect(claude).toContain("Per-Module");
@@ -123,6 +136,10 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(claude).toContain("Backend");
     expect(claude).toContain("/endpoint");
 
+    // Phase 17: Make stop/clean/status commands
+    expect(claude).toContain("make stop");
+    expect(claude).toContain("make status");
+
     // Verify Makefile targets
     const makefile = await fs.readFile(path.join(TEST_DIR, "Makefile"), "utf-8");
     expect(makefile).toContain("test-frontend");
@@ -131,6 +148,10 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(makefile).toContain("verify-frontend");
     expect(makefile).toContain("verify-api");
     expect(makefile).toContain("verify:");
+
+    // Phase 17: Makefile stop/clean/status targets
+    expect(makefile).toContain("stop:");
+    expect(makefile).toContain("clean:");
   });
 
   it("generates module CLAUDE.md files", async () => {
@@ -616,6 +637,51 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     );
     expect(claude).toContain("Voce e o Orquestrador");
     expect(claude).not.toContain("You are the Orchestrator");
+
+    // Phase 14: PT-BR rule descriptions (alwaysActive rules present in minimal)
+    expect(claude).toContain("Delegacao Absoluta");
+    expect(claude).not.toContain("Absolute Delegation");
+    expect(claude).toContain("Escopo de Responsabilidade");
+  });
+
+  it("generates Portuguese expanded rules for pt-BR standard config", async () => {
+    const ptBrStandardConfig: ProjectConfig = {
+      ...minimalConfig,
+      modules: [
+        { name: "frontend", role: "frontend", directory: "frontend" },
+        { name: "api", role: "backend", directory: "api" },
+      ],
+      methodology: {
+        preset: "standard",
+        rules: {
+          "absolute-delegation": true,
+          "changelog-by-date": true,
+          "conditional-mermaid": false,
+          "feature-planning-gate": true,
+          "api-response-contract": true,
+          "scope-of-responsibility": true,
+          "e2e-test-protection": false,
+          "post-dev-e2e-validation": false,
+          "tdd-enforcement": true,
+          "tdd-sequential-enforcement": true,
+        },
+      },
+    };
+
+    await generateOrchestrator(TEST_DIR, ptBrStandardConfig);
+    const claude = await fs.readFile(
+      path.join(TEST_DIR, "CLAUDE.md"),
+      "utf-8"
+    );
+
+    // Phase 15: PT-BR changelog expansion
+    expect(claude).toContain("APPEND");
+    expect(claude).toContain("Responsabilidade do orquestrador");
+
+    // Phase 16: PT-BR planning gate expansion
+    expect(claude).toContain("Auto-Deteccao");
+    expect(claude).toContain("SIMPLES");
+    expect(claude).toContain("NAO e feature");
   });
 });
 
@@ -682,6 +748,20 @@ describe("Project Generation (Full preset with E2E rules)", () => {
     expect(claude).toContain("Diagnostic loop");
     expect(claude).toContain("GUARDRAIL");
     expect(claude).toContain("NEVER modify E2E tests");
+
+    // Phase 17: E2E make commands (e2e-test-protection enabled)
+    expect(claude).toContain("make test-e2e");
+    expect(claude).toContain("make test-e2e-report");
+
+    // Phase 17: Full preset Makefile should have E2E targets
+    const makefile = await fs.readFile(
+      path.join(TEST_DIR, "Makefile"),
+      "utf-8"
+    );
+    expect(makefile).toContain("test-e2e:");
+    expect(makefile).toContain("test-e2e-report:");
+    expect(makefile).toContain("stop:");
+    expect(makefile).toContain("clean:");
   });
 });
 

@@ -8,6 +8,7 @@ description: Create complete endpoint (route + schema + service + test)
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 model: sonnet
+argument-hint: "[resource] [method]"
 ---
 
 {{#if (eq project.language "pt-BR")}}
@@ -26,6 +27,9 @@ model: sonnet
 1. Ler endpoints existentes para entender padroes (routes, schemas, services)
 2. Verificar regras em `.claude/rules/`
 3. Identificar entidades e DTOs existentes
+{{#if stack}}
+4. Ler padroes da stack em [patterns.md](patterns.md)
+{{/if}}
 
 ### Fase 1 — Schema/DTO
 Criar tipos de request e response:
@@ -49,6 +53,9 @@ Criar ou atualizar service com logica de negocio:
 - Injecao de dependencia para repositorios
 
 ### Fase 3 — Route/Controller
+{{#if stack}}
+> Padroes especificos da stack ({{stack.label}}): ver [patterns.md](patterns.md)
+{{/if}}
 Criar o endpoint:
 
 - Recebe HTTP request, valida input via schema
@@ -88,6 +95,9 @@ Criar o endpoint:
 1. Read existing endpoints to understand patterns (routes, schemas, services)
 2. Check rules in `.claude/rules/`
 3. Identify existing entities and DTOs
+{{#if stack}}
+4. Read stack patterns in [patterns.md](patterns.md)
+{{/if}}
 
 ### Phase 1 — Schema/DTO
 Create request and response types:
@@ -111,6 +121,9 @@ Create or update service with business logic:
 - Dependency injection for repositories
 
 ### Phase 3 — Route/Controller
+{{#if stack}}
+> Stack-specific patterns ({{stack.label}}): see [patterns.md](patterns.md)
+{{/if}}
 Create the endpoint:
 
 - Receives HTTP request, validates input via schema

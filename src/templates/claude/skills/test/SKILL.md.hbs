@@ -8,6 +8,7 @@ description: Create unit tests following project patterns
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 model: sonnet
+argument-hint: "[file] [type]"
 ---
 
 {{#if (eq project.language "pt-BR")}}
@@ -41,12 +42,15 @@ model: sonnet
 - Estados: loading, error, empty
 
 ## Setup Padrao
+{{#if stack}}
+> Setup especifico da stack ({{stack.label}}): ver [patterns.md](patterns.md)
+{{/if}}
 
 ```
 1. Mocks declarados ANTES dos imports do SUT
 2. Factory functions para cada DTO
-3. vi.clearAllMocks() no beforeEach
-4. vi.useRealTimers() no afterEach
+3. Limpar mocks no beforeEach
+4. Restaurar timers no afterEach
 ```
 
 ## Fases
@@ -55,6 +59,9 @@ model: sonnet
 1. Ler o arquivo alvo para entender a interface
 2. Ler testes existentes para entender padroes
 3. Identificar dependencias a mockar
+{{#if stack}}
+4. Ler padroes de teste da stack em [patterns.md](patterns.md)
+{{/if}}
 
 ### Fase 1 — Setup
 - Declarar mocks antes dos imports
@@ -109,12 +116,15 @@ model: sonnet
 - States: loading, error, empty
 
 ## Standard Setup
+{{#if stack}}
+> Stack-specific setup ({{stack.label}}): see [patterns.md](patterns.md)
+{{/if}}
 
 ```
 1. Mocks declared BEFORE SUT imports
 2. Factory functions for each DTO
-3. vi.clearAllMocks() in beforeEach
-4. vi.useRealTimers() in afterEach
+3. Clear mocks in beforeEach
+4. Restore timers in afterEach
 ```
 
 ## Phases
@@ -123,6 +133,9 @@ model: sonnet
 1. Read target file to understand the interface
 2. Read existing tests to understand patterns
 3. Identify dependencies to mock
+{{#if stack}}
+4. Read stack test patterns in [patterns.md](patterns.md)
+{{/if}}
 
 ### Phase 1 — Setup
 - Declare mocks before imports

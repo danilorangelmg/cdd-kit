@@ -1,0 +1,241 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Flutter para Widgets
+
+## StatelessWidget
+
+```dart
+class AppButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+  final ButtonVariant variant;
+
+  const AppButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.variant = ButtonVariant.primary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: _buildStyle(context),
+      child: Text(label),
+    );
+  }
+
+  ButtonStyle _buildStyle(BuildContext context) {
+    final theme = Theme.of(context);
+    return switch (variant) {
+      ButtonVariant.primary => ElevatedButton.styleFrom(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+      ),
+      ButtonVariant.outline => OutlinedButton.styleFrom(
+        side: BorderSide(color: theme.colorScheme.primary),
+      ),
+    };
+  }
+}
+
+enum ButtonVariant { primary, outline }
+```
+
+## StatefulWidget
+
+```dart
+class Counter extends StatefulWidget {
+  final int initialValue;
+  const Counter({super.key, this.initialValue = 0});
+
+  @override
+  State<Counter> createState() => _CounterState();
+}
+
+class _CounterState extends State<Counter> {
+  late int _count;
+
+  @override
+  void initState() {
+    super.initState();
+    _count = widget.initialValue;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text('$_count', style: Theme.of(context).textTheme.headlineMedium),
+        IconButton(
+          onPressed: () => setState(() => _count++),
+          icon: const Icon(Icons.add),
+        ),
+      ],
+    );
+  }
+}
+```
+
+## Composicao de Widgets
+
+```dart
+class UserCard extends StatelessWidget {
+  final User user;
+  const UserCard({super.key, required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(backgroundImage: NetworkImage(user.avatarUrl)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(user.name, style: Theme.of(context).textTheme.titleMedium),
+                  Text(user.email, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+## Convencoes
+
+- Preferir `const` constructors sempre que possivel
+- Usar `super.key` ao inves de `Key? key` no construtor
+- Acessar tema via `Theme.of(context)` (nunca cores hardcoded)
+- Composicao sobre heranca: widgets pequenos e reutilizaveis
+- `StatelessWidget` por padrao, `StatefulWidget` apenas quando necessario
+- Separar logica de estilo em metodos privados
+{{else}}
+# Flutter Widget Patterns
+
+## StatelessWidget
+
+```dart
+class AppButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+  final ButtonVariant variant;
+
+  const AppButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.variant = ButtonVariant.primary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: _buildStyle(context),
+      child: Text(label),
+    );
+  }
+
+  ButtonStyle _buildStyle(BuildContext context) {
+    final theme = Theme.of(context);
+    return switch (variant) {
+      ButtonVariant.primary => ElevatedButton.styleFrom(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+      ),
+      ButtonVariant.outline => OutlinedButton.styleFrom(
+        side: BorderSide(color: theme.colorScheme.primary),
+      ),
+    };
+  }
+}
+
+enum ButtonVariant { primary, outline }
+```
+
+## StatefulWidget
+
+```dart
+class Counter extends StatefulWidget {
+  final int initialValue;
+  const Counter({super.key, this.initialValue = 0});
+
+  @override
+  State<Counter> createState() => _CounterState();
+}
+
+class _CounterState extends State<Counter> {
+  late int _count;
+
+  @override
+  void initState() {
+    super.initState();
+    _count = widget.initialValue;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text('$_count', style: Theme.of(context).textTheme.headlineMedium),
+        IconButton(
+          onPressed: () => setState(() => _count++),
+          icon: const Icon(Icons.add),
+        ),
+      ],
+    );
+  }
+}
+```
+
+## Widget Composition
+
+```dart
+class UserCard extends StatelessWidget {
+  final User user;
+  const UserCard({super.key, required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(backgroundImage: NetworkImage(user.avatarUrl)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(user.name, style: Theme.of(context).textTheme.titleMedium),
+                  Text(user.email, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+## Conventions
+
+- Prefer `const` constructors whenever possible
+- Use `super.key` instead of `Key? key` in constructor
+- Access theme via `Theme.of(context)` (never hardcoded colors)
+- Composition over inheritance: small, reusable widgets
+- `StatelessWidget` by default, `StatefulWidget` only when needed
+- Separate styling logic into private methods
+{{/if}}

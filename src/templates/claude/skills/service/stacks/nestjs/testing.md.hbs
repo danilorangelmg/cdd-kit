@@ -1,0 +1,179 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes NestJS para Services
+
+## Configuracao do Modulo de Teste
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
+
+describe('RecursoService', () => {
+  let service: RecursoService;
+  let repository: jest.Mocked<RecursoRepository>;
+
+  beforeEach(async () => {
+    const mockRepository = {
+      findMany: jest.fn(),
+      findById: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        RecursoService,
+        {
+          provide: 'RECURSO_REPOSITORY',
+          useValue: mockRepository,
+        },
+      ],
+    }).compile();
+
+    service = module.get<RecursoService>(RecursoService);
+    repository = module.get('RECURSO_REPOSITORY');
+  });
+```
+
+## Testes de Metodos
+
+```typescript
+  describe('findOne', () => {
+    it('deve retornar recurso quando encontrado', async () => {
+      const recurso = { id: '1', nome: 'Teste' };
+      repository.findById.mockResolvedValue(recurso);
+
+      const resultado = await service.findOne('1');
+      expect(resultado).toEqual(recurso);
+    });
+
+    it('deve lancar NotFoundException quando nao encontrado', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(service.findOne('999')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('create', () => {
+    it('deve criar e retornar recurso', async () => {
+      const dto = { nome: 'Novo' };
+      const criado = { id: '1', ...dto };
+      repository.create.mockResolvedValue(criado);
+
+      const resultado = await service.create(dto);
+      expect(resultado).toEqual(criado);
+      expect(repository.create).toHaveBeenCalledWith(dto);
+    });
+  });
+});
+```
+
+## Override de Provider
+
+```typescript
+const module = await Test.createTestingModule({
+  imports: [RecursoModule],
+})
+  .overrideProvider('RECURSO_REPOSITORY')
+  .useValue(mockRepository)
+  .compile();
+```
+
+## Convencoes
+- `Test.createTestingModule` para configurar providers isolados
+- Mockar repositorios com `jest.fn()` no provider
+- `overrideProvider` quando importar o modulo inteiro
+- Testar cada metodo publico isoladamente
+- Testar lancamento de exceptions (`rejects.toThrow`)
+- Verificar chamadas ao repositorio (`toHaveBeenCalledWith`)
+- Nao testar implementacao interna, testar comportamento
+{{else}}
+# NestJS Service Testing
+
+## Test Module Setup
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
+
+describe('ResourceService', () => {
+  let service: ResourceService;
+  let repository: jest.Mocked<ResourceRepository>;
+
+  beforeEach(async () => {
+    const mockRepository = {
+      findMany: jest.fn(),
+      findById: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ResourceService,
+        {
+          provide: 'RESOURCE_REPOSITORY',
+          useValue: mockRepository,
+        },
+      ],
+    }).compile();
+
+    service = module.get<ResourceService>(ResourceService);
+    repository = module.get('RESOURCE_REPOSITORY');
+  });
+```
+
+## Method Tests
+
+```typescript
+  describe('findOne', () => {
+    it('should return resource when found', async () => {
+      const resource = { id: '1', name: 'Test' };
+      repository.findById.mockResolvedValue(resource);
+
+      const result = await service.findOne('1');
+      expect(result).toEqual(resource);
+    });
+
+    it('should throw NotFoundException when not found', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(service.findOne('999')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('create', () => {
+    it('should create and return resource', async () => {
+      const dto = { name: 'New' };
+      const created = { id: '1', ...dto };
+      repository.create.mockResolvedValue(created);
+
+      const result = await service.create(dto);
+      expect(result).toEqual(created);
+      expect(repository.create).toHaveBeenCalledWith(dto);
+    });
+  });
+});
+```
+
+## Override Provider
+
+```typescript
+const module = await Test.createTestingModule({
+  imports: [ResourceModule],
+})
+  .overrideProvider('RESOURCE_REPOSITORY')
+  .useValue(mockRepository)
+  .compile();
+```
+
+## Conventions
+- `Test.createTestingModule` to configure isolated providers
+- Mock repositories with `jest.fn()` in provider
+- `overrideProvider` when importing the full module
+- Test each public method in isolation
+- Test exception throwing (`rejects.toThrow`)
+- Verify repository calls (`toHaveBeenCalledWith`)
+- Don't test internal implementation, test behavior
+{{/if}}

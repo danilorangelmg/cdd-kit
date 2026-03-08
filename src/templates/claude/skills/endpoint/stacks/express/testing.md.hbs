@@ -1,0 +1,159 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes Express para Endpoints
+
+## Teste de Integracao com Supertest
+
+```typescript
+import request from 'supertest';
+import express from 'express';
+import recursoRouter from './recurso.router';
+
+describe('Recurso Router', () => {
+  let app: express.Application;
+  let mockService: any;
+
+  beforeEach(() => {
+    mockService = {
+      findAll: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+      remove: jest.fn(),
+    };
+
+    app = express();
+    app.use(express.json());
+    app.use('/recursos', recursoRouter(mockService));
+    app.use(errorHandler);
+  });
+
+  it('POST /recursos - deve criar recurso', async () => {
+    mockService.create.mockResolvedValue({ id: '1', nome: 'Teste' });
+
+    const response = await request(app)
+      .post('/recursos')
+      .send({ nome: 'Teste' })
+      .expect(201);
+
+    expect(response.body).toEqual({ id: '1', nome: 'Teste' });
+    expect(mockService.create).toHaveBeenCalledWith({ nome: 'Teste' });
+  });
+
+  it('POST /recursos - deve retornar 400 para body invalido', async () => {
+    await request(app)
+      .post('/recursos')
+      .send({})
+      .expect(400);
+  });
+
+  it('GET /recursos/:id - deve retornar 404', async () => {
+    mockService.findOne.mockRejectedValue(new NotFoundError('Nao encontrado'));
+
+    await request(app)
+      .get('/recursos/999')
+      .expect(404);
+  });
+});
+```
+
+## Teste de Middleware Isolado
+
+```typescript
+describe('validate middleware', () => {
+  it('deve chamar next() quando validacao passa', () => {
+    const req = { body: { nome: 'valido' } } as Request;
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as any;
+    const next = jest.fn();
+
+    validate(req, res, next);
+    expect(next).toHaveBeenCalled();
+  });
+});
+```
+
+## Convencoes
+- Criar app Express fresco em cada `beforeEach`
+- Mockar service via factory function do router
+- Testar codigos de status HTTP para happy path e erros
+- Testar middleware de validacao isoladamente
+- Testar error handler com diferentes tipos de erro
+- Sempre incluir `express.json()` no app de teste
+{{else}}
+# Express Endpoint Testing
+
+## Integration Test with Supertest
+
+```typescript
+import request from 'supertest';
+import express from 'express';
+import resourceRouter from './resource.router';
+
+describe('Resource Router', () => {
+  let app: express.Application;
+  let mockService: any;
+
+  beforeEach(() => {
+    mockService = {
+      findAll: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+      remove: jest.fn(),
+    };
+
+    app = express();
+    app.use(express.json());
+    app.use('/resources', resourceRouter(mockService));
+    app.use(errorHandler);
+  });
+
+  it('POST /resources - should create resource', async () => {
+    mockService.create.mockResolvedValue({ id: '1', name: 'Test' });
+
+    const response = await request(app)
+      .post('/resources')
+      .send({ name: 'Test' })
+      .expect(201);
+
+    expect(response.body).toEqual({ id: '1', name: 'Test' });
+    expect(mockService.create).toHaveBeenCalledWith({ name: 'Test' });
+  });
+
+  it('POST /resources - should return 400 for invalid body', async () => {
+    await request(app)
+      .post('/resources')
+      .send({})
+      .expect(400);
+  });
+
+  it('GET /resources/:id - should return 404', async () => {
+    mockService.findOne.mockRejectedValue(new NotFoundError('Not found'));
+
+    await request(app)
+      .get('/resources/999')
+      .expect(404);
+  });
+});
+```
+
+## Isolated Middleware Test
+
+```typescript
+describe('validate middleware', () => {
+  it('should call next() when validation passes', () => {
+    const req = { body: { name: 'valid' } } as Request;
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as any;
+    const next = jest.fn();
+
+    validate(req, res, next);
+    expect(next).toHaveBeenCalled();
+  });
+});
+```
+
+## Conventions
+- Create fresh Express app in each `beforeEach`
+- Mock service via router factory function
+- Test HTTP status codes for happy path and errors
+- Test validation middleware in isolation
+- Test error handler with different error types
+- Always include `express.json()` in test app
+{{/if}}

@@ -8,6 +8,7 @@ description: Create Service with pure business logic
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 model: sonnet
+argument-hint: "[domain] [methods]"
 ---
 
 {{#if (eq project.language "pt-BR")}}
@@ -24,8 +25,14 @@ model: sonnet
 1. Ler services existentes para entender padroes
 2. Identificar entidades do dominio
 3. Verificar regras de arquitetura em `.claude/rules/`
+{{#if stack}}
+4. Ler padroes da stack em [patterns.md](patterns.md)
+{{/if}}
 
 ### Fase 1 — Criar Service
+{{#if stack}}
+> Padroes especificos da stack ({{stack.label}}): ver [patterns.md](patterns.md)
+{{/if}}
 
 **Principios**:
 - Logica de negocio pura (sem I/O direto)
@@ -75,8 +82,14 @@ model: sonnet
 1. Read existing services to understand patterns
 2. Identify domain entities
 3. Check architecture rules in `.claude/rules/`
+{{#if stack}}
+4. Read stack patterns in [patterns.md](patterns.md)
+{{/if}}
 
 ### Phase 1 — Create Service
+{{#if stack}}
+> Stack-specific patterns ({{stack.label}}): see [patterns.md](patterns.md)
+{{/if}}
 
 **Principles**:
 - Pure business logic (no direct I/O)

@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { PRESETS } from "../methodology/presets.js";
 import { ROLES } from "../methodology/roles.js";
 import { RULES } from "../methodology/rules.js";
+import { getStacksForRole } from "../methodology/stacks.js";
 import type {
   ModuleConfig,
   GitConfig,
@@ -90,13 +91,47 @@ export async function runInitPrompts(
       }
     );
 
+    // Stack selection (optional, based on role)
+    const stacksForRole = getStacksForRole(mod.role as string);
+    let stack: string | undefined;
+
+    if (stacksForRole.length > 0) {
+      const stackChoice = await p.select({
+        message: `Stack for ${mod.name}:`,
+        options: [
+          ...stacksForRole.map((s) => ({
+            value: s.id,
+            label: s.label,
+            hint: s.description,
+          })),
+          {
+            value: "_none",
+            label: "None / Custom",
+            hint: "No stack-specific patterns",
+          },
+        ],
+      });
+
+      if (p.isCancel(stackChoice)) {
+        p.cancel("Operation cancelled.");
+        process.exit(0);
+      }
+
+      if (stackChoice !== "_none") {
+        stack = stackChoice as string;
+      }
+    }
+
     modules.push({
       name: mod.name as string,
       role: mod.role as ModuleConfig["role"],
       directory: mod.name as string,
+      ...(stack ? { stack } : {}),
     });
 
-    p.log.success(`Module ${chalk.bold(mod.name)} (${mod.role}) added.`);
+    p.log.success(
+      `Module ${chalk.bold(mod.name)} (${mod.role}${stack ? ` / ${stack}` : ""}) added.`
+    );
 
     const continueAdding = await p.confirm({
       message: "Add another module?",

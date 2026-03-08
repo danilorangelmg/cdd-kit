@@ -8,6 +8,7 @@ description: Create component following project patterns (typing, states, tests)
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 model: sonnet
+argument-hint: "[name] [type]"
 ---
 
 {{#if (eq project.language "pt-BR")}}
@@ -34,14 +35,20 @@ model: sonnet
 1. Ler componentes existentes para entender padroes
 2. Verificar design system e tokens de cor
 3. Ler regras em `.claude/rules/`
+{{#if stack}}
+4. Ler padroes da stack em [patterns.md](patterns.md)
+{{/if}}
 
 ### Fase 1 — Criar Componente
 
+{{#if stack}}
+> Padroes especificos da stack ({{stack.label}}): ver [patterns.md](patterns.md)
+{{/if}}
+
 **UI Component** (atomico):
-- `forwardRef` para composicao
-- `cn()` para merge de classes
+- Composicao com ref forwarding
+- Merge de classes utilitarias
 - Props interface com `className?`
-- `displayName` definido
 - Skeleton companion para loading
 
 **Feature Component** (dominio):
@@ -57,6 +64,9 @@ model: sonnet
 - Layout e routing
 
 ### Fase 2 — Testes
+{{#if stack}}
+> Padroes de teste da stack: ver [testing.md](testing.md)
+{{/if}}
 - Renderiza sem crash
 - Exibe conteudo correto baseado em props
 - Handlers de click/interacao
@@ -99,14 +109,20 @@ model: sonnet
 1. Read existing components to understand patterns
 2. Check design system and color tokens
 3. Read rules in `.claude/rules/`
+{{#if stack}}
+4. Read stack patterns in [patterns.md](patterns.md)
+{{/if}}
 
 ### Phase 1 — Create Component
 
+{{#if stack}}
+> Stack-specific patterns ({{stack.label}}): see [patterns.md](patterns.md)
+{{/if}}
+
 **UI Component** (atomic):
-- `forwardRef` for composition
-- `cn()` for class merging
+- Composition with ref forwarding
+- Utility-based class merging
 - Props interface with `className?`
-- `displayName` set
 - Skeleton companion for loading
 
 **Feature Component** (domain):
@@ -122,6 +138,9 @@ model: sonnet
 - Layout and routing
 
 ### Phase 2 — Tests
+{{#if stack}}
+> Stack-specific test patterns: see [testing.md](testing.md)
+{{/if}}
 - Renders without crash
 - Displays correct content based on props
 - Click/interaction handlers

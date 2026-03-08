@@ -1,0 +1,145 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes de Hooks React Native
+
+## renderHook Basico
+
+```tsx
+import { renderHook, act, waitFor } from "@testing-library/react-native";
+import { usePersistedState } from "./usePersistedState";
+
+describe("usePersistedState", () => {
+  it("retorna valor padrao inicialmente", () => {
+    const { result } = renderHook(() => usePersistedState("key", "default"));
+    expect(result.current.value).toBe("default");
+    expect(result.current.loading).toBe(true);
+  });
+
+  it("atualiza valor e persiste", async () => {
+    const { result } = renderHook(() => usePersistedState("key", "default"));
+    await act(async () => {
+      await result.current.update("novo");
+    });
+    expect(result.current.value).toBe("novo");
+  });
+});
+```
+
+## Mock de Navegacao
+
+```tsx
+const mockNavigate = jest.fn();
+const mockGoBack = jest.fn();
+const mockParams = { userId: "123" };
+
+jest.mock("@react-navigation/native", () => ({
+  useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
+  useRoute: () => ({ params: mockParams }),
+  useFocusEffect: jest.fn((cb) => cb()),
+}));
+
+describe("useProfileScreen", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("retorna userId dos params", () => {
+    const { result } = renderHook(() => useProfileScreen());
+    expect(result.current.userId).toBe("123");
+  });
+
+  it("navega para edicao", () => {
+    const { result } = renderHook(() => useProfileScreen());
+    act(() => result.current.goToEdit());
+    expect(mockNavigate).toHaveBeenCalledWith("EditProfile", { userId: "123" });
+  });
+});
+```
+
+## Mock de AsyncStorage
+
+```tsx
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(() => Promise.resolve(null)),
+  setItem: jest.fn(() => Promise.resolve()),
+  removeItem: jest.fn(() => Promise.resolve()),
+}));
+```
+
+## Convencoes
+
+- `renderHook` para testar hooks isoladamente
+- `act` para atualizacoes de estado sincronas
+- `waitFor` para efeitos assincronos
+- Mocks de navegacao no topo do arquivo
+- `beforeEach(() => jest.clearAllMocks())` para isolamento
+{{else}}
+# React Native Hook Testing
+
+## Basic renderHook
+
+```tsx
+import { renderHook, act, waitFor } from "@testing-library/react-native";
+import { usePersistedState } from "./usePersistedState";
+
+describe("usePersistedState", () => {
+  it("returns default value initially", () => {
+    const { result } = renderHook(() => usePersistedState("key", "default"));
+    expect(result.current.value).toBe("default");
+    expect(result.current.loading).toBe(true);
+  });
+
+  it("updates value and persists", async () => {
+    const { result } = renderHook(() => usePersistedState("key", "default"));
+    await act(async () => {
+      await result.current.update("new");
+    });
+    expect(result.current.value).toBe("new");
+  });
+});
+```
+
+## Mocking Navigation
+
+```tsx
+const mockNavigate = jest.fn();
+const mockGoBack = jest.fn();
+const mockParams = { userId: "123" };
+
+jest.mock("@react-navigation/native", () => ({
+  useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
+  useRoute: () => ({ params: mockParams }),
+  useFocusEffect: jest.fn((cb) => cb()),
+}));
+
+describe("useProfileScreen", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("returns userId from params", () => {
+    const { result } = renderHook(() => useProfileScreen());
+    expect(result.current.userId).toBe("123");
+  });
+
+  it("navigates to edit", () => {
+    const { result } = renderHook(() => useProfileScreen());
+    act(() => result.current.goToEdit());
+    expect(mockNavigate).toHaveBeenCalledWith("EditProfile", { userId: "123" });
+  });
+});
+```
+
+## Mocking AsyncStorage
+
+```tsx
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(() => Promise.resolve(null)),
+  setItem: jest.fn(() => Promise.resolve()),
+  removeItem: jest.fn(() => Promise.resolve()),
+}));
+```
+
+## Conventions
+
+- `renderHook` to test hooks in isolation
+- `act` for synchronous state updates
+- `waitFor` for async effects
+- Navigation mocks at top of test file
+- `beforeEach(() => jest.clearAllMocks())` for isolation
+{{/if}}

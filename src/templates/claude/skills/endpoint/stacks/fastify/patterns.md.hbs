@@ -1,0 +1,187 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Fastify para Endpoints
+
+## Estrutura de Rota com Schema
+
+```typescript
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+const recursoSchema = {
+  body: {
+    type: 'object',
+    required: ['nome'],
+    properties: {
+      nome: { type: 'string', minLength: 1 },
+      descricao: { type: 'string' },
+    },
+    additionalProperties: false,
+  },
+  response: {
+    201: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        nome: { type: 'string' },
+      },
+    },
+  },
+};
+
+export default async function recursoRoutes(fastify: FastifyInstance) {
+  fastify.get('/', async (request, reply) => {
+    return fastify.recursoService.findAll(request.query);
+  });
+
+  fastify.get('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
+    return fastify.recursoService.findOne(request.params.id);
+  });
+
+  fastify.post('/', { schema: recursoSchema }, async (request, reply) => {
+    const recurso = await fastify.recursoService.create(request.body);
+    reply.code(201).send(recurso);
+  });
+
+  fastify.delete('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
+    await fastify.recursoService.remove(request.params.id);
+    reply.code(204).send();
+  });
+}
+```
+
+## Plugin de Servico com Decorator
+
+```typescript
+import fp from 'fastify-plugin';
+
+export default fp(async function (fastify) {
+  const service = new RecursoService(fastify.db);
+  fastify.decorate('recursoService', service);
+});
+```
+
+## Hooks
+
+```typescript
+export default async function recursoRoutes(fastify: FastifyInstance) {
+  // Hook no nivel da rota
+  fastify.addHook('onRequest', async (request, reply) => {
+    await request.authenticate();
+  });
+
+  fastify.addHook('preHandler', async (request, reply) => {
+    // validacao adicional, logging
+  });
+
+  // rotas aqui...
+}
+```
+
+## Registro de Rotas
+
+```typescript
+// app.ts
+fastify.register(recursoRoutes, { prefix: '/api/recursos' });
+```
+
+## Convencoes
+- Validacao via JSON Schema no objeto `schema` da rota (automatico)
+- Serialization via `response` schema para performance
+- Plugins encapsulados com `fastify-plugin` quando compartilhados
+- Hooks (`onRequest`, `preHandler`) para auth e pre-processamento
+- Decorators para injetar services na instancia Fastify
+- Async handlers — sem callback, retornar valor diretamente
+- Encapsulamento: plugins registrados em escopo isolado por padrao
+{{else}}
+# Fastify Endpoint Patterns
+
+## Route Structure with Schema
+
+```typescript
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+const resourceSchema = {
+  body: {
+    type: 'object',
+    required: ['name'],
+    properties: {
+      name: { type: 'string', minLength: 1 },
+      description: { type: 'string' },
+    },
+    additionalProperties: false,
+  },
+  response: {
+    201: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        name: { type: 'string' },
+      },
+    },
+  },
+};
+
+export default async function resourceRoutes(fastify: FastifyInstance) {
+  fastify.get('/', async (request, reply) => {
+    return fastify.resourceService.findAll(request.query);
+  });
+
+  fastify.get('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
+    return fastify.resourceService.findOne(request.params.id);
+  });
+
+  fastify.post('/', { schema: resourceSchema }, async (request, reply) => {
+    const resource = await fastify.resourceService.create(request.body);
+    reply.code(201).send(resource);
+  });
+
+  fastify.delete('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
+    await fastify.resourceService.remove(request.params.id);
+    reply.code(204).send();
+  });
+}
+```
+
+## Service Plugin with Decorator
+
+```typescript
+import fp from 'fastify-plugin';
+
+export default fp(async function (fastify) {
+  const service = new ResourceService(fastify.db);
+  fastify.decorate('resourceService', service);
+});
+```
+
+## Hooks
+
+```typescript
+export default async function resourceRoutes(fastify: FastifyInstance) {
+  // Route-level hook
+  fastify.addHook('onRequest', async (request, reply) => {
+    await request.authenticate();
+  });
+
+  fastify.addHook('preHandler', async (request, reply) => {
+    // additional validation, logging
+  });
+
+  // routes here...
+}
+```
+
+## Route Registration
+
+```typescript
+// app.ts
+fastify.register(resourceRoutes, { prefix: '/api/resources' });
+```
+
+## Conventions
+- Validation via JSON Schema in the route `schema` object (automatic)
+- Serialization via `response` schema for performance
+- Encapsulated plugins with `fastify-plugin` when shared
+- Hooks (`onRequest`, `preHandler`) for auth and pre-processing
+- Decorators to inject services into the Fastify instance
+- Async handlers — no callbacks, return value directly
+- Encapsulation: plugins registered in isolated scope by default
+{{/if}}

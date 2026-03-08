@@ -1,0 +1,279 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Prisma para Banco de Dados
+
+## Schema Definition
+
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  tags      Tag[]
+  createdAt DateTime @default(now())
+
+  @@index([authorId])
+  @@map("posts")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+## Client - Queries Basicas
+
+```ts
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+// findMany com filtro e paginacao
+const users = await prisma.user.findMany({
+  where: { role: "ADMIN" },
+  include: { posts: { where: { published: true } } },
+  orderBy: { createdAt: "desc" },
+  skip: 0,
+  take: 10,
+});
+
+// findUnique
+const user = await prisma.user.findUnique({
+  where: { email: "admin@test.com" },
+  select: { id: true, name: true, email: true },
+});
+
+// create
+const newUser = await prisma.user.create({
+  data: {
+    email: "joao@test.com",
+    name: "Joao",
+    posts: {
+      create: [{ title: "Primeiro post" }],
+    },
+  },
+  include: { posts: true },
+});
+
+// update
+const updated = await prisma.user.update({
+  where: { id: userId },
+  data: { name: "Joao Silva" },
+});
+
+// upsert
+const upserted = await prisma.user.upsert({
+  where: { email: "joao@test.com" },
+  update: { name: "Joao Atualizado" },
+  create: { email: "joao@test.com", name: "Joao" },
+});
+```
+
+## Transacoes
+
+```ts
+// Transaction interativa
+const result = await prisma.$transaction(async (tx) => {
+  const user = await tx.user.create({ data: { email: "a@b.com", name: "A" } });
+  const post = await tx.post.create({
+    data: { title: "Post", authorId: user.id },
+  });
+  return { user, post };
+});
+
+// Transaction sequencial
+const [users, posts] = await prisma.$transaction([
+  prisma.user.findMany(),
+  prisma.post.findMany({ where: { published: true } }),
+]);
+```
+
+## Middleware
+
+```ts
+prisma.$use(async (params, next) => {
+  const before = Date.now();
+  const result = await next(params);
+  const after = Date.now();
+  console.log(`${params.model}.${params.action} took ${after - before}ms`);
+  return result;
+});
+```
+
+## Singleton (recomendado)
+
+```ts
+// lib/prisma.ts
+import { PrismaClient } from "@prisma/client";
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+export const prisma =
+  globalForPrisma.prisma ?? new PrismaClient({ log: ["query"] });
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+```
+
+## Convencoes
+
+- Singleton do PrismaClient (nunca multiplas instancias)
+- `@@map` para nomes de tabela em snake_case
+- `@@index` em foreign keys para performance
+- `$transaction` para operacoes atomicas
+- `select` para retornar apenas campos necessarios
+- `include` com filtros para evitar N+1
+{{else}}
+# Prisma Database Patterns
+
+## Schema Definition
+
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  tags      Tag[]
+  createdAt DateTime @default(now())
+
+  @@index([authorId])
+  @@map("posts")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+```
+
+## Client - Basic Queries
+
+```ts
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+// findMany with filter and pagination
+const users = await prisma.user.findMany({
+  where: { role: "ADMIN" },
+  include: { posts: { where: { published: true } } },
+  orderBy: { createdAt: "desc" },
+  skip: 0,
+  take: 10,
+});
+
+// findUnique
+const user = await prisma.user.findUnique({
+  where: { email: "admin@test.com" },
+  select: { id: true, name: true, email: true },
+});
+
+// create
+const newUser = await prisma.user.create({
+  data: {
+    email: "john@test.com",
+    name: "John",
+    posts: {
+      create: [{ title: "First post" }],
+    },
+  },
+  include: { posts: true },
+});
+
+// update
+const updated = await prisma.user.update({
+  where: { id: userId },
+  data: { name: "John Doe" },
+});
+
+// upsert
+const upserted = await prisma.user.upsert({
+  where: { email: "john@test.com" },
+  update: { name: "John Updated" },
+  create: { email: "john@test.com", name: "John" },
+});
+```
+
+## Transactions
+
+```ts
+// Interactive transaction
+const result = await prisma.$transaction(async (tx) => {
+  const user = await tx.user.create({ data: { email: "a@b.com", name: "A" } });
+  const post = await tx.post.create({
+    data: { title: "Post", authorId: user.id },
+  });
+  return { user, post };
+});
+
+// Sequential transaction
+const [users, posts] = await prisma.$transaction([
+  prisma.user.findMany(),
+  prisma.post.findMany({ where: { published: true } }),
+]);
+```
+
+## Middleware
+
+```ts
+prisma.$use(async (params, next) => {
+  const before = Date.now();
+  const result = await next(params);
+  const after = Date.now();
+  console.log(`${params.model}.${params.action} took ${after - before}ms`);
+  return result;
+});
+```
+
+## Singleton (recommended)
+
+```ts
+// lib/prisma.ts
+import { PrismaClient } from "@prisma/client";
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+export const prisma =
+  globalForPrisma.prisma ?? new PrismaClient({ log: ["query"] });
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+```
+
+## Conventions
+
+- PrismaClient singleton (never multiple instances)
+- `@@map` for snake_case table names
+- `@@index` on foreign keys for performance
+- `$transaction` for atomic operations
+- `select` to return only needed fields
+- `include` with filters to avoid N+1
+{{/if}}

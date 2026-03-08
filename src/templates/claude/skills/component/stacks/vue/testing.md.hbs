@@ -1,0 +1,177 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes de Teste Vue (Vue Test Utils)
+
+## Estrutura Base
+
+```ts
+import { mount } from "@vue/test-utils";
+import Button from "./Button.vue";
+
+describe("Button", () => {
+  it("renderiza com texto do slot", () => {
+    const wrapper = mount(Button, {
+      slots: { default: "Salvar" },
+    });
+    expect(wrapper.text()).toContain("Salvar");
+  });
+
+  it("emite click ao clicar", async () => {
+    const wrapper = mount(Button);
+    await wrapper.find("button").trigger("click");
+    expect(wrapper.emitted("click")).toHaveLength(1);
+  });
+});
+```
+
+## mount vs shallowMount
+
+```ts
+// mount — renderiza componentes filhos (integracao)
+const wrapper = mount(UserCard, {
+  props: { user: mockUser },
+});
+
+// shallowMount — stubs componentes filhos (unitario)
+const wrapper = shallowMount(UserCard, {
+  props: { user: mockUser },
+});
+```
+
+## Props e Emits
+
+```ts
+it("aplica variante via prop", () => {
+  const wrapper = mount(Button, {
+    props: { variant: "outline" },
+  });
+  expect(wrapper.classes()).toContain("btn--outline");
+});
+
+it("emite update com valor correto", async () => {
+  const wrapper = mount(Input);
+  await wrapper.find("input").setValue("teste");
+  expect(wrapper.emitted("update:modelValue")?.[0]).toEqual(["teste"]);
+});
+```
+
+## Async e nextTick
+
+```ts
+import { nextTick } from "vue";
+
+it("atualiza DOM apos mudanca de estado", async () => {
+  const wrapper = mount(Counter);
+  await wrapper.find("button").trigger("click");
+  await nextTick();
+  expect(wrapper.find(".count").text()).toBe("1");
+});
+```
+
+## Plugins e Provide
+
+```ts
+const wrapper = mount(Component, {
+  global: {
+    plugins: [router, pinia],
+    provide: { theme: "dark" },
+    stubs: { Teleport: true },
+  },
+});
+```
+
+## Convencoes
+
+- Preferir `mount` para testes de integracao
+- Usar `shallowMount` para testes unitarios isolados
+- Verificar emits via `wrapper.emitted()`
+- Sempre usar `await` com `trigger` e `setValue`
+- Usar `nextTick` quando necessario aguardar reatividade
+{{else}}
+# Vue Testing Patterns (Vue Test Utils)
+
+## Base Structure
+
+```ts
+import { mount } from "@vue/test-utils";
+import Button from "./Button.vue";
+
+describe("Button", () => {
+  it("renders with slot text", () => {
+    const wrapper = mount(Button, {
+      slots: { default: "Save" },
+    });
+    expect(wrapper.text()).toContain("Save");
+  });
+
+  it("emits click when clicked", async () => {
+    const wrapper = mount(Button);
+    await wrapper.find("button").trigger("click");
+    expect(wrapper.emitted("click")).toHaveLength(1);
+  });
+});
+```
+
+## mount vs shallowMount
+
+```ts
+// mount — renders child components (integration)
+const wrapper = mount(UserCard, {
+  props: { user: mockUser },
+});
+
+// shallowMount — stubs child components (unit)
+const wrapper = shallowMount(UserCard, {
+  props: { user: mockUser },
+});
+```
+
+## Props and Emits
+
+```ts
+it("applies variant via prop", () => {
+  const wrapper = mount(Button, {
+    props: { variant: "outline" },
+  });
+  expect(wrapper.classes()).toContain("btn--outline");
+});
+
+it("emits update with correct value", async () => {
+  const wrapper = mount(Input);
+  await wrapper.find("input").setValue("test");
+  expect(wrapper.emitted("update:modelValue")?.[0]).toEqual(["test"]);
+});
+```
+
+## Async and nextTick
+
+```ts
+import { nextTick } from "vue";
+
+it("updates DOM after state change", async () => {
+  const wrapper = mount(Counter);
+  await wrapper.find("button").trigger("click");
+  await nextTick();
+  expect(wrapper.find(".count").text()).toBe("1");
+});
+```
+
+## Plugins and Provide
+
+```ts
+const wrapper = mount(Component, {
+  global: {
+    plugins: [router, pinia],
+    provide: { theme: "dark" },
+    stubs: { Teleport: true },
+  },
+});
+```
+
+## Conventions
+
+- Prefer `mount` for integration tests
+- Use `shallowMount` for isolated unit tests
+- Check emits via `wrapper.emitted()`
+- Always `await` with `trigger` and `setValue`
+- Use `nextTick` when waiting for reactivity updates
+{{/if}}

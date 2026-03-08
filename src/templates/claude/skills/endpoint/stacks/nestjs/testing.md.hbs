@@ -1,0 +1,167 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes NestJS para Endpoints
+
+## Configuracao do Modulo de Teste
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import * as request from 'supertest';
+
+describe('RecursoController', () => {
+  let app: INestApplication;
+  let service: RecursoService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [RecursoController],
+      providers: [
+        {
+          provide: RecursoService,
+          useValue: {
+            findAll: jest.fn(),
+            findOne: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            remove: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    app = module.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+    await app.init();
+
+    service = module.get<RecursoService>(RecursoService);
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+```
+
+## Testes de Integracao com Supertest
+
+```typescript
+  it('POST /recursos - deve criar recurso', async () => {
+    const dto = { nome: 'Teste' };
+    jest.spyOn(service, 'create').mockResolvedValue({ id: '1', ...dto });
+
+    const response = await request(app.getHttpServer())
+      .post('/recursos')
+      .send(dto)
+      .expect(201);
+
+    expect(response.body).toEqual({ id: '1', nome: 'Teste' });
+    expect(service.create).toHaveBeenCalledWith(dto);
+  });
+
+  it('POST /recursos - deve rejeitar body invalido', async () => {
+    await request(app.getHttpServer())
+      .post('/recursos')
+      .send({})
+      .expect(400);
+  });
+
+  it('GET /recursos/:id - deve retornar 404 quando nao encontrado', async () => {
+    jest.spyOn(service, 'findOne').mockRejectedValue(new NotFoundException());
+
+    await request(app.getHttpServer())
+      .get('/recursos/999')
+      .expect(404);
+  });
+});
+```
+
+## Convencoes
+- Sempre chamar `app.close()` no `afterEach`
+- Aplicar os mesmos pipes globais usados no `main.ts`
+- Mockar providers no nivel do modulo de teste
+- Testar validacao de DTOs (campos obrigatorios, tipos)
+- Testar codigos de status HTTP para cada cenario
+- Testar Guards separadamente quando presentes
+{{else}}
+# NestJS Endpoint Testing
+
+## Test Module Setup
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import * as request from 'supertest';
+
+describe('ResourceController', () => {
+  let app: INestApplication;
+  let service: ResourceService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [ResourceController],
+      providers: [
+        {
+          provide: ResourceService,
+          useValue: {
+            findAll: jest.fn(),
+            findOne: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            remove: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    app = module.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+    await app.init();
+
+    service = module.get<ResourceService>(ResourceService);
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+```
+
+## Integration Tests with Supertest
+
+```typescript
+  it('POST /resources - should create resource', async () => {
+    const dto = { name: 'Test' };
+    jest.spyOn(service, 'create').mockResolvedValue({ id: '1', ...dto });
+
+    const response = await request(app.getHttpServer())
+      .post('/resources')
+      .send(dto)
+      .expect(201);
+
+    expect(response.body).toEqual({ id: '1', name: 'Test' });
+    expect(service.create).toHaveBeenCalledWith(dto);
+  });
+
+  it('POST /resources - should reject invalid body', async () => {
+    await request(app.getHttpServer())
+      .post('/resources')
+      .send({})
+      .expect(400);
+  });
+
+  it('GET /resources/:id - should return 404 when not found', async () => {
+    jest.spyOn(service, 'findOne').mockRejectedValue(new NotFoundException());
+
+    await request(app.getHttpServer())
+      .get('/resources/999')
+      .expect(404);
+  });
+});
+```
+
+## Conventions
+- Always call `app.close()` in `afterEach`
+- Apply the same global pipes used in `main.ts`
+- Mock providers at the test module level
+- Test DTO validation (required fields, types)
+- Test HTTP status codes for each scenario
+- Test Guards separately when present
+{{/if}}

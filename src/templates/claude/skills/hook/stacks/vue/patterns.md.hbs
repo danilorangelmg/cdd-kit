@@ -1,0 +1,247 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Vue para Composables
+
+## Estrutura Base
+
+```ts
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+
+export function useCounter(initial = 0) {
+  const count = ref(initial);
+
+  const doubled = computed(() => count.value * 2);
+
+  function increment() { count.value++; }
+  function decrement() { count.value--; }
+  function reset() { count.value = initial; }
+
+  return { count, doubled, increment, decrement, reset };
+}
+```
+
+## ref, computed, watch
+
+```ts
+import { ref, computed, watch, watchEffect } from "vue";
+
+export function useSearch(items: Ref<Item[]>) {
+  const query = ref("");
+  const debouncedQuery = ref("");
+
+  // computed — valor derivado
+  const filtered = computed(() =>
+    items.value.filter((item) =>
+      item.name.toLowerCase().includes(debouncedQuery.value.toLowerCase())
+    )
+  );
+
+  // watch — reage a mudancas especificas
+  watch(query, (newVal) => {
+    const timer = setTimeout(() => (debouncedQuery.value = newVal), 300);
+    return () => clearTimeout(timer);
+  });
+
+  // watchEffect — reage a todas dependencias
+  watchEffect(() => {
+    console.log(`Buscando: ${debouncedQuery.value}`);
+  });
+
+  return { query, filtered };
+}
+```
+
+## Lifecycle Hooks
+
+```ts
+import { onMounted, onUnmounted } from "vue";
+
+export function useWindowSize() {
+  const width = ref(0);
+  const height = ref(0);
+
+  function update() {
+    width.value = window.innerWidth;
+    height.value = window.innerHeight;
+  }
+
+  onMounted(() => {
+    update();
+    window.addEventListener("resize", update);
+  });
+
+  onUnmounted(() => {
+    window.removeEventListener("resize", update);
+  });
+
+  return { width, height };
+}
+```
+
+## provide / inject
+
+```ts
+import { provide, inject, type InjectionKey } from "vue";
+
+export const ThemeKey: InjectionKey<Ref<string>> = Symbol("theme");
+
+// No componente pai
+export function useThemeProvider(initial = "light") {
+  const theme = ref(initial);
+  provide(ThemeKey, theme);
+  return { theme };
+}
+
+// No componente filho
+export function useTheme() {
+  const theme = inject(ThemeKey);
+  if (!theme) throw new Error("useTheme requer ThemeProvider");
+  return { theme };
+}
+```
+
+## VueUse (Referencia)
+
+```ts
+import { useLocalStorage, useDark, useToggle } from "@vueuse/core";
+
+export function useAppSettings() {
+  const isDark = useDark();
+  const toggleDark = useToggle(isDark);
+  const locale = useLocalStorage("app-locale", "pt-BR");
+
+  return { isDark, toggleDark, locale };
+}
+```
+
+## Convencoes
+
+- Prefixo `use` obrigatorio
+- Retornar refs e funcoes (nunca valores brutos)
+- Cleanup em `onUnmounted`
+- `InjectionKey` tipada para provide/inject
+- Usar VueUse para utilidades comuns
+- Composables devem ser chamados apenas no `setup()`
+{{else}}
+# Vue Composable Patterns
+
+## Base Structure
+
+```ts
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+
+export function useCounter(initial = 0) {
+  const count = ref(initial);
+
+  const doubled = computed(() => count.value * 2);
+
+  function increment() { count.value++; }
+  function decrement() { count.value--; }
+  function reset() { count.value = initial; }
+
+  return { count, doubled, increment, decrement, reset };
+}
+```
+
+## ref, computed, watch
+
+```ts
+import { ref, computed, watch, watchEffect } from "vue";
+
+export function useSearch(items: Ref<Item[]>) {
+  const query = ref("");
+  const debouncedQuery = ref("");
+
+  // computed — derived value
+  const filtered = computed(() =>
+    items.value.filter((item) =>
+      item.name.toLowerCase().includes(debouncedQuery.value.toLowerCase())
+    )
+  );
+
+  // watch — react to specific changes
+  watch(query, (newVal) => {
+    const timer = setTimeout(() => (debouncedQuery.value = newVal), 300);
+    return () => clearTimeout(timer);
+  });
+
+  // watchEffect — react to all dependencies
+  watchEffect(() => {
+    console.log(`Searching: ${debouncedQuery.value}`);
+  });
+
+  return { query, filtered };
+}
+```
+
+## Lifecycle Hooks
+
+```ts
+import { onMounted, onUnmounted } from "vue";
+
+export function useWindowSize() {
+  const width = ref(0);
+  const height = ref(0);
+
+  function update() {
+    width.value = window.innerWidth;
+    height.value = window.innerHeight;
+  }
+
+  onMounted(() => {
+    update();
+    window.addEventListener("resize", update);
+  });
+
+  onUnmounted(() => {
+    window.removeEventListener("resize", update);
+  });
+
+  return { width, height };
+}
+```
+
+## provide / inject
+
+```ts
+import { provide, inject, type InjectionKey } from "vue";
+
+export const ThemeKey: InjectionKey<Ref<string>> = Symbol("theme");
+
+// In parent component
+export function useThemeProvider(initial = "light") {
+  const theme = ref(initial);
+  provide(ThemeKey, theme);
+  return { theme };
+}
+
+// In child component
+export function useTheme() {
+  const theme = inject(ThemeKey);
+  if (!theme) throw new Error("useTheme requires ThemeProvider");
+  return { theme };
+}
+```
+
+## VueUse (Reference)
+
+```ts
+import { useLocalStorage, useDark, useToggle } from "@vueuse/core";
+
+export function useAppSettings() {
+  const isDark = useDark();
+  const toggleDark = useToggle(isDark);
+  const locale = useLocalStorage("app-locale", "en");
+
+  return { isDark, toggleDark, locale };
+}
+```
+
+## Conventions
+
+- `use` prefix is mandatory
+- Return refs and functions (never raw values)
+- Cleanup in `onUnmounted`
+- Typed `InjectionKey` for provide/inject
+- Use VueUse for common utilities
+- Composables must only be called inside `setup()`
+{{/if}}

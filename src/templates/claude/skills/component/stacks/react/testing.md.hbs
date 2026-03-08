@@ -1,0 +1,133 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes de Teste React (Testing Library)
+
+## Estrutura Base
+
+```tsx
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Button } from "./Button";
+
+describe("Button", () => {
+  it("renderiza com texto correto", () => {
+    render(<Button>Salvar</Button>);
+    expect(screen.getByRole("button", { name: "Salvar" })).toBeInTheDocument();
+  });
+
+  it("chama onClick ao clicar", async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    render(<Button onClick={onClick}>Salvar</Button>);
+
+    await user.click(screen.getByRole("button"));
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+});
+```
+
+## Queries (ordem de prioridade)
+
+1. `getByRole` — preferido (acessibilidade)
+2. `getByLabelText` — para campos de formulario
+3. `getByPlaceholderText` — alternativa para inputs
+4. `getByText` — para texto visivel
+5. `getByTestId` — ultimo recurso
+
+## Padroes Assincronos
+
+```tsx
+import { render, screen, waitFor } from "@testing-library/react";
+
+it("exibe dados apos carregamento", async () => {
+  render(<UserList />);
+
+  expect(screen.getByText("Carregando...")).toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.getByText("Maria")).toBeInTheDocument();
+  });
+});
+```
+
+## within — Escopo de busca
+
+```tsx
+import { within } from "@testing-library/react";
+
+const row = screen.getByRole("row", { name: /maria/i });
+expect(within(row).getByText("Ativo")).toBeInTheDocument();
+```
+
+## Convencoes
+
+- Usar `userEvent` (nunca `fireEvent`) para interacoes
+- Sempre chamar `userEvent.setup()` antes do render
+- Queries por role/label primeiro, `data-testid` como ultimo recurso
+- Testar comportamento, nao detalhes de implementacao
+- Um `expect` principal por teste (asserts auxiliares sao ok)
+{{else}}
+# React Testing Patterns (Testing Library)
+
+## Base Structure
+
+```tsx
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Button } from "./Button";
+
+describe("Button", () => {
+  it("renders with correct text", () => {
+    render(<Button>Save</Button>);
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+  });
+
+  it("calls onClick when clicked", async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    render(<Button onClick={onClick}>Save</Button>);
+
+    await user.click(screen.getByRole("button"));
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+});
+```
+
+## Queries (priority order)
+
+1. `getByRole` — preferred (accessibility)
+2. `getByLabelText` — for form fields
+3. `getByPlaceholderText` — alternative for inputs
+4. `getByText` — for visible text
+5. `getByTestId` — last resort
+
+## Async Patterns
+
+```tsx
+import { render, screen, waitFor } from "@testing-library/react";
+
+it("displays data after loading", async () => {
+  render(<UserList />);
+
+  expect(screen.getByText("Loading...")).toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.getByText("Maria")).toBeInTheDocument();
+  });
+});
+```
+
+## within — Scoped Queries
+
+```tsx
+import { within } from "@testing-library/react";
+
+const row = screen.getByRole("row", { name: /maria/i });
+expect(within(row).getByText("Active")).toBeInTheDocument();
+```
+
+## Conventions
+
+- Use `userEvent` (never `fireEvent`) for interactions
+- Always call `userEvent.setup()` before render
+- Query by role/label first, `data-testid` as last resort
+- Test behavior, not implementation details
+- One main `expect` per test (auxiliary asserts are ok)
+{{/if}}

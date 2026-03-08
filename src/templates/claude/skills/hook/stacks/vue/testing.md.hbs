@@ -1,0 +1,219 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes de Teste para Composables Vue
+
+## Wrapper com createApp
+
+```ts
+import { createApp, ref } from "vue";
+import { useCounter } from "./useCounter";
+
+function withSetup<T>(composable: () => T): T {
+  let result: T;
+
+  const app = createApp({
+    setup() {
+      result = composable();
+      return () => {};
+    },
+  });
+
+  app.mount(document.createElement("div"));
+  return result!;
+}
+
+describe("useCounter", () => {
+  it("inicia com valor padrao", () => {
+    const { count } = withSetup(() => useCounter());
+    expect(count.value).toBe(0);
+  });
+
+  it("incrementa corretamente", () => {
+    const { count, increment } = withSetup(() => useCounter());
+    increment();
+    expect(count.value).toBe(1);
+  });
+});
+```
+
+## Testando com mount (componente wrapper)
+
+```ts
+import { mount } from "@vue/test-utils";
+import { defineComponent } from "vue";
+import { useSearch } from "./useSearch";
+
+function mountComposable<T>(composable: () => T) {
+  let result: T;
+
+  const TestComponent = defineComponent({
+    setup() {
+      result = composable();
+      return { ...result };
+    },
+    template: "<div />",
+  });
+
+  const wrapper = mount(TestComponent);
+  return { result: result!, wrapper };
+}
+
+describe("useSearch", () => {
+  it("filtra itens por query", async () => {
+    const items = ref([{ name: "Alice" }, { name: "Bob" }]);
+    const { result } = mountComposable(() => useSearch(items));
+
+    result.query.value = "Ali";
+    await nextTick();
+
+    expect(result.filtered.value).toHaveLength(1);
+  });
+});
+```
+
+## Testando com Plugins (Pinia, Router)
+
+```ts
+import { setActivePinia, createPinia } from "pinia";
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
+
+it("usa store do Pinia", () => {
+  const { items } = withSetup(() => useItems());
+  expect(items.value).toEqual([]);
+});
+```
+
+## Testando Lifecycle Hooks
+
+```ts
+it("limpa event listeners ao desmontar", () => {
+  const addSpy = vi.spyOn(window, "addEventListener");
+  const removeSpy = vi.spyOn(window, "removeEventListener");
+
+  const { wrapper } = mountComposable(() => useWindowSize());
+  expect(addSpy).toHaveBeenCalledWith("resize", expect.any(Function));
+
+  wrapper.unmount();
+  expect(removeSpy).toHaveBeenCalledWith("resize", expect.any(Function));
+});
+```
+
+## Convencoes
+
+- Usar helper `withSetup` para composables simples
+- Usar `mountComposable` quando precisar de lifecycle ou DOM
+- `setActivePinia` no `beforeEach` para testes com Pinia
+- Testar valores reativos via `.value`
+- Verificar cleanup de lifecycle hooks desmontando wrapper
+{{else}}
+# Vue Composable Testing Patterns
+
+## Wrapper with createApp
+
+```ts
+import { createApp, ref } from "vue";
+import { useCounter } from "./useCounter";
+
+function withSetup<T>(composable: () => T): T {
+  let result: T;
+
+  const app = createApp({
+    setup() {
+      result = composable();
+      return () => {};
+    },
+  });
+
+  app.mount(document.createElement("div"));
+  return result!;
+}
+
+describe("useCounter", () => {
+  it("starts with default value", () => {
+    const { count } = withSetup(() => useCounter());
+    expect(count.value).toBe(0);
+  });
+
+  it("increments correctly", () => {
+    const { count, increment } = withSetup(() => useCounter());
+    increment();
+    expect(count.value).toBe(1);
+  });
+});
+```
+
+## Testing with mount (wrapper component)
+
+```ts
+import { mount } from "@vue/test-utils";
+import { defineComponent } from "vue";
+import { useSearch } from "./useSearch";
+
+function mountComposable<T>(composable: () => T) {
+  let result: T;
+
+  const TestComponent = defineComponent({
+    setup() {
+      result = composable();
+      return { ...result };
+    },
+    template: "<div />",
+  });
+
+  const wrapper = mount(TestComponent);
+  return { result: result!, wrapper };
+}
+
+describe("useSearch", () => {
+  it("filters items by query", async () => {
+    const items = ref([{ name: "Alice" }, { name: "Bob" }]);
+    const { result } = mountComposable(() => useSearch(items));
+
+    result.query.value = "Ali";
+    await nextTick();
+
+    expect(result.filtered.value).toHaveLength(1);
+  });
+});
+```
+
+## Testing with Plugins (Pinia, Router)
+
+```ts
+import { setActivePinia, createPinia } from "pinia";
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
+
+it("uses Pinia store", () => {
+  const { items } = withSetup(() => useItems());
+  expect(items.value).toEqual([]);
+});
+```
+
+## Testing Lifecycle Hooks
+
+```ts
+it("cleans up event listeners on unmount", () => {
+  const addSpy = vi.spyOn(window, "addEventListener");
+  const removeSpy = vi.spyOn(window, "removeEventListener");
+
+  const { wrapper } = mountComposable(() => useWindowSize());
+  expect(addSpy).toHaveBeenCalledWith("resize", expect.any(Function));
+
+  wrapper.unmount();
+  expect(removeSpy).toHaveBeenCalledWith("resize", expect.any(Function));
+});
+```
+
+## Conventions
+
+- Use `withSetup` helper for simple composables
+- Use `mountComposable` when lifecycle or DOM is needed
+- `setActivePinia` in `beforeEach` for Pinia tests
+- Test reactive values via `.value`
+- Verify lifecycle cleanup by unmounting wrapper
+{{/if}}

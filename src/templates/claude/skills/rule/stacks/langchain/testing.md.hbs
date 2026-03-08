@@ -1,0 +1,169 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes LangChain para Rules
+
+## Mock de LLM com FakeLLM
+
+```python
+import pytest
+from langchain_core.language_models.fake import FakeListLLM
+from langchain_core.messages import AIMessage
+
+def make_fake_llm(responses: list[str]) -> FakeListLLM:
+    return FakeListLLM(responses=responses)
+
+def test_chain_retorna_analise():
+    fake_llm = make_fake_llm(["positivo"])
+    chain = prompt | fake_llm | StrOutputParser()
+    result = chain.invoke({"text": "Adorei o produto!"})
+    assert result == "positivo"
+```
+
+## Mock de ChatModel
+
+```python
+from langchain_core.language_models.fake_chat_models import FakeChatModel
+from langchain_core.messages import AIMessage
+
+def test_chat_chain():
+    fake_chat = FakeChatModel(messages=iter([
+        AIMessage(content='{"sentiment": "positive", "confidence": 0.95}'),
+    ]))
+    chain = prompt | fake_chat | json_parser
+    result = chain.invoke({"text": "Great product!"})
+    assert result["sentiment"] == "positive"
+```
+
+## Testando Structured Output
+
+```python
+from unittest.mock import MagicMock, patch
+
+def test_structured_output():
+    expected = ReviewResult(approved=True, issues=[], suggestions=["Adicionar docstrings"])
+    mock_llm = MagicMock()
+    mock_llm.with_structured_output.return_value.invoke.return_value = expected
+
+    result = review_chain(mock_llm, "def add(a, b): return a + b")
+    assert result.approved is True
+    assert len(result.suggestions) == 1
+```
+
+## Testando Chains com invoke
+
+```python
+def test_chain_end_to_end():
+    fake_llm = make_fake_llm(["Paris e a capital da Franca."])
+    chain = build_qa_chain(llm=fake_llm)
+    result = chain.invoke({"question": "Qual e a capital da Franca?"})
+    assert "Paris" in result
+```
+
+## Fixture para LLM
+
+```python
+@pytest.fixture
+def fake_llm():
+    return FakeListLLM(responses=["resposta mock"])
+
+@pytest.fixture
+def qa_chain(fake_llm):
+    return build_qa_chain(llm=fake_llm)
+
+def test_qa(qa_chain):
+    result = qa_chain.invoke({"question": "teste"})
+    assert result == "resposta mock"
+```
+
+## Convencoes
+
+- `FakeListLLM` / `FakeChatModel` para testes unitarios (nunca chamar API real)
+- Um teste por comportamento da chain
+- Fixtures para LLM mock e chains
+- Testar output parsers separadamente
+- `MagicMock` para `with_structured_output` quando necessario
+- Testes de integracao separados (marcados com `@pytest.mark.integration`)
+{{else}}
+# LangChain Rule Testing
+
+## Mock LLM with FakeLLM
+
+```python
+import pytest
+from langchain_core.language_models.fake import FakeListLLM
+from langchain_core.messages import AIMessage
+
+def make_fake_llm(responses: list[str]) -> FakeListLLM:
+    return FakeListLLM(responses=responses)
+
+def test_chain_returns_analysis():
+    fake_llm = make_fake_llm(["positive"])
+    chain = prompt | fake_llm | StrOutputParser()
+    result = chain.invoke({"text": "I love this product!"})
+    assert result == "positive"
+```
+
+## Mock ChatModel
+
+```python
+from langchain_core.language_models.fake_chat_models import FakeChatModel
+from langchain_core.messages import AIMessage
+
+def test_chat_chain():
+    fake_chat = FakeChatModel(messages=iter([
+        AIMessage(content='{"sentiment": "positive", "confidence": 0.95}'),
+    ]))
+    chain = prompt | fake_chat | json_parser
+    result = chain.invoke({"text": "Great product!"})
+    assert result["sentiment"] == "positive"
+```
+
+## Testing Structured Output
+
+```python
+from unittest.mock import MagicMock, patch
+
+def test_structured_output():
+    expected = ReviewResult(approved=True, issues=[], suggestions=["Add docstrings"])
+    mock_llm = MagicMock()
+    mock_llm.with_structured_output.return_value.invoke.return_value = expected
+
+    result = review_chain(mock_llm, "def add(a, b): return a + b")
+    assert result.approved is True
+    assert len(result.suggestions) == 1
+```
+
+## Testing Chains with invoke
+
+```python
+def test_chain_end_to_end():
+    fake_llm = make_fake_llm(["Paris is the capital of France."])
+    chain = build_qa_chain(llm=fake_llm)
+    result = chain.invoke({"question": "What is the capital of France?"})
+    assert "Paris" in result
+```
+
+## LLM Fixture
+
+```python
+@pytest.fixture
+def fake_llm():
+    return FakeListLLM(responses=["mock response"])
+
+@pytest.fixture
+def qa_chain(fake_llm):
+    return build_qa_chain(llm=fake_llm)
+
+def test_qa(qa_chain):
+    result = qa_chain.invoke({"question": "test"})
+    assert result == "mock response"
+```
+
+## Conventions
+
+- `FakeListLLM` / `FakeChatModel` for unit tests (never call real API)
+- One test per chain behavior
+- Fixtures for mock LLM and chains
+- Test output parsers separately
+- `MagicMock` for `with_structured_output` when needed
+- Integration tests separated (marked with `@pytest.mark.integration`)
+{{/if}}

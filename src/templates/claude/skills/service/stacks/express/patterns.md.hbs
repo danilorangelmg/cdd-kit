@@ -1,0 +1,195 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Express para Services
+
+## Service Baseado em Classe
+
+```typescript
+export class RecursoService {
+  constructor(private readonly repository: RecursoRepository) {}
+
+  async findAll(filtros?: ListRecursoFiltros): Promise<Recurso[]> {
+    return this.repository.findMany(filtros);
+  }
+
+  async findOne(id: string): Promise<Recurso> {
+    const recurso = await this.repository.findById(id);
+    if (!recurso) {
+      throw new NotFoundError(`Recurso ${id} nao encontrado`);
+    }
+    return recurso;
+  }
+
+  async create(dados: CreateRecursoInput): Promise<Recurso> {
+    return this.repository.create(dados);
+  }
+
+  async update(id: string, dados: UpdateRecursoInput): Promise<Recurso> {
+    await this.findOne(id);
+    return this.repository.update(id, dados);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.findOne(id);
+    await this.repository.delete(id);
+  }
+}
+```
+
+## Injecao Manual de Dependencias
+
+```typescript
+// Composicao na inicializacao
+const db = new PrismaClient();
+const recursoRepository = new PrismaRecursoRepository(db);
+const recursoService = new RecursoService(recursoRepository);
+const recursoRouter = createRecursoRouter(recursoService);
+
+app.use('/api/recursos', recursoRouter);
+```
+
+## Padrao Repository
+
+```typescript
+// Interface
+export interface RecursoRepository {
+  findMany(filtros?: ListRecursoFiltros): Promise<Recurso[]>;
+  findById(id: string): Promise<Recurso | null>;
+  create(dados: CreateRecursoInput): Promise<Recurso>;
+  update(id: string, dados: UpdateRecursoInput): Promise<Recurso>;
+  delete(id: string): Promise<void>;
+}
+
+// Implementacao
+export class PrismaRecursoRepository implements RecursoRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async findById(id: string): Promise<Recurso | null> {
+    return this.prisma.recurso.findUnique({ where: { id } });
+  }
+  // ...demais metodos
+}
+```
+
+## Erros de Dominio
+
+```typescript
+export class NotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
+
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+```
+
+## Convencoes
+- Service recebe dependencias via construtor (sem decorators)
+- Composicao manual na raiz da aplicacao (composition root)
+- Interface de repositorio para desacoplamento
+- Erros de dominio customizados (sem usar erros HTTP)
+- Service nao conhece Express (sem req/res)
+- Um service por dominio, metodos com responsabilidade unica
+{{else}}
+# Express Service Patterns
+
+## Class-Based Service
+
+```typescript
+export class ResourceService {
+  constructor(private readonly repository: ResourceRepository) {}
+
+  async findAll(filters?: ListResourceFilters): Promise<Resource[]> {
+    return this.repository.findMany(filters);
+  }
+
+  async findOne(id: string): Promise<Resource> {
+    const resource = await this.repository.findById(id);
+    if (!resource) {
+      throw new NotFoundError(`Resource ${id} not found`);
+    }
+    return resource;
+  }
+
+  async create(data: CreateResourceInput): Promise<Resource> {
+    return this.repository.create(data);
+  }
+
+  async update(id: string, data: UpdateResourceInput): Promise<Resource> {
+    await this.findOne(id);
+    return this.repository.update(id, data);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.findOne(id);
+    await this.repository.delete(id);
+  }
+}
+```
+
+## Manual Dependency Injection
+
+```typescript
+// Composition at startup
+const db = new PrismaClient();
+const resourceRepository = new PrismaResourceRepository(db);
+const resourceService = new ResourceService(resourceRepository);
+const resourceRouter = createResourceRouter(resourceService);
+
+app.use('/api/resources', resourceRouter);
+```
+
+## Repository Pattern
+
+```typescript
+// Interface
+export interface ResourceRepository {
+  findMany(filters?: ListResourceFilters): Promise<Resource[]>;
+  findById(id: string): Promise<Resource | null>;
+  create(data: CreateResourceInput): Promise<Resource>;
+  update(id: string, data: UpdateResourceInput): Promise<Resource>;
+  delete(id: string): Promise<void>;
+}
+
+// Implementation
+export class PrismaResourceRepository implements ResourceRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async findById(id: string): Promise<Resource | null> {
+    return this.prisma.resource.findUnique({ where: { id } });
+  }
+  // ...other methods
+}
+```
+
+## Domain Errors
+
+```typescript
+export class NotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
+
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+```
+
+## Conventions
+- Service receives dependencies via constructor (no decorators)
+- Manual composition at the application root (composition root)
+- Repository interface for decoupling
+- Custom domain errors (don't use HTTP errors)
+- Service doesn't know Express (no req/res)
+- One service per domain, single-responsibility methods
+{{/if}}

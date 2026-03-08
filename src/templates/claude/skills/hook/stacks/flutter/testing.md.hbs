@@ -1,0 +1,255 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes de Estado Flutter
+
+## Testando ChangeNotifier
+
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:my_app/notifiers/counter_notifier.dart';
+
+void main() {
+  late CounterNotifier notifier;
+
+  setUp(() {
+    notifier = CounterNotifier();
+  });
+
+  test('valor inicial e zero', () {
+    expect(notifier.count, 0);
+  });
+
+  test('increment aumenta o contador', () {
+    notifier.increment();
+    expect(notifier.count, 1);
+  });
+
+  test('decrement nao vai abaixo de zero', () {
+    notifier.decrement();
+    expect(notifier.count, 0);
+  });
+
+  test('notifica listeners ao mudar', () {
+    var notified = false;
+    notifier.addListener(() => notified = true);
+    notifier.increment();
+    expect(notified, isTrue);
+  });
+}
+```
+
+## Testando BLoC
+
+```dart
+import 'package:bloc_test/bloc_test.dart';
+import 'package:my_app/blocs/counter_bloc.dart';
+
+void main() {
+  blocTest<CounterBloc, int>(
+    'emite [1] quando Increment e adicionado',
+    build: () => CounterBloc(),
+    act: (bloc) => bloc.add(Increment()),
+    expect: () => [1],
+  );
+
+  blocTest<CounterBloc, int>(
+    'emite [1, 2, 1] para sequencia de eventos',
+    build: () => CounterBloc(),
+    act: (bloc) {
+      bloc.add(Increment());
+      bloc.add(Increment());
+      bloc.add(Decrement());
+    },
+    expect: () => [1, 2, 1],
+  );
+}
+```
+
+## Testando Riverpod
+
+```dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:my_app/providers/counter_provider.dart';
+
+void main() {
+  test('counterProvider inicia em zero', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    expect(container.read(counterProvider), 0);
+  });
+
+  test('counterProvider incrementa', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    container.read(counterProvider.notifier).increment();
+    expect(container.read(counterProvider), 1);
+  });
+
+  test('provider com override de dependencia', () {
+    final container = ProviderContainer(
+      overrides: [
+        userRepositoryProvider.overrideWithValue(MockUserRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+  });
+}
+```
+
+## Mock de Notifiers
+
+```dart
+class MockCounterNotifier extends Mock implements CounterNotifier {}
+
+// Em widget tests com Provider
+testWidgets('exibe contador', (tester) async {
+  final mockNotifier = MockCounterNotifier();
+  when(() => mockNotifier.count).thenReturn(42);
+
+  await tester.pumpWidget(
+    ChangeNotifierProvider<CounterNotifier>.value(
+      value: mockNotifier,
+      child: const MaterialApp(home: CounterScreen()),
+    ),
+  );
+  expect(find.text('42'), findsOneWidget);
+});
+```
+
+## Convencoes
+
+- `setUp` para criar instancia nova a cada teste
+- `blocTest` para testar BLoCs (nao testar manualmente)
+- `ProviderContainer` para testes unitarios de providers
+- `addTearDown(container.dispose)` para limpeza
+- Overrides para injetar mocks em testes de integracao
+{{else}}
+# Flutter State Testing
+
+## Testing ChangeNotifier
+
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:my_app/notifiers/counter_notifier.dart';
+
+void main() {
+  late CounterNotifier notifier;
+
+  setUp(() {
+    notifier = CounterNotifier();
+  });
+
+  test('initial value is zero', () {
+    expect(notifier.count, 0);
+  });
+
+  test('increment increases counter', () {
+    notifier.increment();
+    expect(notifier.count, 1);
+  });
+
+  test('decrement does not go below zero', () {
+    notifier.decrement();
+    expect(notifier.count, 0);
+  });
+
+  test('notifies listeners on change', () {
+    var notified = false;
+    notifier.addListener(() => notified = true);
+    notifier.increment();
+    expect(notified, isTrue);
+  });
+}
+```
+
+## Testing BLoC
+
+```dart
+import 'package:bloc_test/bloc_test.dart';
+import 'package:my_app/blocs/counter_bloc.dart';
+
+void main() {
+  blocTest<CounterBloc, int>(
+    'emits [1] when Increment is added',
+    build: () => CounterBloc(),
+    act: (bloc) => bloc.add(Increment()),
+    expect: () => [1],
+  );
+
+  blocTest<CounterBloc, int>(
+    'emits [1, 2, 1] for event sequence',
+    build: () => CounterBloc(),
+    act: (bloc) {
+      bloc.add(Increment());
+      bloc.add(Increment());
+      bloc.add(Decrement());
+    },
+    expect: () => [1, 2, 1],
+  );
+}
+```
+
+## Testing Riverpod
+
+```dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:my_app/providers/counter_provider.dart';
+
+void main() {
+  test('counterProvider starts at zero', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    expect(container.read(counterProvider), 0);
+  });
+
+  test('counterProvider increments', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    container.read(counterProvider.notifier).increment();
+    expect(container.read(counterProvider), 1);
+  });
+
+  test('provider with dependency override', () {
+    final container = ProviderContainer(
+      overrides: [
+        userRepositoryProvider.overrideWithValue(MockUserRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+  });
+}
+```
+
+## Mock Notifiers
+
+```dart
+class MockCounterNotifier extends Mock implements CounterNotifier {}
+
+// In widget tests with Provider
+testWidgets('displays counter', (tester) async {
+  final mockNotifier = MockCounterNotifier();
+  when(() => mockNotifier.count).thenReturn(42);
+
+  await tester.pumpWidget(
+    ChangeNotifierProvider<CounterNotifier>.value(
+      value: mockNotifier,
+      child: const MaterialApp(home: CounterScreen()),
+    ),
+  );
+  expect(find.text('42'), findsOneWidget);
+});
+```
+
+## Conventions
+
+- `setUp` to create fresh instance for each test
+- `blocTest` for testing BLoCs (don't test manually)
+- `ProviderContainer` for unit testing providers
+- `addTearDown(container.dispose)` for cleanup
+- Overrides to inject mocks in integration tests
+{{/if}}

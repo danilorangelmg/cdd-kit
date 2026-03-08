@@ -1,0 +1,201 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes CrewAI para Rules
+
+## Mock de Agent
+
+```python
+import pytest
+from unittest.mock import MagicMock, patch
+from crewai import Agent, Task, Crew
+
+@pytest.fixture
+def mock_agent():
+    agent = MagicMock(spec=Agent)
+    agent.role = "Pesquisador"
+    agent.goal = "Pesquisar sobre {topic}"
+    agent.backstory = "Pesquisador experiente."
+    agent.tools = []
+    return agent
+
+def test_agent_tem_role_definido(mock_agent):
+    assert mock_agent.role == "Pesquisador"
+```
+
+## Testando Task Execution
+
+```python
+@pytest.fixture
+def mock_task(mock_agent):
+    return Task(
+        description="Pesquisar sobre IA",
+        expected_output="Relatorio com fontes",
+        agent=mock_agent,
+    )
+
+def test_task_tem_expected_output(mock_task):
+    assert "Relatorio" in mock_task.expected_output
+    assert mock_task.agent is not None
+```
+
+## Testando Crew
+
+```python
+@patch("crewai.Crew.kickoff")
+def test_crew_executa_sequencialmente(mock_kickoff, mock_agent):
+    mock_kickoff.return_value = "Resultado da pesquisa sobre IA Generativa"
+
+    research_task = Task(
+        description="Pesquisar sobre {topic}",
+        expected_output="Relatorio",
+        agent=mock_agent,
+    )
+
+    crew = Crew(
+        agents=[mock_agent],
+        tasks=[research_task],
+        verbose=False,
+    )
+
+    result = crew.kickoff(inputs={"topic": "IA Generativa"})
+    assert "IA Generativa" in result
+    mock_kickoff.assert_called_once()
+```
+
+## Testando Tools do Agent
+
+```python
+def test_agent_possui_tools_necessarias():
+    agent = Agent(
+        role="Pesquisador",
+        goal="Pesquisar",
+        backstory="Experiente",
+        tools=[search_tool, scrape_tool],
+    )
+    tool_names = [t.name for t in agent.tools]
+    assert "search" in tool_names
+    assert "scrape" in tool_names
+```
+
+## Testando Context entre Tasks
+
+```python
+def test_task_context_encadeamento():
+    task1 = Task(description="Pesquisar", expected_output="Dados", agent=mock_agent)
+    task2 = Task(
+        description="Escrever",
+        expected_output="Artigo",
+        agent=mock_agent,
+        context=[task1],
+    )
+    assert task1 in task2.context
+```
+
+## Convencoes
+
+- `MagicMock(spec=Agent)` para mocks com interface validada
+- `@patch("crewai.Crew.kickoff")` para evitar execucao real
+- Fixtures para agents e tasks reutilizaveis
+- Testar configuracao (roles, tools, context) separado de execucao
+- Testes de integracao com `@pytest.mark.integration`
+- `verbose=False` em testes para output limpo
+{{else}}
+# CrewAI Rule Testing
+
+## Mock Agent
+
+```python
+import pytest
+from unittest.mock import MagicMock, patch
+from crewai import Agent, Task, Crew
+
+@pytest.fixture
+def mock_agent():
+    agent = MagicMock(spec=Agent)
+    agent.role = "Researcher"
+    agent.goal = "Research about {topic}"
+    agent.backstory = "Experienced researcher."
+    agent.tools = []
+    return agent
+
+def test_agent_has_defined_role(mock_agent):
+    assert mock_agent.role == "Researcher"
+```
+
+## Testing Task Execution
+
+```python
+@pytest.fixture
+def mock_task(mock_agent):
+    return Task(
+        description="Research about AI",
+        expected_output="Report with sources",
+        agent=mock_agent,
+    )
+
+def test_task_has_expected_output(mock_task):
+    assert "Report" in mock_task.expected_output
+    assert mock_task.agent is not None
+```
+
+## Testing Crew
+
+```python
+@patch("crewai.Crew.kickoff")
+def test_crew_executes_sequentially(mock_kickoff, mock_agent):
+    mock_kickoff.return_value = "Research result about Generative AI"
+
+    research_task = Task(
+        description="Research about {topic}",
+        expected_output="Report",
+        agent=mock_agent,
+    )
+
+    crew = Crew(
+        agents=[mock_agent],
+        tasks=[research_task],
+        verbose=False,
+    )
+
+    result = crew.kickoff(inputs={"topic": "Generative AI"})
+    assert "Generative AI" in result
+    mock_kickoff.assert_called_once()
+```
+
+## Testing Agent Tools
+
+```python
+def test_agent_has_required_tools():
+    agent = Agent(
+        role="Researcher",
+        goal="Research",
+        backstory="Experienced",
+        tools=[search_tool, scrape_tool],
+    )
+    tool_names = [t.name for t in agent.tools]
+    assert "search" in tool_names
+    assert "scrape" in tool_names
+```
+
+## Testing Context Between Tasks
+
+```python
+def test_task_context_chaining():
+    task1 = Task(description="Research", expected_output="Data", agent=mock_agent)
+    task2 = Task(
+        description="Write",
+        expected_output="Article",
+        agent=mock_agent,
+        context=[task1],
+    )
+    assert task1 in task2.context
+```
+
+## Conventions
+
+- `MagicMock(spec=Agent)` for interface-validated mocks
+- `@patch("crewai.Crew.kickoff")` to avoid real execution
+- Fixtures for reusable agents and tasks
+- Test configuration (roles, tools, context) separately from execution
+- Integration tests with `@pytest.mark.integration`
+- `verbose=False` in tests for clean output
+{{/if}}

@@ -1,0 +1,201 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes React Native para Componentes
+
+## Estrutura Base
+
+```tsx
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+interface ButtonProps {
+  title: string;
+  variant?: "primary" | "outline" | "ghost";
+  onPress: () => void;
+  disabled?: boolean;
+}
+
+export function Button({
+  title,
+  variant = "primary",
+  onPress,
+  disabled = false,
+}: ButtonProps) {
+  return (
+    <TouchableOpacity
+      style={[styles.base, styles[variant], disabled && styles.disabled]}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.7}
+    >
+      <Text style={[styles.text, styles[`${variant}Text`]]}>{title}</Text>
+    </TouchableOpacity>
+  );
+}
+```
+
+## StyleSheet
+
+```tsx
+const styles = StyleSheet.create({
+  base: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primary: { backgroundColor: "#007AFF" },
+  outline: { borderWidth: 1, borderColor: "#007AFF", backgroundColor: "transparent" },
+  ghost: { backgroundColor: "transparent" },
+  disabled: { opacity: 0.5 },
+  text: { fontSize: 16, fontWeight: "600" },
+  primaryText: { color: "#FFFFFF" },
+  outlineText: { color: "#007AFF" },
+  ghostText: { color: "#007AFF" },
+});
+```
+
+## Responsividade com Dimensions
+
+```tsx
+import { Dimensions, useWindowDimensions } from "react-native";
+
+function ResponsiveCard() {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+
+  return (
+    <View style={{ padding: isTablet ? 24 : 16 }}>
+      <Text>Conteudo responsivo</Text>
+    </View>
+  );
+}
+```
+
+## Platform-Specific
+
+```tsx
+const styles = StyleSheet.create({
+  shadow: Platform.select({
+    ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+    android: { elevation: 4 },
+  }),
+});
+```
+
+## Convencoes
+
+- Sempre usar `SafeAreaView` como wrapper de telas
+- `StyleSheet.create` para todos os estilos (nunca inline objects repetidos)
+- `Platform.select` para diferencas iOS/Android
+- `useWindowDimensions` para layouts responsivos (nao `Dimensions.get` em render)
+- `TouchableOpacity` com `activeOpacity` para feedback visual
+- Props interface tipada, nunca `any`
+{{else}}
+# React Native Component Patterns
+
+## Base Structure
+
+```tsx
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+interface ButtonProps {
+  title: string;
+  variant?: "primary" | "outline" | "ghost";
+  onPress: () => void;
+  disabled?: boolean;
+}
+
+export function Button({
+  title,
+  variant = "primary",
+  onPress,
+  disabled = false,
+}: ButtonProps) {
+  return (
+    <TouchableOpacity
+      style={[styles.base, styles[variant], disabled && styles.disabled]}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.7}
+    >
+      <Text style={[styles.text, styles[`${variant}Text`]]}>{title}</Text>
+    </TouchableOpacity>
+  );
+}
+```
+
+## StyleSheet
+
+```tsx
+const styles = StyleSheet.create({
+  base: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primary: { backgroundColor: "#007AFF" },
+  outline: { borderWidth: 1, borderColor: "#007AFF", backgroundColor: "transparent" },
+  ghost: { backgroundColor: "transparent" },
+  disabled: { opacity: 0.5 },
+  text: { fontSize: 16, fontWeight: "600" },
+  primaryText: { color: "#FFFFFF" },
+  outlineText: { color: "#007AFF" },
+  ghostText: { color: "#007AFF" },
+});
+```
+
+## Responsiveness with Dimensions
+
+```tsx
+import { Dimensions, useWindowDimensions } from "react-native";
+
+function ResponsiveCard() {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+
+  return (
+    <View style={{ padding: isTablet ? 24 : 16 }}>
+      <Text>Responsive content</Text>
+    </View>
+  );
+}
+```
+
+## Platform-Specific
+
+```tsx
+const styles = StyleSheet.create({
+  shadow: Platform.select({
+    ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+    android: { elevation: 4 },
+  }),
+});
+```
+
+## Conventions
+
+- Always use `SafeAreaView` as screen wrapper
+- `StyleSheet.create` for all styles (never repeated inline objects)
+- `Platform.select` for iOS/Android differences
+- `useWindowDimensions` for responsive layouts (not `Dimensions.get` in render)
+- `TouchableOpacity` with `activeOpacity` for visual feedback
+- Typed props interface, never `any`
+{{/if}}

@@ -1,0 +1,187 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes de Hooks React Native
+
+## Hook de Navegacao
+
+```tsx
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "@/navigation/types";
+
+type ProfileScreenRouteProp = RouteProp<RootStackParamList, "Profile">;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+export function useProfileScreen() {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<ProfileScreenRouteProp>();
+  const { userId } = route.params;
+
+  const goToEdit = () => navigation.navigate("EditProfile", { userId });
+  const goBack = () => navigation.goBack();
+
+  return { userId, goToEdit, goBack };
+}
+```
+
+## useFocusEffect
+
+```tsx
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
+
+export function useRefreshOnFocus(refetch: () => void) {
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+}
+```
+
+## Hook de AsyncStorage
+
+```tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useState, useEffect, useCallback } from "react";
+
+export function usePersistedState<T>(key: string, defaultValue: T) {
+  const [value, setValue] = useState<T>(defaultValue);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    AsyncStorage.getItem(key).then((stored) => {
+      if (stored !== null) setValue(JSON.parse(stored));
+      setLoading(false);
+    });
+  }, [key]);
+
+  const update = useCallback(
+    async (newValue: T) => {
+      setValue(newValue);
+      await AsyncStorage.setItem(key, JSON.stringify(newValue));
+    },
+    [key]
+  );
+
+  return { value, update, loading } as const;
+}
+```
+
+## Hook de Dimensoes de Tela
+
+```tsx
+import { useWindowDimensions } from "react-native";
+
+export function useResponsive() {
+  const { width, height } = useWindowDimensions();
+  return {
+    isPhone: width < 768,
+    isTablet: width >= 768 && width < 1024,
+    isLandscape: width > height,
+    width,
+    height,
+  };
+}
+```
+
+## Convencoes
+
+- Tipar navigation e route com `ParamList` do projeto
+- `useFocusEffect` com `useCallback` para evitar re-renders
+- AsyncStorage: sempre tratar `null` e serializar com JSON
+- Hooks de tela: um hook por tela para encapsular navegacao + dados
+- Retornar objeto nomeado (nunca array/tupla) para clareza
+{{else}}
+# React Native Hook Patterns
+
+## Navigation Hook
+
+```tsx
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "@/navigation/types";
+
+type ProfileScreenRouteProp = RouteProp<RootStackParamList, "Profile">;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+export function useProfileScreen() {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<ProfileScreenRouteProp>();
+  const { userId } = route.params;
+
+  const goToEdit = () => navigation.navigate("EditProfile", { userId });
+  const goBack = () => navigation.goBack();
+
+  return { userId, goToEdit, goBack };
+}
+```
+
+## useFocusEffect
+
+```tsx
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
+
+export function useRefreshOnFocus(refetch: () => void) {
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+}
+```
+
+## AsyncStorage Hook
+
+```tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useState, useEffect, useCallback } from "react";
+
+export function usePersistedState<T>(key: string, defaultValue: T) {
+  const [value, setValue] = useState<T>(defaultValue);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    AsyncStorage.getItem(key).then((stored) => {
+      if (stored !== null) setValue(JSON.parse(stored));
+      setLoading(false);
+    });
+  }, [key]);
+
+  const update = useCallback(
+    async (newValue: T) => {
+      setValue(newValue);
+      await AsyncStorage.setItem(key, JSON.stringify(newValue));
+    },
+    [key]
+  );
+
+  return { value, update, loading } as const;
+}
+```
+
+## Screen Dimensions Hook
+
+```tsx
+import { useWindowDimensions } from "react-native";
+
+export function useResponsive() {
+  const { width, height } = useWindowDimensions();
+  return {
+    isPhone: width < 768,
+    isTablet: width >= 768 && width < 1024,
+    isLandscape: width > height,
+    width,
+    height,
+  };
+}
+```
+
+## Conventions
+
+- Type navigation and route with project `ParamList`
+- `useFocusEffect` with `useCallback` to avoid re-renders
+- AsyncStorage: always handle `null` and serialize with JSON
+- Screen hooks: one hook per screen to encapsulate navigation + data
+- Return named object (never array/tuple) for clarity
+{{/if}}

@@ -1,0 +1,171 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes NestJS para Services
+
+## Estrutura de Service
+
+```typescript
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+
+@Injectable()
+export class RecursoService {
+  constructor(
+    @Inject('RECURSO_REPOSITORY')
+    private readonly recursoRepository: RecursoRepository,
+  ) {}
+
+  async findAll(query: ListRecursoQuery): Promise<Recurso[]> {
+    return this.recursoRepository.findMany(query);
+  }
+
+  async findOne(id: string): Promise<Recurso> {
+    const recurso = await this.recursoRepository.findById(id);
+    if (!recurso) {
+      throw new NotFoundException(`Recurso ${id} nao encontrado`);
+    }
+    return recurso;
+  }
+
+  async create(dto: CreateRecursoDto): Promise<Recurso> {
+    return this.recursoRepository.create(dto);
+  }
+
+  async update(id: string, dto: UpdateRecursoDto): Promise<Recurso> {
+    await this.findOne(id); // valida existencia
+    return this.recursoRepository.update(id, dto);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.findOne(id);
+    await this.recursoRepository.delete(id);
+  }
+}
+```
+
+## Injecao de Dependencia
+
+```typescript
+// Token customizado
+export const RECURSO_REPOSITORY = 'RECURSO_REPOSITORY';
+
+// Provider no module
+@Module({
+  providers: [
+    RecursoService,
+    {
+      provide: RECURSO_REPOSITORY,
+      useClass: PrismaRecursoRepository,
+    },
+  ],
+  exports: [RecursoService],
+})
+export class RecursoModule {}
+```
+
+## Service com Multiplas Dependencias
+
+```typescript
+@Injectable()
+export class PedidoService {
+  constructor(
+    private readonly pedidoRepository: PedidoRepository,
+    private readonly estoqueService: EstoqueService,
+    private readonly notificacaoService: NotificacaoService,
+  ) {}
+}
+```
+
+## Convencoes
+- `@Injectable()` em todo service
+- Injetar via construtor — nunca instanciar manualmente
+- `@Inject('TOKEN')` para tokens customizados (repositorios, configs)
+- Service no array `providers` do modulo
+- `exports` no modulo para disponibilizar para outros modulos
+- Logica de negocio pura — sem acesso direto a `Request`/`Response`
+- Erros de dominio via exceptions do NestJS (`NotFoundException`, `BadRequestException`)
+- Um service por dominio, metodos com responsabilidade unica
+{{else}}
+# NestJS Service Patterns
+
+## Service Structure
+
+```typescript
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+
+@Injectable()
+export class ResourceService {
+  constructor(
+    @Inject('RESOURCE_REPOSITORY')
+    private readonly resourceRepository: ResourceRepository,
+  ) {}
+
+  async findAll(query: ListResourceQuery): Promise<Resource[]> {
+    return this.resourceRepository.findMany(query);
+  }
+
+  async findOne(id: string): Promise<Resource> {
+    const resource = await this.resourceRepository.findById(id);
+    if (!resource) {
+      throw new NotFoundException(`Resource ${id} not found`);
+    }
+    return resource;
+  }
+
+  async create(dto: CreateResourceDto): Promise<Resource> {
+    return this.resourceRepository.create(dto);
+  }
+
+  async update(id: string, dto: UpdateResourceDto): Promise<Resource> {
+    await this.findOne(id); // validate existence
+    return this.resourceRepository.update(id, dto);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.findOne(id);
+    await this.resourceRepository.delete(id);
+  }
+}
+```
+
+## Dependency Injection
+
+```typescript
+// Custom token
+export const RESOURCE_REPOSITORY = 'RESOURCE_REPOSITORY';
+
+// Provider in module
+@Module({
+  providers: [
+    ResourceService,
+    {
+      provide: RESOURCE_REPOSITORY,
+      useClass: PrismaResourceRepository,
+    },
+  ],
+  exports: [ResourceService],
+})
+export class ResourceModule {}
+```
+
+## Service with Multiple Dependencies
+
+```typescript
+@Injectable()
+export class OrderService {
+  constructor(
+    private readonly orderRepository: OrderRepository,
+    private readonly inventoryService: InventoryService,
+    private readonly notificationService: NotificationService,
+  ) {}
+}
+```
+
+## Conventions
+- `@Injectable()` on every service
+- Inject via constructor — never instantiate manually
+- `@Inject('TOKEN')` for custom tokens (repositories, configs)
+- Service in the module's `providers` array
+- `exports` in module to expose to other modules
+- Pure business logic — no direct access to `Request`/`Response`
+- Domain errors via NestJS exceptions (`NotFoundException`, `BadRequestException`)
+- One service per domain, single-responsibility methods
+{{/if}}

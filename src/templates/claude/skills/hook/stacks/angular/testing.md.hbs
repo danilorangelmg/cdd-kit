@@ -1,0 +1,239 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes de Teste para Services Angular
+
+## Estrutura Base (TestBed.inject)
+
+```ts
+import { TestBed } from "@angular/core/testing";
+import { HttpClientTestingModule, HttpTestingController } from "@angular/common/http/testing";
+import { UserService } from "./user.service";
+
+describe("UserService", () => {
+  let service: UserService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [UserService],
+    });
+
+    service = TestBed.inject(UserService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it("deve carregar usuarios", () => {
+    const mockUsers = [{ id: "1", name: "Maria" }];
+
+    service.loadUsers();
+    const req = httpMock.expectOne("/api/users");
+    req.flush(mockUsers);
+
+    service.users$.subscribe((users) => {
+      expect(users).toEqual(mockUsers);
+    });
+  });
+});
+```
+
+## fakeAsync / tick
+
+```ts
+import { fakeAsync, tick } from "@angular/core/testing";
+
+it("debounce na busca", fakeAsync(() => {
+  service.search("test");
+  tick(100); // ainda dentro do debounce
+  expect(lastResult).toBeUndefined();
+
+  tick(300); // debounce completo
+  const req = httpMock.expectOne("/api/search?q=test");
+  req.flush([{ name: "Test Item" }]);
+
+  service.results$.subscribe((results) => {
+    expect(results).toHaveLength(1);
+  });
+}));
+```
+
+## Testando BehaviorSubject / Estado
+
+```ts
+it("atualiza estado de loading", () => {
+  const loadingStates: boolean[] = [];
+  service.loading$.subscribe((l) => loadingStates.push(l));
+
+  service.loadUsers();
+  expect(loadingStates).toContain(true);
+
+  const req = httpMock.expectOne("/api/users");
+  req.flush([]);
+
+  expect(loadingStates[loadingStates.length - 1]).toBe(false);
+});
+```
+
+## Testando Erros
+
+```ts
+it("trata erro HTTP", () => {
+  service.loadUsers();
+
+  const req = httpMock.expectOne("/api/users");
+  req.error(new ProgressEvent("error"), { status: 500 });
+
+  service.error$.subscribe((error) => {
+    expect(error).toBeTruthy();
+  });
+});
+```
+
+## Testando Subscriptions
+
+```ts
+it("cancela subscription anterior com switchMap", fakeAsync(() => {
+  service.search("ab");
+  tick(300);
+  const req1 = httpMock.expectOne("/api/search?q=ab");
+
+  service.search("abc"); // deve cancelar req1
+  tick(300);
+  const req2 = httpMock.expectOne("/api/search?q=abc");
+
+  req2.flush([{ name: "Result" }]);
+  expect(req1.cancelled).toBe(true);
+}));
+```
+
+## Convencoes
+
+- Usar `TestBed.inject` para obter instancia do service
+- `HttpClientTestingModule` para mock de HTTP
+- `httpMock.verify()` no `afterEach` para garantir sem requests pendentes
+- `fakeAsync` + `tick` para testar operadores temporais (debounce, delay)
+- Testar sequencia de estados (loading -> success / error)
+- Verificar cancelamento de subscriptions
+{{else}}
+# Angular Service Testing Patterns
+
+## Base Structure (TestBed.inject)
+
+```ts
+import { TestBed } from "@angular/core/testing";
+import { HttpClientTestingModule, HttpTestingController } from "@angular/common/http/testing";
+import { UserService } from "./user.service";
+
+describe("UserService", () => {
+  let service: UserService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [UserService],
+    });
+
+    service = TestBed.inject(UserService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it("should load users", () => {
+    const mockUsers = [{ id: "1", name: "Maria" }];
+
+    service.loadUsers();
+    const req = httpMock.expectOne("/api/users");
+    req.flush(mockUsers);
+
+    service.users$.subscribe((users) => {
+      expect(users).toEqual(mockUsers);
+    });
+  });
+});
+```
+
+## fakeAsync / tick
+
+```ts
+import { fakeAsync, tick } from "@angular/core/testing";
+
+it("debounces search", fakeAsync(() => {
+  service.search("test");
+  tick(100); // still within debounce
+  expect(lastResult).toBeUndefined();
+
+  tick(300); // debounce complete
+  const req = httpMock.expectOne("/api/search?q=test");
+  req.flush([{ name: "Test Item" }]);
+
+  service.results$.subscribe((results) => {
+    expect(results).toHaveLength(1);
+  });
+}));
+```
+
+## Testing BehaviorSubject / State
+
+```ts
+it("updates loading state", () => {
+  const loadingStates: boolean[] = [];
+  service.loading$.subscribe((l) => loadingStates.push(l));
+
+  service.loadUsers();
+  expect(loadingStates).toContain(true);
+
+  const req = httpMock.expectOne("/api/users");
+  req.flush([]);
+
+  expect(loadingStates[loadingStates.length - 1]).toBe(false);
+});
+```
+
+## Testing Errors
+
+```ts
+it("handles HTTP error", () => {
+  service.loadUsers();
+
+  const req = httpMock.expectOne("/api/users");
+  req.error(new ProgressEvent("error"), { status: 500 });
+
+  service.error$.subscribe((error) => {
+    expect(error).toBeTruthy();
+  });
+});
+```
+
+## Testing Subscriptions
+
+```ts
+it("cancels previous subscription with switchMap", fakeAsync(() => {
+  service.search("ab");
+  tick(300);
+  const req1 = httpMock.expectOne("/api/search?q=ab");
+
+  service.search("abc"); // should cancel req1
+  tick(300);
+  const req2 = httpMock.expectOne("/api/search?q=abc");
+
+  req2.flush([{ name: "Result" }]);
+  expect(req1.cancelled).toBe(true);
+}));
+```
+
+## Conventions
+
+- Use `TestBed.inject` to get service instance
+- `HttpClientTestingModule` for HTTP mocking
+- `httpMock.verify()` in `afterEach` to ensure no pending requests
+- `fakeAsync` + `tick` for testing temporal operators (debounce, delay)
+- Test state sequences (loading -> success / error)
+- Verify subscription cancellation
+{{/if}}

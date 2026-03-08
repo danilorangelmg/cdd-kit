@@ -1,0 +1,173 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes React para Componentes
+
+## Estrutura Base
+
+```tsx
+import { forwardRef } from "react";
+import { cn } from "@/lib/utils";
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "default" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg";
+}
+
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = "default", size = "md", ...rest }, ref) => {
+    return (
+      <button
+        ref={ref}
+        className={cn(buttonVariants({ variant, size }), className)}
+        {...rest}
+      />
+    );
+  }
+);
+Button.displayName = "Button";
+
+export { Button };
+```
+
+## Funcao cn() (clsx + tailwind-merge)
+
+```ts
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+## Variantes com cva (class-variance-authority)
+
+```ts
+import { cva, type VariantProps } from "class-variance-authority";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center rounded-md font-medium transition-colors",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        outline: "border border-input bg-background hover:bg-accent",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+      },
+      size: {
+        sm: "h-8 px-3 text-xs",
+        md: "h-10 px-4 text-sm",
+        lg: "h-12 px-6 text-base",
+      },
+    },
+    defaultVariants: { variant: "default", size: "md" },
+  }
+);
+
+type ButtonVariants = VariantProps<typeof buttonVariants>;
+```
+
+## Skeleton Companion
+
+```tsx
+export function ButtonSkeleton() {
+  return <div className="h-10 w-24 animate-pulse rounded-md bg-muted" />;
+}
+```
+
+## Convencoes
+
+- Sempre usar `forwardRef` para componentes UI
+- Sempre definir `displayName`
+- Props interface: incluir `className?` e usar `...rest` spread
+- Usar `cn()` para merge de classes (nunca concatenar strings)
+- Dark mode via tokens CSS (nunca `dark:` direto, preferir variaveis)
+- Criar `Skeleton` companion para todo componente com estado de loading
+- Exportar variantes separadamente para reutilizacao
+{{else}}
+# React Component Patterns
+
+## Base Structure
+
+```tsx
+import { forwardRef } from "react";
+import { cn } from "@/lib/utils";
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "default" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg";
+}
+
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = "default", size = "md", ...rest }, ref) => {
+    return (
+      <button
+        ref={ref}
+        className={cn(buttonVariants({ variant, size }), className)}
+        {...rest}
+      />
+    );
+  }
+);
+Button.displayName = "Button";
+
+export { Button };
+```
+
+## cn() Function (clsx + tailwind-merge)
+
+```ts
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+## Variants with cva (class-variance-authority)
+
+```ts
+import { cva, type VariantProps } from "class-variance-authority";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center rounded-md font-medium transition-colors",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        outline: "border border-input bg-background hover:bg-accent",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+      },
+      size: {
+        sm: "h-8 px-3 text-xs",
+        md: "h-10 px-4 text-sm",
+        lg: "h-12 px-6 text-base",
+      },
+    },
+    defaultVariants: { variant: "default", size: "md" },
+  }
+);
+
+type ButtonVariants = VariantProps<typeof buttonVariants>;
+```
+
+## Skeleton Companion
+
+```tsx
+export function ButtonSkeleton() {
+  return <div className="h-10 w-24 animate-pulse rounded-md bg-muted" />;
+}
+```
+
+## Conventions
+
+- Always use `forwardRef` for UI components
+- Always set `displayName`
+- Props interface: include `className?` and use `...rest` spread
+- Use `cn()` for class merging (never concatenate strings)
+- Dark mode via CSS tokens (never raw `dark:`, prefer CSS variables)
+- Create `Skeleton` companion for every component with loading state
+- Export variants separately for reuse
+{{/if}}

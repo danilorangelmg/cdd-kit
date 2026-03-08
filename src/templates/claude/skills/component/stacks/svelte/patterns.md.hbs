@@ -1,0 +1,215 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Svelte 5 para Componentes
+
+## Estrutura Base
+
+```svelte
+<script lang="ts">
+  interface Props {
+    variant?: "default" | "outline" | "ghost";
+    size?: "sm" | "md" | "lg";
+    disabled?: boolean;
+    onclick?: (event: MouseEvent) => void;
+  }
+
+  let {
+    variant = "default",
+    size = "md",
+    disabled = false,
+    onclick,
+    children,
+  }: Props = $props();
+
+  let hovered = $state(false);
+</script>
+
+<button
+  class="btn btn--{variant} btn--{size}"
+  {disabled}
+  {onclick}
+  onmouseenter={() => (hovered = true)}
+  onmouseleave={() => (hovered = false)}
+>
+  {@render children?.()}
+</button>
+```
+
+## Runes ($props, $state, $derived, $effect)
+
+```svelte
+<script lang="ts">
+  // Props (substitui export let)
+  let { count = 0, label }: { count?: number; label: string } = $props();
+
+  // Estado reativo
+  let internalCount = $state(count);
+
+  // Valor derivado (substitui $:)
+  let doubled = $derived(internalCount * 2);
+
+  // Efeito colateral
+  $effect(() => {
+    console.log(`Count mudou para: ${internalCount}`);
+    return () => console.log("cleanup");
+  });
+</script>
+```
+
+## Snippets (substitui slots)
+
+```svelte
+<script lang="ts">
+  import type { Snippet } from "svelte";
+
+  interface Props {
+    header?: Snippet;
+    children: Snippet;
+    footer?: Snippet<[{ count: number }]>;
+  }
+
+  let { header, children, footer }: Props = $props();
+</script>
+
+<div class="card">
+  {#if header}
+    <header>{@render header()}</header>
+  {/if}
+  {@render children()}
+  {#if footer}
+    <footer>{@render footer({ count: 42 })}</footer>
+  {/if}
+</div>
+```
+
+## Bindings e Blocos de Controle
+
+```svelte
+<input bind:value={name} />
+
+{#if loading}
+  <Spinner />
+{:else if error}
+  <ErrorMessage message={error} />
+{:else}
+  {#each items as item (item.id)}
+    <Item {item} />
+  {/each}
+{/if}
+```
+
+## Convencoes
+
+- Usar runes do Svelte 5 (`$props`, `$state`, `$derived`, `$effect`)
+- Snippets em vez de slots para composicao
+- Props tipadas com interface TypeScript
+- Callbacks via props (ex: `onclick`) em vez de `createEventDispatcher`
+- Cleanup em `$effect` retornando funcao
+- Sempre usar key em `{#each}` com `(item.id)`
+{{else}}
+# Svelte 5 Component Patterns
+
+## Base Structure
+
+```svelte
+<script lang="ts">
+  interface Props {
+    variant?: "default" | "outline" | "ghost";
+    size?: "sm" | "md" | "lg";
+    disabled?: boolean;
+    onclick?: (event: MouseEvent) => void;
+  }
+
+  let {
+    variant = "default",
+    size = "md",
+    disabled = false,
+    onclick,
+    children,
+  }: Props = $props();
+
+  let hovered = $state(false);
+</script>
+
+<button
+  class="btn btn--{variant} btn--{size}"
+  {disabled}
+  {onclick}
+  onmouseenter={() => (hovered = true)}
+  onmouseleave={() => (hovered = false)}
+>
+  {@render children?.()}
+</button>
+```
+
+## Runes ($props, $state, $derived, $effect)
+
+```svelte
+<script lang="ts">
+  // Props (replaces export let)
+  let { count = 0, label }: { count?: number; label: string } = $props();
+
+  // Reactive state
+  let internalCount = $state(count);
+
+  // Derived value (replaces $:)
+  let doubled = $derived(internalCount * 2);
+
+  // Side effect
+  $effect(() => {
+    console.log(`Count changed to: ${internalCount}`);
+    return () => console.log("cleanup");
+  });
+</script>
+```
+
+## Snippets (replaces slots)
+
+```svelte
+<script lang="ts">
+  import type { Snippet } from "svelte";
+
+  interface Props {
+    header?: Snippet;
+    children: Snippet;
+    footer?: Snippet<[{ count: number }]>;
+  }
+
+  let { header, children, footer }: Props = $props();
+</script>
+
+<div class="card">
+  {#if header}
+    <header>{@render header()}</header>
+  {/if}
+  {@render children()}
+  {#if footer}
+    <footer>{@render footer({ count: 42 })}</footer>
+  {/if}
+</div>
+```
+
+## Bindings and Control Blocks
+
+```svelte
+<input bind:value={name} />
+
+{#if loading}
+  <Spinner />
+{:else if error}
+  <ErrorMessage message={error} />
+{:else}
+  {#each items as item (item.id)}
+    <Item {item} />
+  {/each}
+{/if}
+```
+
+## Conventions
+
+- Use Svelte 5 runes (`$props`, `$state`, `$derived`, `$effect`)
+- Snippets instead of slots for composition
+- Typed props with TypeScript interface
+- Callbacks via props (e.g., `onclick`) instead of `createEventDispatcher`
+- Cleanup in `$effect` by returning a function
+- Always use key in `{#each}` with `(item.id)`
+{{/if}}

@@ -99,15 +99,19 @@ git add {directory} && git commit -m "chore: update {module} submodule ref"
 {{#ifRule "absolute-delegation"}}
 ## Regra #0 — Delegacao Absoluta (CRITICA)
 
-O orquestrador NUNCA edita/cria arquivos dentro de modulos. Toda implementacao e delegada via Task tool ao sub-agente especializado.
+**EM HIPOTESE ALGUMA o orquestrador implementa, edita ou cria arquivos dentro de modulos.**
 
 **Voce pode editar**: `CLAUDE.md`, `Makefile`, `docker-compose.yml`, `.env.example`, `.claude/`, `{{docsRoot}}/`, `cdd.json`
 **Voce NAO pode editar**: Qualquer arquivo dentro de {{#each modules}}`{{directory}}/`{{#unless @last}}, {{/unless}}{{/each}}
+
+> "O arquivo esta dentro de um modulo?" → Se SIM → delegar via Task tool. Sem excecoes.
 
 **Diretorios bloqueados por modulo**:
 {{#each modules}}
 - `{{directory}}/` → somente `{{name}}-delegate`
 {{/each}}
+
+Violacao = retrabalho completo.
 {{/ifRule}}
 
 {{#ifRule "scope-of-responsibility"}}
@@ -134,6 +138,8 @@ Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsi
 {{/each}}
 
 **Regra de Ouro**: Frontends sao camada visual pura. Toda logica de negocio pertence ao backend/BFF.
+
+**Auto-roteamento**: durante planejamento, logica de negocio → BFF obrigatorio. Logica de motor/pipeline → Agent. Regra completa: `.claude/rules/scope-responsibilities.md`
 {{/ifRule}}
 
 ## Delegation Map
@@ -192,9 +198,30 @@ DEPENDENCIAS_EXTERNAS: [mudancas necessarias em outros modulos, ou "nenhuma"]
 
 ### TDD Sequential Enforcement (Regra #9)
 
-Delegates NAO podem escrever testes E implementacao na mesma invocacao. Use `tdd-test-writer` (Red) e `tdd-implementer` (Green) como invocacoes separadas com context isolation.
+**BLOQUEIO ABSOLUTO.** Nenhum delegate pode escrever testes E implementacao na mesma invocacao.
 
-**Excecoes**: bug fix < 3 arquivos, refactoring com testes existentes, config sem logica de negocio.
+**Problema**: Quando um delegate (ex: front-delegate, bff-delegate) cria testes e codigo juntos, os hooks TDD (`tdd-guard.sh`) nao detectam a violacao — timestamps sao identicos, compliance TDD cai para ~20%.
+
+**Regra**: Toda tarefa testavel DEVE usar **duas invocacoes separadas**:
+
+| Fase | Agente | Ve | Produz | Validacao |
+|------|--------|-----|--------|-----------|
+| **Red** | `tdd-test-writer` | Specs/regras de negocio, `tests/` existentes | Testes que FALHAM | Rodar testes → confirmar FALHA |
+| **Green** | `tdd-implementer` | Testes falhando + `src/` existente | Implementacao minima | Rodar testes → confirmar PASS |
+
+**Proibicoes**:
+- Delegate direto (front-delegate, bff-delegate, etc.) **NAO PODE** criar arquivos em `tests/` E `src/` na mesma invocacao
+- Se o orquestrador delegar implementacao a um delegate direto, o delegate recebe APENAS tarefa de implementacao — testes ja devem existir
+- **NUNCA** pular a validacao de falha entre Red e Green
+
+**Excecoes** (delegate direto permitido para testes + codigo juntos):
+- Bug fix com teste de regressao (escopo < 3 arquivos)
+- Refactoring onde testes ja existem e devem continuar passando
+- Config/ajuste sem logica de negocio
+
+**Skill**: `/tdd` orquestra o ciclo completo automaticamente com context isolation.
+
+Regra completa: `.claude/rules/tdd/sequential-enforcement.md`
 {{/ifRule}}
 {{#unless (lookup methodology.rules "tdd-enforcement")}}
 4. **Executar** — Delegar implementacao ao agente correto
@@ -215,29 +242,24 @@ Para features que envolvem frontend + backend, siga a ordem Outside-In:
 {{#ifRule "feature-planning-gate"}}
 ## Feature Planning Gate (Regra #3)
 
-Antes de implementar uma feature nova:
-1. Classificar: SIMPLES ou COMPLEXA
-2. Se COMPLEXA → invocar `/plan-feature` ANTES de delegar
-3. Docs obrigatorios por modulo: `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/`, `{{paths.testPlans}}/`, `{{paths.devPlans}}/`
+> **BLOQUEIO ABSOLUTO.** Nenhuma feature pode ser implementada sem docs em disco.
 
-### Auto-Deteccao
+**Auto-deteccao obrigatoria** — o orquestrador DEVE detectar "nova feature" e invocar `/plan-feature` automaticamente.
 
-O orquestrador DEVE detectar "nova feature" e invocar `/plan-feature` automaticamente.
+**Checklist pre-implementacao:**
+1. E feature nova? (palavras: implementar, criar, adicionar, novo modulo)
+2. Se SIM → `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{feature}.md` existe nos modulos afetados?
+3. Se NAO → Classificar Simples/Complexa → `/plan-feature`
+4. Se SIM → Usar `{{paths.devPlans}}/{feature}.md` como guia
 
-**Palavras-chave trigger**: implementar, criar, adicionar, novo modulo, nova funcionalidade
-**NAO e feature**: bug fix, refactoring, config/ajuste, correcao de layout
+**Classificacao**: SIMPLES quando TODOS: max 2 modulos, CRUD padrao, sem novo conceito, padrao claro, sem integracao nova, sem regras complexas. Qualquer falha → COMPLEXA.
 
-### Criterios SIMPLES
+**NAO e feature**: bug fix, refactoring, config/ajuste, correcao de layout.
 
-SIMPLES quando TODOS os criterios:
-- Max 2 modulos afetados
-- CRUD padrao
-- Sem novo conceito de dominio
-- Padrao claro existente
-- Sem integracao nova
-- Sem regras de negocio complexas
-
-**Qualquer falha → COMPLEXA** → `/plan-feature` obrigatorio.
+**Docs por modulo**: Para cada modulo afetado, 3 arquivos em `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/`:
+- `{{paths.businessRules}}/{feature}.md` — regras de negocio
+- `{{paths.testPlans}}/{feature}.md` — plano de testes
+- `{{paths.devPlans}}/{feature}.md` — tarefas atomicas do delegate
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}
@@ -299,15 +321,30 @@ Todos os endpoints DEVEM seguir este envelope. Sem excecoes.
 {{#ifRule "e2e-test-protection"}}
 ## Protecao E2E (Regra #6)
 
-Protecao em 2 camadas:
-1. `chmod 555/444` nos arquivos de teste (via `make e2e-lock`)
-2. Deny rules no `settings.json` (Edit/Write bloqueados)
+Testes E2E sao protegidos por DUAS camadas: deny rules (Claude Code) + chmod 555/444 (OS).
+
+**Arquivos protegidos**: `features/**/*.feature` + `step-definitions/**/*.ts`
+**Arquivos livres**: `support/**` (page objects, fixtures, mock server)
 
 | Diretorio | Status | Motivo |
 |-----------|--------|--------|
 | `features/` | Protegido | Cenarios BDD sao especificacao |
 | `step-definitions/` | Protegido | Passos sao contrato |
 | `support/` | Livre | Page objects, fixtures, helpers |
+
+**Toggle 100% manual pelo usuario**:
+- `make e2e-unlock` — libera chmod para escrita (fase Red)
+- `make e2e-lock` — bloqueia chmod nos diretorios/arquivos de teste
+- Deny rules em `.claude/settings.json` bloqueiam Edit/Write permanentemente
+- O orquestrador NUNCA executa `e2e-unlock` ou remove deny rules
+- Safety net: `make test-e2e` e `make dev` rodam `e2e-lock` automaticamente
+
+**Workflow**:
+- **Red phase**: Usuario executa `make e2e-unlock` → escrever testes → `make e2e-lock`
+- **Green phase**: Testes bloqueados. Implementar ate testes passarem.
+- **Refactor**: Repetir Red phase se testes precisam mudar.
+
+**NUNCA** modificar testes para faze-los passar. O codigo sob teste deve mudar.
 {{/ifRule}}
 
 {{#ifRule "post-dev-e2e-validation"}}
@@ -315,15 +352,26 @@ Protecao em 2 camadas:
 
 **Trigger**: apos implementacao que afete frontend, mobile ou BFF.
 
-Loop diagnostico (max 3 tentativas):
-1. Executar testes E2E
-2. Se FAIL → analisar output do teste
-3. Investigar codigo da APLICACAO (NUNCA o teste E2E)
-4. Corrigir e re-executar
+**Guardrail absoluto**: diretorios E2E sao INTOCAVEIS durante o loop de diagnostico. Nenhum arquivo — features, step definitions, support — pode ser alterado. A correcao e SEMPRE no codigo da aplicacao.
 
-Apos 3 falhas consecutivas: **PARAR** e reportar ao usuario com diagnostico.
+**Se todos os testes passam** → continuar fluxo normal.
 
-**GUARDRAIL**: NUNCA modificar testes E2E para fazer codigo passar.
+**Se algum teste falha** → Loop de Diagnostico (max 3 tentativas):
+1. Analisar output do teste — identificar cenarios falhando e mensagens de erro
+2. Investigar causa raiz no codigo da APLICACAO (NUNCA no E2E)
+3. Delegar correcao ao delegate correto — NUNCA ao e2e-delegate
+4. Re-executar testes E2E
+5. Se passou → continuar. Se falhou → voltar ao passo 1
+
+**Apos 3 iteracoes sem sucesso**: PARAR e reportar ao usuario com diagnostico:
+- Cenarios que falham e mensagens de erro
+- Hipotese de causa raiz
+- Tentativas de correcao realizadas
+- O usuario decide se os testes precisam ser atualizados (via `make e2e-unlock`)
+
+**Escopo**: Inclui mudancas no BFF (nao so frontend), pois alteracoes em endpoints/contratos podem quebrar comportamento E2E.
+
+> Reforca Regra #6: NUNCA modificar testes E2E para fazer codigo passar.
 {{/ifRule}}
 
 {{#if (or (lookup methodology.rules "tdd-enforcement") (lookup methodology.rules "feature-planning-gate"))}}
@@ -344,6 +392,16 @@ Os seguintes hooks automaticos estao ativos neste projeto:
 | `planning-eval.sh` | UserPromptSubmit | Avalia necessidade de planejamento no prompt |
 {{/ifRule}}
 | `post-dev-verify.sh` | Stop | Verificacao final antes de encerrar |
+
+{{#ifRule "tdd-enforcement"}}
+**Context Isolation** — Para features, usar subagentes TDD dedicados:
+- `tdd-test-writer`: Ve APENAS specs de negocio → escreve testes (Red)
+- `tdd-implementer`: Ve APENAS testes falhando → implementa (Green)
+
+**Skill `/tdd`** — Orquestra ciclo TDD completo: Feature Gate → Test Writer (Red) → Implementer (Green) → Validacao.
+
+**Por que**: Sem enforcement, compliance TDD com agentes IA e ~20%. Com hooks + context isolation, sobe para ~84%.
+{{/ifRule}}
 
 {{/if}}
 ## Comandos
@@ -476,15 +534,19 @@ git add {directory} && git commit -m "chore: update {module} submodule ref"
 {{#ifRule "absolute-delegation"}}
 ## Rule #0 — Absolute Delegation (CRITICAL)
 
-The orchestrator NEVER edits/creates files inside modules. All implementation is delegated via Task tool to the specialized sub-agent.
+**UNDER NO CIRCUMSTANCES does the orchestrator implement, edit, or create files inside modules.**
 
 **You CAN edit**: `CLAUDE.md`, `Makefile`, `docker-compose.yml`, `.env.example`, `.claude/`, `{{docsRoot}}/`, `cdd.json`
 **You CANNOT edit**: Any file inside {{#each modules}}`{{directory}}/`{{#unless @last}}, {{/unless}}{{/each}}
+
+> "Is the file inside a module?" → If YES → delegate via Task tool. No exceptions.
 
 **Blocked directories per module**:
 {{#each modules}}
 - `{{directory}}/` → only `{{name}}-delegate`
 {{/each}}
+
+Violation = complete rework.
 {{/ifRule}}
 
 {{#ifRule "scope-of-responsibility"}}
@@ -511,6 +573,8 @@ Each module has well-defined boundaries. See `.claude/rules/scope-responsibiliti
 {{/each}}
 
 **Golden Rule**: Frontends are pure visual layer. All business logic belongs to the backend/BFF.
+
+**Auto-routing**: during planning, business logic → BFF mandatory. Engine/pipeline logic → Agent. Full rule: `.claude/rules/scope-responsibilities.md`
 {{/ifRule}}
 
 ## Delegation Map
@@ -569,9 +633,30 @@ EXTERNAL_DEPENDENCIES: [changes needed in other modules, or "none"]
 
 ### TDD Sequential Enforcement (Rule #9)
 
-Delegates CANNOT write tests AND implementation in the same invocation. Use `tdd-test-writer` (Red) and `tdd-implementer` (Green) as separate invocations with context isolation.
+**ABSOLUTE BLOCK.** No delegate can write tests AND implementation in the same invocation.
 
-**Exceptions**: bug fix < 3 files, refactoring with existing tests, config without business logic.
+**Problem**: When a delegate (e.g., front-delegate, bff-delegate) creates tests and code together, TDD hooks (`tdd-guard.sh`) don't detect the violation — timestamps are identical, TDD compliance drops to ~20%.
+
+**Rule**: Every testable task MUST use **two separate invocations**:
+
+| Phase | Agent | Sees | Produces | Validation |
+|-------|-------|------|----------|------------|
+| **Red** | `tdd-test-writer` | Business specs/rules, existing `tests/` | Tests that FAIL | Run tests → confirm FAILURE |
+| **Green** | `tdd-implementer` | Failing tests + existing `src/` | Minimum implementation | Run tests → confirm PASS |
+
+**Prohibitions**:
+- Direct delegate (front-delegate, bff-delegate, etc.) **CANNOT** create files in `tests/` AND `src/` in the same invocation
+- If orchestrator delegates implementation to a direct delegate, the delegate receives ONLY implementation task — tests must already exist
+- **NEVER** skip failure validation between Red and Green
+
+**Exceptions** (direct delegate allowed for tests + code together):
+- Bug fix with regression test (scope < 3 files)
+- Refactoring where tests already exist and must continue passing
+- Config/adjustment without business logic
+
+**Skill**: `/tdd` orchestrates the full cycle automatically with context isolation.
+
+Full rule: `.claude/rules/tdd/sequential-enforcement.md`
 {{/ifRule}}
 {{#unless (lookup methodology.rules "tdd-enforcement")}}
 4. **Execute** — Delegate implementation to the correct agent
@@ -592,29 +677,24 @@ For features involving frontend + backend, follow the Outside-In order:
 {{#ifRule "feature-planning-gate"}}
 ## Feature Planning Gate (Rule #3)
 
-Before implementing a new feature:
-1. Classify: SIMPLE or COMPLEX
-2. If COMPLEX → invoke `/plan-feature` BEFORE delegating
-3. Required docs per module: `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/`, `{{paths.testPlans}}/`, `{{paths.devPlans}}/`
+> **ABSOLUTE BLOCK.** No feature can be implemented without docs on disk.
 
-### Auto-Detection
+**Mandatory auto-detection** — the orchestrator MUST detect "new feature" and invoke `/plan-feature` automatically.
 
-The orchestrator MUST detect "new feature" and invoke `/plan-feature` automatically.
+**Pre-implementation checklist:**
+1. Is it a new feature? (keywords: implement, create, add, new module)
+2. If YES → do `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{feature}.md` exist in affected modules?
+3. If NO → Classify Simple/Complex → `/plan-feature`
+4. If YES → Use `{{paths.devPlans}}/{feature}.md` as implementation guide
 
-**Trigger keywords**: implement, create, add, new module, new feature
-**NOT a feature**: bug fix, refactoring, config/adjustment, layout fix
+**Classification**: SIMPLE when ALL: max 2 modules, standard CRUD, no new concept, clear pattern, no new integration, no complex rules. Any failure → COMPLEX.
 
-### SIMPLE Criteria
+**NOT a feature**: bug fix, refactoring, config/adjustment, layout fix.
 
-SIMPLE when ALL criteria met:
-- Max 2 affected modules
-- Standard CRUD
-- No new domain concept
-- Clear existing pattern
-- No new integration
-- No complex business rules
-
-**Any failure → COMPLEX** → `/plan-feature` mandatory.
+**Docs per module**: For each affected module, 3 files in `{{paths.docsRoot}}/{{paths.rules}}/{module}/`:
+- `{{paths.businessRules}}/{feature}.md` — business rules
+- `{{paths.testPlans}}/{feature}.md` — test plan
+- `{{paths.devPlans}}/{feature}.md` — atomic delegate tasks
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}
@@ -676,15 +756,30 @@ All endpoints MUST follow this envelope. No exceptions.
 {{#ifRule "e2e-test-protection"}}
 ## E2E Protection (Rule #6)
 
-2-layer protection:
-1. `chmod 555/444` on test files (via `make e2e-lock`)
-2. Deny rules in `settings.json` (Edit/Write blocked)
+E2E tests are protected by TWO layers: deny rules (Claude Code) + chmod 555/444 (OS).
+
+**Protected files**: `features/**/*.feature` + `step-definitions/**/*.ts`
+**Free files**: `support/**` (page objects, fixtures, mock server)
 
 | Directory | Status | Reason |
 |-----------|--------|--------|
 | `features/` | Protected | BDD scenarios are specification |
 | `step-definitions/` | Protected | Steps are contract |
 | `support/` | Free | Page objects, fixtures, helpers |
+
+**100% manual user toggle**:
+- `make e2e-unlock` — allows chmod writing (Red phase)
+- `make e2e-lock` — locks chmod on test directories/files
+- Deny rules in `.claude/settings.json` block Edit/Write permanently
+- The orchestrator NEVER executes `e2e-unlock` or removes deny rules
+- Safety net: `make test-e2e` and `make dev` run `e2e-lock` automatically
+
+**Workflow**:
+- **Red phase**: User runs `make e2e-unlock` → write tests → `make e2e-lock`
+- **Green phase**: Tests locked. Implement until tests pass.
+- **Refactor**: Repeat Red phase if tests need changes.
+
+**NEVER** modify tests to make them pass. The code under test must change.
 {{/ifRule}}
 
 {{#ifRule "post-dev-e2e-validation"}}
@@ -692,15 +787,26 @@ All endpoints MUST follow this envelope. No exceptions.
 
 **Trigger**: after implementation affecting frontend, mobile, or BFF.
 
-Diagnostic loop (max 3 attempts):
-1. Run E2E tests
-2. If FAIL → analyze test output
-3. Investigate APPLICATION code (NEVER the E2E test)
-4. Fix and re-run
+**Absolute guardrail**: E2E directories are UNTOUCHABLE during the diagnostic loop. No file — features, step definitions, support — can be altered. The fix is ALWAYS in application code.
 
-After 3 consecutive failures: **STOP** and report to user with diagnostics.
+**If all tests pass** → continue normal flow.
 
-**GUARDRAIL**: NEVER modify E2E tests to make code pass.
+**If any test fails** → Diagnostic Loop (max 3 attempts):
+1. Analyze test output — identify failing scenarios and error messages
+2. Investigate root cause in APPLICATION code (NEVER in E2E)
+3. Delegate fix to the correct delegate — NEVER to e2e-delegate
+4. Re-run E2E tests
+5. If passed → continue. If failed → back to step 1
+
+**After 3 iterations without success**: STOP and report to user with diagnostics:
+- Failing scenarios and error messages
+- Root cause hypothesis
+- Correction attempts made
+- User decides if tests need updating (via `make e2e-unlock`)
+
+**Scope**: Includes BFF changes (not just frontend), as endpoint/contract changes can break E2E behavior.
+
+> Reinforces Rule #6: NEVER modify E2E tests to make code pass.
 {{/ifRule}}
 
 {{#if (or (lookup methodology.rules "tdd-enforcement") (lookup methodology.rules "feature-planning-gate"))}}
@@ -721,6 +827,16 @@ The following automatic hooks are active in this project:
 | `planning-eval.sh` | UserPromptSubmit | Evaluates planning needs in prompt |
 {{/ifRule}}
 | `post-dev-verify.sh` | Stop | Final verification before ending |
+
+{{#ifRule "tdd-enforcement"}}
+**Context Isolation** — For features, use dedicated TDD sub-agents:
+- `tdd-test-writer`: Sees ONLY business specs → writes tests (Red)
+- `tdd-implementer`: Sees ONLY failing tests → implements (Green)
+
+**Skill `/tdd`** — Orchestrates full TDD cycle: Feature Gate → Test Writer (Red) → Implementer (Green) → Validation.
+
+**Why**: Without enforcement, TDD compliance with AI agents is ~20%. With hooks + context isolation, it rises to ~84%.
+{{/ifRule}}
 
 {{/if}}
 ## Commands

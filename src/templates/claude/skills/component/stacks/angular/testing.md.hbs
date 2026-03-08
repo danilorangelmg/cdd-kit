@@ -1,0 +1,165 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes de Teste Angular (TestBed)
+
+## Estrutura Base
+
+```ts
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { ButtonComponent } from "./button.component";
+
+describe("ButtonComponent", () => {
+  let component: ButtonComponent;
+  let fixture: ComponentFixture<ButtonComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ButtonComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ButtonComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it("deve criar o componente", () => {
+    expect(component).toBeTruthy();
+  });
+
+  it("deve aplicar variante via Input", () => {
+    component.variant = "outline";
+    fixture.detectChanges();
+
+    const button = fixture.debugElement.query(By.css("button"));
+    expect(button.nativeElement.className).toContain("btn--outline");
+  });
+});
+```
+
+## Testando Outputs (EventEmitter)
+
+```ts
+it("deve emitir clicked ao clicar", () => {
+  const spy = jest.spyOn(component.clicked, "emit");
+
+  const button = fixture.debugElement.query(By.css("button"));
+  button.triggerEventHandler("click", new MouseEvent("click"));
+
+  expect(spy).toHaveBeenCalledTimes(1);
+});
+```
+
+## Testando com Dependencias
+
+```ts
+beforeEach(async () => {
+  const mockService = { getUsers: () => of([mockUser]) };
+
+  await TestBed.configureTestingModule({
+    imports: [UserListComponent],
+    providers: [
+      { provide: UserService, useValue: mockService },
+    ],
+  }).compileComponents();
+});
+```
+
+## debugElement Queries
+
+```ts
+import { By } from "@angular/platform-browser";
+
+const button = fixture.debugElement.query(By.css("button"));
+const allItems = fixture.debugElement.queryAll(By.css(".item"));
+const child = fixture.debugElement.query(By.directive(ChildComponent));
+```
+
+## Convencoes
+
+- Sempre chamar `fixture.detectChanges()` apos mudar Inputs
+- Usar `By.css()` e `By.directive()` para queries
+- Mock de services via `providers` com `useValue`
+- Testar Outputs com `spyOn(component.output, 'emit')`
+- Componentes standalone: importar diretamente no `imports`
+{{else}}
+# Angular Testing Patterns (TestBed)
+
+## Base Structure
+
+```ts
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { ButtonComponent } from "./button.component";
+
+describe("ButtonComponent", () => {
+  let component: ButtonComponent;
+  let fixture: ComponentFixture<ButtonComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ButtonComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ButtonComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it("should create the component", () => {
+    expect(component).toBeTruthy();
+  });
+
+  it("should apply variant via Input", () => {
+    component.variant = "outline";
+    fixture.detectChanges();
+
+    const button = fixture.debugElement.query(By.css("button"));
+    expect(button.nativeElement.className).toContain("btn--outline");
+  });
+});
+```
+
+## Testing Outputs (EventEmitter)
+
+```ts
+it("should emit clicked on click", () => {
+  const spy = jest.spyOn(component.clicked, "emit");
+
+  const button = fixture.debugElement.query(By.css("button"));
+  button.triggerEventHandler("click", new MouseEvent("click"));
+
+  expect(spy).toHaveBeenCalledTimes(1);
+});
+```
+
+## Testing with Dependencies
+
+```ts
+beforeEach(async () => {
+  const mockService = { getUsers: () => of([mockUser]) };
+
+  await TestBed.configureTestingModule({
+    imports: [UserListComponent],
+    providers: [
+      { provide: UserService, useValue: mockService },
+    ],
+  }).compileComponents();
+});
+```
+
+## debugElement Queries
+
+```ts
+import { By } from "@angular/platform-browser";
+
+const button = fixture.debugElement.query(By.css("button"));
+const allItems = fixture.debugElement.queryAll(By.css(".item"));
+const child = fixture.debugElement.query(By.directive(ChildComponent));
+```
+
+## Conventions
+
+- Always call `fixture.detectChanges()` after changing Inputs
+- Use `By.css()` and `By.directive()` for queries
+- Mock services via `providers` with `useValue`
+- Test Outputs with `spyOn(component.output, 'emit')`
+- Standalone components: import directly in `imports`
+{{/if}}

@@ -1,0 +1,215 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Angular para Services (ViewModel)
+
+## Estrutura Base
+
+```ts
+import { Injectable } from "@angular/core";
+import { BehaviorSubject, Observable, map } from "rxjs";
+
+export interface UserState {
+  users: User[];
+  loading: boolean;
+  error: string | null;
+}
+
+@Injectable({ providedIn: "root" })
+export class UserService {
+  private state$ = new BehaviorSubject<UserState>({
+    users: [],
+    loading: false,
+    error: null,
+  });
+
+  readonly users$ = this.state$.pipe(map((s) => s.users));
+  readonly loading$ = this.state$.pipe(map((s) => s.loading));
+  readonly error$ = this.state$.pipe(map((s) => s.error));
+
+  private updateState(partial: Partial<UserState>): void {
+    this.state$.next({ ...this.state$.value, ...partial });
+  }
+
+  loadUsers(): void {
+    this.updateState({ loading: true, error: null });
+    this.http.get<User[]>("/api/users").subscribe({
+      next: (users) => this.updateState({ users, loading: false }),
+      error: (err) => this.updateState({ error: err.message, loading: false }),
+    });
+  }
+}
+```
+
+## RxJS Operators Essenciais
+
+```ts
+import {
+  map, switchMap, combineLatest, distinctUntilChanged,
+  debounceTime, catchError, tap, shareReplay,
+} from "rxjs";
+
+@Injectable({ providedIn: "root" })
+export class SearchService {
+  private query$ = new BehaviorSubject<string>("");
+
+  // switchMap — cancela requisicao anterior
+  readonly results$ = this.query$.pipe(
+    debounceTime(300),
+    distinctUntilChanged(),
+    switchMap((query) =>
+      query.length < 2
+        ? of([])
+        : this.http.get<Item[]>(`/api/search?q=${query}`)
+    ),
+    shareReplay(1),
+    catchError(() => of([]))
+  );
+
+  // combineLatest — combinar streams
+  readonly viewModel$ = combineLatest([
+    this.users$,
+    this.filters$,
+  ]).pipe(
+    map(([users, filters]) => this.applyFilters(users, filters))
+  );
+
+  search(query: string): void {
+    this.query$.next(query);
+  }
+}
+```
+
+## ViewModel Pattern
+
+```ts
+@Injectable()
+export class UserPageViewModel {
+  readonly vm$ = combineLatest([
+    this.userService.user$,
+    this.permissionService.permissions$,
+  ]).pipe(
+    map(([user, permissions]) => ({
+      user,
+      permissions,
+      canEdit: permissions.includes("edit"),
+    }))
+  );
+}
+```
+
+## Convencoes
+
+- Services como ViewModels com `BehaviorSubject` para estado
+- Selectors como observables derivados com `pipe(map(...))`
+- `switchMap` para requisicoes que cancelam a anterior
+- `shareReplay(1)` para evitar re-execucao
+- `catchError` em todo observable HTTP
+- `distinctUntilChanged` para evitar emissoes duplicadas
+- Metodo `updateState` privado para atualizacoes imutaveis
+{{else}}
+# Angular Service (ViewModel) Patterns
+
+## Base Structure
+
+```ts
+import { Injectable } from "@angular/core";
+import { BehaviorSubject, Observable, map } from "rxjs";
+
+export interface UserState {
+  users: User[];
+  loading: boolean;
+  error: string | null;
+}
+
+@Injectable({ providedIn: "root" })
+export class UserService {
+  private state$ = new BehaviorSubject<UserState>({
+    users: [],
+    loading: false,
+    error: null,
+  });
+
+  readonly users$ = this.state$.pipe(map((s) => s.users));
+  readonly loading$ = this.state$.pipe(map((s) => s.loading));
+  readonly error$ = this.state$.pipe(map((s) => s.error));
+
+  private updateState(partial: Partial<UserState>): void {
+    this.state$.next({ ...this.state$.value, ...partial });
+  }
+
+  loadUsers(): void {
+    this.updateState({ loading: true, error: null });
+    this.http.get<User[]>("/api/users").subscribe({
+      next: (users) => this.updateState({ users, loading: false }),
+      error: (err) => this.updateState({ error: err.message, loading: false }),
+    });
+  }
+}
+```
+
+## Essential RxJS Operators
+
+```ts
+import {
+  map, switchMap, combineLatest, distinctUntilChanged,
+  debounceTime, catchError, tap, shareReplay,
+} from "rxjs";
+
+@Injectable({ providedIn: "root" })
+export class SearchService {
+  private query$ = new BehaviorSubject<string>("");
+
+  // switchMap — cancels previous request
+  readonly results$ = this.query$.pipe(
+    debounceTime(300),
+    distinctUntilChanged(),
+    switchMap((query) =>
+      query.length < 2
+        ? of([])
+        : this.http.get<Item[]>(`/api/search?q=${query}`)
+    ),
+    shareReplay(1),
+    catchError(() => of([]))
+  );
+
+  // combineLatest — combine streams
+  readonly viewModel$ = combineLatest([
+    this.users$,
+    this.filters$,
+  ]).pipe(
+    map(([users, filters]) => this.applyFilters(users, filters))
+  );
+
+  search(query: string): void {
+    this.query$.next(query);
+  }
+}
+```
+
+## ViewModel Pattern
+
+```ts
+@Injectable()
+export class UserPageViewModel {
+  readonly vm$ = combineLatest([
+    this.userService.user$,
+    this.permissionService.permissions$,
+  ]).pipe(
+    map(([user, permissions]) => ({
+      user,
+      permissions,
+      canEdit: permissions.includes("edit"),
+    }))
+  );
+}
+```
+
+## Conventions
+
+- Services as ViewModels with `BehaviorSubject` for state
+- Selectors as derived observables with `pipe(map(...))`
+- `switchMap` for requests that cancel the previous one
+- `shareReplay(1)` to avoid re-execution
+- `catchError` on every HTTP observable
+- `distinctUntilChanged` to avoid duplicate emissions
+- Private `updateState` method for immutable updates
+{{/if}}

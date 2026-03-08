@@ -8,6 +8,7 @@ description: Create complete deterministic rule (Protocol + implementation + tes
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 model: sonnet
+argument-hint: "[name]"
 ---
 
 {{#if (eq project.language "pt-BR")}}
@@ -30,6 +31,9 @@ Regras sao funcoes **puras e deterministicas** que avaliam dados e retornam um r
 1. Ler regras existentes para entender o padrao (Protocol, implementacao)
 2. Verificar padroes em `.claude/rules/`
 3. Identificar entidades de dominio envolvidas
+{{#if stack}}
+4. Ler padroes da stack em [patterns.md](patterns.md)
+{{/if}}
 
 ### Fase 1 — Protocol (Contrato)
 Definir interface/protocol da regra:
@@ -94,6 +98,9 @@ Rules are **pure, deterministic functions** that evaluate data and return a stan
 1. Read existing rules to understand the pattern (Protocol, implementation)
 2. Check patterns in `.claude/rules/`
 3. Identify involved domain entities
+{{#if stack}}
+4. Read stack patterns in [patterns.md](patterns.md)
+{{/if}}
 
 ### Phase 1 — Protocol (Contract)
 Define rule interface/protocol:

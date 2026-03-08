@@ -1,0 +1,321 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes CrewAI para Criacao de Agents
+
+## Definicao de Agent
+
+```python
+from crewai import Agent
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+researcher = Agent(
+    role="Pesquisador Senior de Mercado",
+    goal="Identificar tendencias e oportunidades em {industry}",
+    backstory=(
+        "Voce e um pesquisador com 15 anos de experiencia em analise de mercado. "
+        "Tem habilidade em encontrar padroes em dados e prever tendencias."
+    ),
+    llm=llm,
+    tools=[search_tool, scrape_tool],
+    verbose=True,
+    allow_delegation=False,
+    max_iter=5,
+    memory=True,
+)
+
+analyst = Agent(
+    role="Analista de Dados",
+    goal="Transformar dados brutos em insights acionaveis",
+    backstory=(
+        "Voce e um analista de dados especializado em transformar "
+        "informacoes complexas em recomendacoes claras."
+    ),
+    llm=llm,
+    tools=[calculator_tool, chart_tool],
+    verbose=True,
+    allow_delegation=False,
+)
+
+writer = Agent(
+    role="Redator Estrategico",
+    goal="Criar relatorios executivos claros e persuasivos",
+    backstory=(
+        "Voce e um redator especializado em comunicacao corporativa "
+        "com foco em clareza e acao."
+    ),
+    llm=llm,
+    verbose=True,
+    allow_delegation=False,
+)
+```
+
+## Definicao de Tasks
+
+```python
+from crewai import Task
+
+research_task = Task(
+    description=(
+        "Pesquisar as 5 principais tendencias em {industry} para 2025. "
+        "Incluir dados quantitativos e fontes confiaveis."
+    ),
+    expected_output=(
+        "Lista de 5 tendencias com: descricao, impacto estimado, "
+        "fontes e dados de suporte."
+    ),
+    agent=researcher,
+)
+
+analysis_task = Task(
+    description=(
+        "Analisar as tendencias identificadas e classificar por impacto. "
+        "Calcular ROI potencial para cada oportunidade."
+    ),
+    expected_output="Ranking de tendencias com ROI estimado e recomendacoes.",
+    agent=analyst,
+    context=[research_task],
+)
+
+report_task = Task(
+    description="Criar relatorio executivo com as analises e recomendacoes.",
+    expected_output="Relatorio em Markdown com sumario executivo, analise e proximos passos.",
+    agent=writer,
+    context=[research_task, analysis_task],
+    output_file="report.md",
+)
+```
+
+## Crew com Process Sequential
+
+```python
+from crewai import Crew, Process
+
+crew = Crew(
+    agents=[researcher, analyst, writer],
+    tasks=[research_task, analysis_task, report_task],
+    process=Process.sequential,
+    verbose=True,
+    memory=True,
+    planning=True,
+)
+
+result = crew.kickoff(inputs={"industry": "FinTech"})
+print(result)
+```
+
+## Crew com Process Hierarchical
+
+```python
+crew = Crew(
+    agents=[researcher, analyst, writer],
+    tasks=[research_task, analysis_task, report_task],
+    process=Process.hierarchical,
+    manager_llm=ChatOpenAI(model="gpt-4o"),
+    verbose=True,
+)
+```
+
+## Configuracao via YAML
+
+```yaml
+# config/agents.yaml
+researcher:
+  role: "Pesquisador Senior de Mercado"
+  goal: "Identificar tendencias em {industry}"
+  backstory: "Pesquisador com 15 anos de experiencia."
+  tools:
+    - search_tool
+    - scrape_tool
+
+# config/tasks.yaml
+research_task:
+  description: "Pesquisar tendencias em {industry}."
+  expected_output: "Lista de 5 tendencias com fontes."
+  agent: researcher
+```
+
+```python
+from crewai import Crew
+import yaml
+
+class ResearchCrew:
+    def __init__(self):
+        with open("config/agents.yaml") as f:
+            self.agents_config = yaml.safe_load(f)
+        with open("config/tasks.yaml") as f:
+            self.tasks_config = yaml.safe_load(f)
+```
+
+## Convencoes
+
+- `role`: especifico e descritivo (titulo profissional)
+- `goal`: orientado a resultado com variavel `{input}`
+- `backstory`: 2-3 frases contextualizando expertise
+- `max_iter`: limitar iteracoes para evitar loops
+- `memory=True` no Crew para contexto entre execucoes
+- `output_file` na ultima task para salvar resultado
+- `Process.sequential` por padrao
+- `Process.hierarchical` quando um manager precisa decidir a ordem
+- YAML para configuracoes reutilizaveis
+{{else}}
+# CrewAI Agent Creation Patterns
+
+## Agent Definition
+
+```python
+from crewai import Agent
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+researcher = Agent(
+    role="Senior Market Researcher",
+    goal="Identify trends and opportunities in {industry}",
+    backstory=(
+        "You are a researcher with 15 years of experience in market analysis. "
+        "You excel at finding patterns in data and predicting trends."
+    ),
+    llm=llm,
+    tools=[search_tool, scrape_tool],
+    verbose=True,
+    allow_delegation=False,
+    max_iter=5,
+    memory=True,
+)
+
+analyst = Agent(
+    role="Data Analyst",
+    goal="Transform raw data into actionable insights",
+    backstory=(
+        "You are a data analyst specialized in transforming "
+        "complex information into clear recommendations."
+    ),
+    llm=llm,
+    tools=[calculator_tool, chart_tool],
+    verbose=True,
+    allow_delegation=False,
+)
+
+writer = Agent(
+    role="Strategic Writer",
+    goal="Create clear and persuasive executive reports",
+    backstory=(
+        "You are a writer specialized in corporate communication "
+        "focused on clarity and action."
+    ),
+    llm=llm,
+    verbose=True,
+    allow_delegation=False,
+)
+```
+
+## Task Definition
+
+```python
+from crewai import Task
+
+research_task = Task(
+    description=(
+        "Research the top 5 trends in {industry} for 2025. "
+        "Include quantitative data and reliable sources."
+    ),
+    expected_output=(
+        "List of 5 trends with: description, estimated impact, "
+        "sources and supporting data."
+    ),
+    agent=researcher,
+)
+
+analysis_task = Task(
+    description=(
+        "Analyze identified trends and rank by impact. "
+        "Calculate potential ROI for each opportunity."
+    ),
+    expected_output="Ranking of trends with estimated ROI and recommendations.",
+    agent=analyst,
+    context=[research_task],
+)
+
+report_task = Task(
+    description="Create executive report with analyses and recommendations.",
+    expected_output="Markdown report with executive summary, analysis, and next steps.",
+    agent=writer,
+    context=[research_task, analysis_task],
+    output_file="report.md",
+)
+```
+
+## Crew with Sequential Process
+
+```python
+from crewai import Crew, Process
+
+crew = Crew(
+    agents=[researcher, analyst, writer],
+    tasks=[research_task, analysis_task, report_task],
+    process=Process.sequential,
+    verbose=True,
+    memory=True,
+    planning=True,
+)
+
+result = crew.kickoff(inputs={"industry": "FinTech"})
+print(result)
+```
+
+## Crew with Hierarchical Process
+
+```python
+crew = Crew(
+    agents=[researcher, analyst, writer],
+    tasks=[research_task, analysis_task, report_task],
+    process=Process.hierarchical,
+    manager_llm=ChatOpenAI(model="gpt-4o"),
+    verbose=True,
+)
+```
+
+## YAML Configuration
+
+```yaml
+# config/agents.yaml
+researcher:
+  role: "Senior Market Researcher"
+  goal: "Identify trends in {industry}"
+  backstory: "Researcher with 15 years of experience."
+  tools:
+    - search_tool
+    - scrape_tool
+
+# config/tasks.yaml
+research_task:
+  description: "Research trends in {industry}."
+  expected_output: "List of 5 trends with sources."
+  agent: researcher
+```
+
+```python
+from crewai import Crew
+import yaml
+
+class ResearchCrew:
+    def __init__(self):
+        with open("config/agents.yaml") as f:
+            self.agents_config = yaml.safe_load(f)
+        with open("config/tasks.yaml") as f:
+            self.tasks_config = yaml.safe_load(f)
+```
+
+## Conventions
+
+- `role`: specific and descriptive (professional title)
+- `goal`: result-oriented with `{input}` variable
+- `backstory`: 2-3 sentences contextualizing expertise
+- `max_iter`: limit iterations to prevent loops
+- `memory=True` on Crew for cross-execution context
+- `output_file` on last task to save result
+- `Process.sequential` by default
+- `Process.hierarchical` when a manager needs to decide order
+- YAML for reusable configurations
+{{/if}}

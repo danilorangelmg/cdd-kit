@@ -1,0 +1,231 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes de Teste para Hooks React
+
+## Estrutura Base (renderHook)
+
+```ts
+import { renderHook, act } from "@testing-library/react";
+import { useCounter } from "./useCounter";
+
+describe("useCounter", () => {
+  it("inicia com valor padrao", () => {
+    const { result } = renderHook(() => useCounter());
+    expect(result.current.count).toBe(0);
+  });
+
+  it("inicia com valor customizado", () => {
+    const { result } = renderHook(() => useCounter(10));
+    expect(result.current.count).toBe(10);
+  });
+
+  it("incrementa o contador", () => {
+    const { result } = renderHook(() => useCounter());
+
+    act(() => {
+      result.current.increment();
+    });
+
+    expect(result.current.count).toBe(1);
+  });
+});
+```
+
+## act() — Envolvendo Atualizacoes de Estado
+
+```ts
+it("executa multiplas acoes", () => {
+  const { result } = renderHook(() => useCounter());
+
+  act(() => {
+    result.current.increment();
+    result.current.increment();
+    result.current.increment();
+  });
+
+  expect(result.current.count).toBe(3);
+});
+```
+
+## Testando Hooks Assincronos
+
+```ts
+import { renderHook, waitFor } from "@testing-library/react";
+
+it("carrega dados do usuario", async () => {
+  const { result } = renderHook(() => useUser("123"));
+
+  await waitFor(() => {
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  expect(result.current.data?.name).toBe("Maria");
+});
+```
+
+## Wrapper para Providers
+
+```tsx
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+}
+
+it("usa React Query", async () => {
+  const { result } = renderHook(() => useUsers(), {
+    wrapper: createWrapper(),
+  });
+
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+});
+```
+
+## Testando Rerender com Novos Args
+
+```ts
+it("reseta ao mudar valor inicial", () => {
+  const { result, rerender } = renderHook(
+    ({ initial }) => useCounter(initial),
+    { initialProps: { initial: 0 } }
+  );
+
+  act(() => result.current.increment());
+  expect(result.current.count).toBe(1);
+
+  rerender({ initial: 10 });
+  // Verificar comportamento com nova prop
+});
+```
+
+## Convencoes
+
+- Usar `renderHook` de `@testing-library/react`
+- Envolver mutacoes de estado com `act()`
+- Usar `waitFor` para hooks assincronos
+- Criar wrapper factory para providers (QueryClient, etc.)
+- Testar retorno inicial, acoes e efeitos colaterais
+- Usar `rerender` para testar mudancas de argumentos
+{{else}}
+# React Hook Testing Patterns
+
+## Base Structure (renderHook)
+
+```ts
+import { renderHook, act } from "@testing-library/react";
+import { useCounter } from "./useCounter";
+
+describe("useCounter", () => {
+  it("starts with default value", () => {
+    const { result } = renderHook(() => useCounter());
+    expect(result.current.count).toBe(0);
+  });
+
+  it("starts with custom value", () => {
+    const { result } = renderHook(() => useCounter(10));
+    expect(result.current.count).toBe(10);
+  });
+
+  it("increments the counter", () => {
+    const { result } = renderHook(() => useCounter());
+
+    act(() => {
+      result.current.increment();
+    });
+
+    expect(result.current.count).toBe(1);
+  });
+});
+```
+
+## act() — Wrapping State Updates
+
+```ts
+it("executes multiple actions", () => {
+  const { result } = renderHook(() => useCounter());
+
+  act(() => {
+    result.current.increment();
+    result.current.increment();
+    result.current.increment();
+  });
+
+  expect(result.current.count).toBe(3);
+});
+```
+
+## Testing Async Hooks
+
+```ts
+import { renderHook, waitFor } from "@testing-library/react";
+
+it("loads user data", async () => {
+  const { result } = renderHook(() => useUser("123"));
+
+  await waitFor(() => {
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  expect(result.current.data?.name).toBe("Maria");
+});
+```
+
+## Wrapper for Providers
+
+```tsx
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+}
+
+it("uses React Query", async () => {
+  const { result } = renderHook(() => useUsers(), {
+    wrapper: createWrapper(),
+  });
+
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+});
+```
+
+## Testing Rerender with New Args
+
+```ts
+it("resets when initial value changes", () => {
+  const { result, rerender } = renderHook(
+    ({ initial }) => useCounter(initial),
+    { initialProps: { initial: 0 } }
+  );
+
+  act(() => result.current.increment());
+  expect(result.current.count).toBe(1);
+
+  rerender({ initial: 10 });
+  // Verify behavior with new prop
+});
+```
+
+## Conventions
+
+- Use `renderHook` from `@testing-library/react`
+- Wrap state mutations with `act()`
+- Use `waitFor` for async hooks
+- Create wrapper factory for providers (QueryClient, etc.)
+- Test initial return, actions, and side effects
+- Use `rerender` to test argument changes
+{{/if}}

@@ -1,0 +1,197 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Fastify para Services
+
+## Service como Plugin
+
+```typescript
+import fp from 'fastify-plugin';
+import { FastifyInstance } from 'fastify';
+
+export class RecursoService {
+  constructor(private readonly repository: RecursoRepository) {}
+
+  async findAll(filtros?: ListRecursoFiltros): Promise<Recurso[]> {
+    return this.repository.findMany(filtros);
+  }
+
+  async findOne(id: string): Promise<Recurso> {
+    const recurso = await this.repository.findById(id);
+    if (!recurso) {
+      throw new NotFoundError(`Recurso ${id} nao encontrado`);
+    }
+    return recurso;
+  }
+
+  async create(dados: CreateRecursoInput): Promise<Recurso> {
+    return this.repository.create(dados);
+  }
+
+  async update(id: string, dados: UpdateRecursoInput): Promise<Recurso> {
+    await this.findOne(id);
+    return this.repository.update(id, dados);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.findOne(id);
+    await this.repository.delete(id);
+  }
+}
+
+// Plugin que registra o service
+export default fp(async function recursoServicePlugin(fastify: FastifyInstance) {
+  const repository = new PrismaRecursoRepository(fastify.prisma);
+  const service = new RecursoService(repository);
+  fastify.decorate('recursoService', service);
+});
+```
+
+## Decorators e Tipagem
+
+```typescript
+// Declaracao de tipos para o decorator
+declare module 'fastify' {
+  interface FastifyInstance {
+    recursoService: RecursoService;
+  }
+}
+```
+
+## Encapsulamento
+
+```typescript
+// Plugin encapsulado — visivel apenas no escopo de registro
+async function recursoPlugin(fastify: FastifyInstance) {
+  const service = new RecursoService(fastify.db);
+  fastify.decorate('recursoService', service);
+
+  // Rotas que usam o service
+  fastify.get('/', async () => service.findAll());
+}
+
+// Plugin compartilhado — visivel em toda a aplicacao
+export default fp(async function sharedPlugin(fastify: FastifyInstance) {
+  fastify.decorate('sharedService', new SharedService());
+});
+```
+
+## Acesso a Dependencias via Fastify
+
+```typescript
+export default fp(async function pedidoServicePlugin(fastify: FastifyInstance) {
+  // Acessar outros services via decorators do Fastify
+  const service = new PedidoService(
+    fastify.pedidoRepository,
+    fastify.estoqueService,
+    fastify.notificacaoService,
+  );
+  fastify.decorate('pedidoService', service);
+});
+```
+
+## Convencoes
+- Service e classe pura — logica de negocio sem Fastify
+- Plugin (`fp`) registra e expoe o service via `decorate`
+- `fastify-plugin` (`fp`) para plugins que devem ser compartilhados
+- Sem `fp` para plugins encapsulados (escopo isolado)
+- Declarar tipos com `declare module 'fastify'`
+- Dependencias acessadas via decorators da instancia Fastify
+- Service nao conhece HTTP (sem request/reply)
+{{else}}
+# Fastify Service Patterns
+
+## Service as Plugin
+
+```typescript
+import fp from 'fastify-plugin';
+import { FastifyInstance } from 'fastify';
+
+export class ResourceService {
+  constructor(private readonly repository: ResourceRepository) {}
+
+  async findAll(filters?: ListResourceFilters): Promise<Resource[]> {
+    return this.repository.findMany(filters);
+  }
+
+  async findOne(id: string): Promise<Resource> {
+    const resource = await this.repository.findById(id);
+    if (!resource) {
+      throw new NotFoundError(`Resource ${id} not found`);
+    }
+    return resource;
+  }
+
+  async create(data: CreateResourceInput): Promise<Resource> {
+    return this.repository.create(data);
+  }
+
+  async update(id: string, data: UpdateResourceInput): Promise<Resource> {
+    await this.findOne(id);
+    return this.repository.update(id, data);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.findOne(id);
+    await this.repository.delete(id);
+  }
+}
+
+// Plugin that registers the service
+export default fp(async function resourceServicePlugin(fastify: FastifyInstance) {
+  const repository = new PrismaResourceRepository(fastify.prisma);
+  const service = new ResourceService(repository);
+  fastify.decorate('resourceService', service);
+});
+```
+
+## Decorators and Typing
+
+```typescript
+// Type declaration for the decorator
+declare module 'fastify' {
+  interface FastifyInstance {
+    resourceService: ResourceService;
+  }
+}
+```
+
+## Encapsulation
+
+```typescript
+// Encapsulated plugin — visible only in registration scope
+async function resourcePlugin(fastify: FastifyInstance) {
+  const service = new ResourceService(fastify.db);
+  fastify.decorate('resourceService', service);
+
+  // Routes that use the service
+  fastify.get('/', async () => service.findAll());
+}
+
+// Shared plugin — visible across the entire application
+export default fp(async function sharedPlugin(fastify: FastifyInstance) {
+  fastify.decorate('sharedService', new SharedService());
+});
+```
+
+## Accessing Dependencies via Fastify
+
+```typescript
+export default fp(async function orderServicePlugin(fastify: FastifyInstance) {
+  // Access other services via Fastify decorators
+  const service = new OrderService(
+    fastify.orderRepository,
+    fastify.inventoryService,
+    fastify.notificationService,
+  );
+  fastify.decorate('orderService', service);
+});
+```
+
+## Conventions
+- Service is a pure class — business logic without Fastify
+- Plugin (`fp`) registers and exposes the service via `decorate`
+- `fastify-plugin` (`fp`) for plugins that should be shared
+- Without `fp` for encapsulated plugins (isolated scope)
+- Declare types with `declare module 'fastify'`
+- Dependencies accessed via Fastify instance decorators
+- Service doesn't know HTTP (no request/reply)
+{{/if}}

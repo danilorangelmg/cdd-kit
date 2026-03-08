@@ -175,6 +175,11 @@ export function renderTemplateString(
   return template(context);
 }
 
+export function templateExists(templatePath: string): boolean {
+  const fullPath = path.resolve(TEMPLATES_DIR, templatePath);
+  return fs.existsSync(fullPath);
+}
+
 export function getTemplatesDir(): string {
   return TEMPLATES_DIR;
 }

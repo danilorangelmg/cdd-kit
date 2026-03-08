@@ -1,0 +1,243 @@
+{{#if (eq project.language "pt-BR")}}
+# Setup de Testes Angular (Jest + TestBed)
+
+## Configuracao Jest
+
+```js
+// jest.config.js
+module.exports = {
+  preset: "jest-preset-angular",
+  setupFilesAfterSetup: ["<rootDir>/setup-jest.ts"],
+  testPathIgnorePatterns: ["/node_modules/", "/dist/"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
+};
+```
+
+## Setup File
+
+```ts
+// setup-jest.ts
+import "jest-preset-angular/setup-jest";
+```
+
+## Estrutura de Teste (Componente)
+
+```ts
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { By } from "@angular/platform-browser";
+import { ButtonComponent } from "./button.component";
+
+describe("ButtonComponent", () => {
+  let component: ButtonComponent;
+  let fixture: ComponentFixture<ButtonComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ButtonComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ButtonComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it("deve criar", () => {
+    expect(component).toBeTruthy();
+  });
+
+  it("deve renderizar com variante", () => {
+    component.variant = "outline";
+    fixture.detectChanges();
+
+    const el = fixture.debugElement.query(By.css("button"));
+    expect(el.nativeElement.className).toContain("btn--outline");
+  });
+
+  it("deve emitir ao clicar", () => {
+    const spy = jest.spyOn(component.clicked, "emit");
+    const button = fixture.debugElement.query(By.css("button"));
+    button.triggerEventHandler("click", new MouseEvent("click"));
+    expect(spy).toHaveBeenCalled();
+  });
+});
+```
+
+## ComponentFixture API
+
+```ts
+// Detectar mudancas apos alterar inputs
+fixture.detectChanges();
+
+// Queries no template
+fixture.debugElement.query(By.css(".selector"));
+fixture.debugElement.queryAll(By.css(".item"));
+fixture.debugElement.query(By.directive(ChildComponent));
+
+// Texto nativo
+fixture.nativeElement.textContent;
+```
+
+## fakeAsync para Operacoes Temporais
+
+```ts
+import { fakeAsync, tick, flush } from "@angular/core/testing";
+
+it("debounce funciona", fakeAsync(() => {
+  component.onSearch("test");
+  tick(300);
+  fixture.detectChanges();
+  expect(component.results).toHaveLength(1);
+}));
+```
+
+## Mock de Services
+
+```ts
+const mockUserService = {
+  getUsers: jest.fn().mockReturnValue(of([mockUser])),
+  loading$: new BehaviorSubject(false),
+};
+
+beforeEach(async () => {
+  await TestBed.configureTestingModule({
+    imports: [UserListComponent],
+    providers: [
+      { provide: UserService, useValue: mockUserService },
+    ],
+  }).compileComponents();
+});
+```
+
+## Convencoes
+
+- Jest com `jest-preset-angular`
+- TestBed para configurar modulo de teste
+- `fixture.detectChanges()` obrigatorio apos mudar estado
+- `By.css()` para queries no template
+- `fakeAsync` + `tick` para timers e debounce
+- Mock de services via `providers` com `useValue`
+- Componentes standalone importados diretamente
+{{else}}
+# Angular Testing Setup (Jest + TestBed)
+
+## Jest Configuration
+
+```js
+// jest.config.js
+module.exports = {
+  preset: "jest-preset-angular",
+  setupFilesAfterSetup: ["<rootDir>/setup-jest.ts"],
+  testPathIgnorePatterns: ["/node_modules/", "/dist/"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
+};
+```
+
+## Setup File
+
+```ts
+// setup-jest.ts
+import "jest-preset-angular/setup-jest";
+```
+
+## Test Structure (Component)
+
+```ts
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { By } from "@angular/platform-browser";
+import { ButtonComponent } from "./button.component";
+
+describe("ButtonComponent", () => {
+  let component: ButtonComponent;
+  let fixture: ComponentFixture<ButtonComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ButtonComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ButtonComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it("should create", () => {
+    expect(component).toBeTruthy();
+  });
+
+  it("should render with variant", () => {
+    component.variant = "outline";
+    fixture.detectChanges();
+
+    const el = fixture.debugElement.query(By.css("button"));
+    expect(el.nativeElement.className).toContain("btn--outline");
+  });
+
+  it("should emit on click", () => {
+    const spy = jest.spyOn(component.clicked, "emit");
+    const button = fixture.debugElement.query(By.css("button"));
+    button.triggerEventHandler("click", new MouseEvent("click"));
+    expect(spy).toHaveBeenCalled();
+  });
+});
+```
+
+## ComponentFixture API
+
+```ts
+// Detect changes after modifying inputs
+fixture.detectChanges();
+
+// Template queries
+fixture.debugElement.query(By.css(".selector"));
+fixture.debugElement.queryAll(By.css(".item"));
+fixture.debugElement.query(By.directive(ChildComponent));
+
+// Native text
+fixture.nativeElement.textContent;
+```
+
+## fakeAsync for Temporal Operations
+
+```ts
+import { fakeAsync, tick, flush } from "@angular/core/testing";
+
+it("debounce works", fakeAsync(() => {
+  component.onSearch("test");
+  tick(300);
+  fixture.detectChanges();
+  expect(component.results).toHaveLength(1);
+}));
+```
+
+## Service Mocking
+
+```ts
+const mockUserService = {
+  getUsers: jest.fn().mockReturnValue(of([mockUser])),
+  loading$: new BehaviorSubject(false),
+};
+
+beforeEach(async () => {
+  await TestBed.configureTestingModule({
+    imports: [UserListComponent],
+    providers: [
+      { provide: UserService, useValue: mockUserService },
+    ],
+  }).compileComponents();
+});
+```
+
+## Conventions
+
+- Jest with `jest-preset-angular`
+- TestBed for test module configuration
+- `fixture.detectChanges()` mandatory after state changes
+- `By.css()` for template queries
+- `fakeAsync` + `tick` for timers and debounce
+- Mock services via `providers` with `useValue`
+- Standalone components imported directly
+{{/if}}

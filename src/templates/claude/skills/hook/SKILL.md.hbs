@@ -8,6 +8,7 @@ description: Create custom hook (ViewModel) following MVVM pattern
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 model: sonnet
+argument-hint: "[name] [type]"
 ---
 
 {{#if (eq project.language "pt-BR")}}
@@ -49,20 +50,29 @@ model: sonnet
 1. Ler hooks existentes para entender padroes
 2. Identificar services e API modules disponiveis
 3. Verificar query keys existentes
+{{#if stack}}
+4. Ler padroes da stack em [patterns.md](patterns.md)
+{{/if}}
 
 ### Fase 1 — Tipo de Retorno
-Criar interface `Use{Nome}Return` com:
+Criar interface de retorno com:
 - Dados expostos (tipados)
 - Estado (isLoading, error)
 - Acoes (refetch, mutate, setters)
 
 ### Fase 2 — Implementacao
+{{#if stack}}
+> Padroes especificos da stack ({{stack.label}}): ver [patterns.md](patterns.md)
+{{/if}}
 - Query library para server state
 - Service para logica derivada
-- `useCallback`/`useMemo` para estabilidade de referencia
-- Cleanup adequado em `useEffect`
+- Memoizacao para estabilidade de referencia
+- Cleanup adequado de side effects
 
 ### Fase 3 — Testes
+{{#if stack}}
+> Padroes de teste da stack: ver [testing.md](testing.md)
+{{/if}}
 - Mock de dependencias (sub-hooks, API, query library)
 - Testar shape do retorno vs interface
 - Testar agregacao de loading/error
@@ -74,8 +84,8 @@ Criar interface `Use{Nome}Return` com:
 - Verificar lint
 
 ## Checklist
-- [ ] Interface `Use{Nome}Return` definida
-- [ ] Server state via query library (nao useState)
+- [ ] Interface de retorno tipada definida
+- [ ] Server state via query library
 - [ ] Logica derivada no service (nao no hook)
 - [ ] Memoizacao adequada (nao excessiva)
 - [ ] Cleanup de side effects
@@ -120,20 +130,29 @@ Criar interface `Use{Nome}Return` com:
 1. Read existing hooks to understand patterns
 2. Identify available services and API modules
 3. Check existing query keys
+{{#if stack}}
+4. Read stack patterns in [patterns.md](patterns.md)
+{{/if}}
 
 ### Phase 1 — Return Type
-Create `Use{Name}Return` interface with:
+Create typed return interface with:
 - Exposed data (typed)
 - State (isLoading, error)
 - Actions (refetch, mutate, setters)
 
 ### Phase 2 — Implementation
+{{#if stack}}
+> Stack-specific patterns ({{stack.label}}): see [patterns.md](patterns.md)
+{{/if}}
 - Query library for server state
 - Service for derived logic
-- `useCallback`/`useMemo` for reference stability
-- Proper cleanup in `useEffect`
+- Memoization for reference stability
+- Proper side effect cleanup
 
 ### Phase 3 — Tests
+{{#if stack}}
+> Stack-specific test patterns: see [testing.md](testing.md)
+{{/if}}
 - Mock dependencies (sub-hooks, API, query library)
 - Test return shape vs interface
 - Test loading/error aggregation
@@ -145,8 +164,8 @@ Create `Use{Name}Return` interface with:
 - Check lint
 
 ## Checklist
-- [ ] `Use{Name}Return` interface defined
-- [ ] Server state via query library (not useState)
+- [ ] Typed return interface defined
+- [ ] Server state via query library
 - [ ] Derived logic in service (not in hook)
 - [ ] Appropriate memoization (not excessive)
 - [ ] Side effect cleanup

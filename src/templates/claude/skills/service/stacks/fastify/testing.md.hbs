@@ -1,0 +1,219 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes Fastify para Services
+
+## Teste Unitario do Service (Puro)
+
+```typescript
+describe('RecursoService', () => {
+  let service: RecursoService;
+  let mockRepository: jest.Mocked<RecursoRepository>;
+
+  beforeEach(() => {
+    mockRepository = {
+      findMany: jest.fn(),
+      findById: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    };
+
+    service = new RecursoService(mockRepository);
+  });
+
+  describe('findOne', () => {
+    it('deve retornar recurso quando encontrado', async () => {
+      const recurso = { id: '1', nome: 'Teste' };
+      mockRepository.findById.mockResolvedValue(recurso);
+
+      const resultado = await service.findOne('1');
+      expect(resultado).toEqual(recurso);
+    });
+
+    it('deve lancar NotFoundError quando nao encontrado', async () => {
+      mockRepository.findById.mockResolvedValue(null);
+
+      await expect(service.findOne('999')).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe('create', () => {
+    it('deve criar e retornar recurso', async () => {
+      const dados = { nome: 'Novo' };
+      const criado = { id: '1', ...dados };
+      mockRepository.create.mockResolvedValue(criado);
+
+      const resultado = await service.create(dados);
+      expect(resultado).toEqual(criado);
+    });
+  });
+});
+```
+
+## Teste do Plugin
+
+```typescript
+import Fastify from 'fastify';
+import recursoServicePlugin from './recurso.service.plugin';
+
+describe('recursoServicePlugin', () => {
+  it('deve registrar service como decorator', async () => {
+    const fastify = Fastify();
+
+    // Registrar dependencias necessarias
+    fastify.decorate('prisma', mockPrismaClient);
+
+    fastify.register(recursoServicePlugin);
+    await fastify.ready();
+
+    expect(fastify.recursoService).toBeDefined();
+    expect(fastify.recursoService).toBeInstanceOf(RecursoService);
+
+    await fastify.close();
+  });
+});
+```
+
+## Teste de Integracao com inject
+
+```typescript
+describe('Recurso Routes + Service', () => {
+  let fastify: ReturnType<typeof Fastify>;
+
+  beforeEach(async () => {
+    fastify = Fastify();
+    fastify.decorate('prisma', mockPrismaClient);
+    fastify.register(recursoServicePlugin);
+    fastify.register(recursoRoutes, { prefix: '/recursos' });
+    await fastify.ready();
+  });
+
+  afterEach(() => fastify.close());
+
+  it('deve buscar recurso via endpoint', async () => {
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/recursos/1',
+    });
+
+    expect(response.statusCode).toBe(200);
+  });
+});
+```
+
+## Convencoes
+- Service e classe pura — testar com `new` e mocks simples
+- Plugin testado separadamente: verificar que decorator existe
+- Testes de integracao com `fastify.inject()` quando necessario
+- Sempre chamar `fastify.close()` apos testes com Fastify
+- Mockar dependencias via `decorate` antes de registrar plugin
+- Separar testes unitarios (service) de integracao (plugin + rotas)
+{{else}}
+# Fastify Service Testing
+
+## Unit Test (Pure Service)
+
+```typescript
+describe('ResourceService', () => {
+  let service: ResourceService;
+  let mockRepository: jest.Mocked<ResourceRepository>;
+
+  beforeEach(() => {
+    mockRepository = {
+      findMany: jest.fn(),
+      findById: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    };
+
+    service = new ResourceService(mockRepository);
+  });
+
+  describe('findOne', () => {
+    it('should return resource when found', async () => {
+      const resource = { id: '1', name: 'Test' };
+      mockRepository.findById.mockResolvedValue(resource);
+
+      const result = await service.findOne('1');
+      expect(result).toEqual(resource);
+    });
+
+    it('should throw NotFoundError when not found', async () => {
+      mockRepository.findById.mockResolvedValue(null);
+
+      await expect(service.findOne('999')).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe('create', () => {
+    it('should create and return resource', async () => {
+      const data = { name: 'New' };
+      const created = { id: '1', ...data };
+      mockRepository.create.mockResolvedValue(created);
+
+      const result = await service.create(data);
+      expect(result).toEqual(created);
+    });
+  });
+});
+```
+
+## Plugin Test
+
+```typescript
+import Fastify from 'fastify';
+import resourceServicePlugin from './resource.service.plugin';
+
+describe('resourceServicePlugin', () => {
+  it('should register service as decorator', async () => {
+    const fastify = Fastify();
+
+    // Register required dependencies
+    fastify.decorate('prisma', mockPrismaClient);
+
+    fastify.register(resourceServicePlugin);
+    await fastify.ready();
+
+    expect(fastify.resourceService).toBeDefined();
+    expect(fastify.resourceService).toBeInstanceOf(ResourceService);
+
+    await fastify.close();
+  });
+});
+```
+
+## Integration Test with inject
+
+```typescript
+describe('Resource Routes + Service', () => {
+  let fastify: ReturnType<typeof Fastify>;
+
+  beforeEach(async () => {
+    fastify = Fastify();
+    fastify.decorate('prisma', mockPrismaClient);
+    fastify.register(resourceServicePlugin);
+    fastify.register(resourceRoutes, { prefix: '/resources' });
+    await fastify.ready();
+  });
+
+  afterEach(() => fastify.close());
+
+  it('should fetch resource via endpoint', async () => {
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/resources/1',
+    });
+
+    expect(response.statusCode).toBe(200);
+  });
+});
+```
+
+## Conventions
+- Service is a pure class — test with `new` and simple mocks
+- Plugin tested separately: verify decorator exists
+- Integration tests with `fastify.inject()` when needed
+- Always call `fastify.close()` after tests with Fastify
+- Mock dependencies via `decorate` before registering plugin
+- Separate unit tests (service) from integration tests (plugin + routes)
+{{/if}}

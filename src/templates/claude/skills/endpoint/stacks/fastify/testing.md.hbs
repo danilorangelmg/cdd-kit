@@ -1,0 +1,181 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes Fastify para Endpoints
+
+## Teste com fastify.inject()
+
+```typescript
+import Fastify from 'fastify';
+import recursoRoutes from './recurso.routes';
+import recursoServicePlugin from './recurso.service.plugin';
+
+describe('Recurso Routes', () => {
+  let fastify: ReturnType<typeof Fastify>;
+
+  beforeEach(async () => {
+    fastify = Fastify();
+
+    // Registrar mock do service como decorator
+    fastify.decorate('recursoService', {
+      findAll: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+      remove: jest.fn(),
+    });
+
+    fastify.register(recursoRoutes, { prefix: '/recursos' });
+    await fastify.ready();
+  });
+
+  afterEach(async () => {
+    await fastify.close();
+  });
+
+  it('POST /recursos - deve criar recurso', async () => {
+    const service = fastify.recursoService as any;
+    service.create.mockResolvedValue({ id: '1', nome: 'Teste' });
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/recursos',
+      payload: { nome: 'Teste' },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toEqual({ id: '1', nome: 'Teste' });
+  });
+
+  it('POST /recursos - deve rejeitar payload invalido', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/recursos',
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('GET /recursos/:id - deve retornar recurso', async () => {
+    const service = fastify.recursoService as any;
+    service.findOne.mockResolvedValue({ id: '1', nome: 'Teste' });
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/recursos/1',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ id: '1', nome: 'Teste' });
+  });
+});
+```
+
+## Teste de Plugin
+
+```typescript
+it('deve registrar plugin sem erro', async () => {
+  const app = Fastify();
+  app.register(recursoServicePlugin);
+  await app.ready();
+  expect(app.recursoService).toBeDefined();
+  await app.close();
+});
+```
+
+## Convencoes
+- Usar `fastify.inject()` — sem necessidade de porta de rede
+- Chamar `fastify.ready()` antes dos testes
+- Sempre chamar `fastify.close()` no `afterEach`
+- Mockar services via `decorate` antes de registrar rotas
+- Schema de rota valida automaticamente — testar rejeicoes
+- Usar `response.json()` para parse do body
+{{else}}
+# Fastify Endpoint Testing
+
+## Testing with fastify.inject()
+
+```typescript
+import Fastify from 'fastify';
+import resourceRoutes from './resource.routes';
+import resourceServicePlugin from './resource.service.plugin';
+
+describe('Resource Routes', () => {
+  let fastify: ReturnType<typeof Fastify>;
+
+  beforeEach(async () => {
+    fastify = Fastify();
+
+    // Register mock service as decorator
+    fastify.decorate('resourceService', {
+      findAll: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+      remove: jest.fn(),
+    });
+
+    fastify.register(resourceRoutes, { prefix: '/resources' });
+    await fastify.ready();
+  });
+
+  afterEach(async () => {
+    await fastify.close();
+  });
+
+  it('POST /resources - should create resource', async () => {
+    const service = fastify.resourceService as any;
+    service.create.mockResolvedValue({ id: '1', name: 'Test' });
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/resources',
+      payload: { name: 'Test' },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toEqual({ id: '1', name: 'Test' });
+  });
+
+  it('POST /resources - should reject invalid payload', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/resources',
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('GET /resources/:id - should return resource', async () => {
+    const service = fastify.resourceService as any;
+    service.findOne.mockResolvedValue({ id: '1', name: 'Test' });
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/resources/1',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ id: '1', name: 'Test' });
+  });
+});
+```
+
+## Plugin Testing
+
+```typescript
+it('should register plugin without error', async () => {
+  const app = Fastify();
+  app.register(resourceServicePlugin);
+  await app.ready();
+  expect(app.resourceService).toBeDefined();
+  await app.close();
+});
+```
+
+## Conventions
+- Use `fastify.inject()` — no network port needed
+- Call `fastify.ready()` before tests
+- Always call `fastify.close()` in `afterEach`
+- Mock services via `decorate` before registering routes
+- Route schema validates automatically — test rejections
+- Use `response.json()` to parse body
+{{/if}}

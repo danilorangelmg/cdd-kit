@@ -1,0 +1,179 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes LangChain para Rules
+
+## RunnableSequence (LCEL)
+
+```python
+from langchain_core.runnables import RunnableSequence, RunnablePassthrough
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "Voce e um assistente especialista em {domain}."),
+    ("human", "{question}"),
+])
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+chain = prompt | llm
+response = chain.invoke({"domain": "Python", "question": "O que e um decorator?"})
+```
+
+## LCEL com Passthrough e Assign
+
+```python
+from langchain_core.runnables import RunnablePassthrough
+
+chain = (
+    RunnablePassthrough.assign(
+        context=lambda x: retrieve_docs(x["question"]),
+    )
+    | prompt
+    | llm
+    | output_parser
+)
+```
+
+## Output Parsers
+
+```python
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+# String parser
+chain = prompt | llm | StrOutputParser()
+
+# JSON parser com schema
+class Analysis(BaseModel):
+    sentiment: str = Field(description="positivo, negativo ou neutro")
+    confidence: float = Field(description="confianca de 0 a 1")
+    summary: str = Field(description="resumo em uma frase")
+
+json_parser = JsonOutputParser(pydantic_object=Analysis)
+chain = prompt | llm | json_parser
+```
+
+## Structured Output (with_structured_output)
+
+```python
+from pydantic import BaseModel
+
+class ReviewResult(BaseModel):
+    approved: bool
+    issues: list[str]
+    suggestions: list[str]
+
+llm_structured = llm.with_structured_output(ReviewResult)
+result: ReviewResult = llm_structured.invoke("Revise este codigo: ...")
+```
+
+## Branching (RunnableBranch)
+
+```python
+from langchain_core.runnables import RunnableBranch
+
+branch = RunnableBranch(
+    (lambda x: x["type"] == "bug", bug_chain),
+    (lambda x: x["type"] == "feature", feature_chain),
+    default_chain,
+)
+```
+
+## Convencoes
+
+- LCEL (`|`) como padrao para composicao de chains
+- `with_structured_output` para saidas tipadas (preferido sobre JsonOutputParser)
+- `RunnablePassthrough.assign` para enriquecer contexto
+- Temperature 0 para tarefas deterministicas
+- Prompts como templates (nunca f-strings com dados do usuario)
+- Pydantic models para validacao de output
+{{else}}
+# LangChain Rule Patterns
+
+## RunnableSequence (LCEL)
+
+```python
+from langchain_core.runnables import RunnableSequence, RunnablePassthrough
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are an expert assistant in {domain}."),
+    ("human", "{question}"),
+])
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+chain = prompt | llm
+response = chain.invoke({"domain": "Python", "question": "What is a decorator?"})
+```
+
+## LCEL with Passthrough and Assign
+
+```python
+from langchain_core.runnables import RunnablePassthrough
+
+chain = (
+    RunnablePassthrough.assign(
+        context=lambda x: retrieve_docs(x["question"]),
+    )
+    | prompt
+    | llm
+    | output_parser
+)
+```
+
+## Output Parsers
+
+```python
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+# String parser
+chain = prompt | llm | StrOutputParser()
+
+# JSON parser with schema
+class Analysis(BaseModel):
+    sentiment: str = Field(description="positive, negative, or neutral")
+    confidence: float = Field(description="confidence from 0 to 1")
+    summary: str = Field(description="one-sentence summary")
+
+json_parser = JsonOutputParser(pydantic_object=Analysis)
+chain = prompt | llm | json_parser
+```
+
+## Structured Output (with_structured_output)
+
+```python
+from pydantic import BaseModel
+
+class ReviewResult(BaseModel):
+    approved: bool
+    issues: list[str]
+    suggestions: list[str]
+
+llm_structured = llm.with_structured_output(ReviewResult)
+result: ReviewResult = llm_structured.invoke("Review this code: ...")
+```
+
+## Branching (RunnableBranch)
+
+```python
+from langchain_core.runnables import RunnableBranch
+
+branch = RunnableBranch(
+    (lambda x: x["type"] == "bug", bug_chain),
+    (lambda x: x["type"] == "feature", feature_chain),
+    default_chain,
+)
+```
+
+## Conventions
+
+- LCEL (`|`) as default for chain composition
+- `with_structured_output` for typed outputs (preferred over JsonOutputParser)
+- `RunnablePassthrough.assign` to enrich context
+- Temperature 0 for deterministic tasks
+- Prompts as templates (never f-strings with user data)
+- Pydantic models for output validation
+{{/if}}

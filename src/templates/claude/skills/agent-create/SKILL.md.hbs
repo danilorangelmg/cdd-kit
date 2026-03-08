@@ -8,6 +8,7 @@ description: Create LLM agent with structured prompts and endpoints
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 model: sonnet
+argument-hint: "[name]"
 ---
 
 {{#if (eq project.language "pt-BR")}}
@@ -28,6 +29,9 @@ Agentes sao pipelines LLM com prompts estruturados, tools, e endpoints de exposi
 1. Ler agentes existentes para entender o padrao
 2. Identificar tools disponiveis
 3. Verificar regras deterministicas relacionadas
+{{#if stack}}
+4. Ler padroes da stack em [patterns.md](patterns.md)
+{{/if}}
 
 ### Fase 1 — Prompt
 - **System prompt**: Define papel, restricoes, formato de saida
@@ -85,6 +89,9 @@ Agents are LLM pipelines with structured prompts, tools, and exposure endpoints.
 1. Read existing agents to understand the pattern
 2. Identify available tools
 3. Check related deterministic rules
+{{#if stack}}
+4. Read stack patterns in [patterns.md](patterns.md)
+{{/if}}
 
 ### Phase 1 — Prompt
 - **System prompt**: Defines role, constraints, output format

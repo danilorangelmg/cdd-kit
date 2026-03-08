@@ -1,0 +1,225 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes React para Hooks
+
+## Estrutura Base
+
+```ts
+import { useState, useCallback, useMemo } from "react";
+
+export interface UseCounterReturn {
+  count: number;
+  increment: () => void;
+  decrement: () => void;
+  reset: () => void;
+}
+
+export function useCounter(initial = 0): UseCounterReturn {
+  const [count, setCount] = useState(initial);
+
+  const increment = useCallback(() => setCount((c) => c + 1), []);
+  const decrement = useCallback(() => setCount((c) => c - 1), []);
+  const reset = useCallback(() => setCount(initial), [initial]);
+
+  return { count, increment, decrement, reset };
+}
+```
+
+## useEffect com Cleanup
+
+```ts
+import { useEffect } from "react";
+
+export function useWindowSize() {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const handler = () =>
+      setSize({ width: window.innerWidth, height: window.innerHeight });
+
+    handler();
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
+  return size;
+}
+```
+
+## React Query (TanStack Query)
+
+```ts
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+// Query keys como constantes
+export const userKeys = {
+  all: ["users"] as const,
+  detail: (id: string) => ["users", id] as const,
+};
+
+export function useUsers() {
+  return useQuery({
+    queryKey: userKeys.all,
+    queryFn: () => api.getUsers(),
+  });
+}
+
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateUserDTO) => api.createUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    },
+  });
+}
+```
+
+## useMemo para Computacoes Pesadas
+
+```ts
+const sortedItems = useMemo(
+  () => items.slice().sort((a, b) => a.name.localeCompare(b.name)),
+  [items]
+);
+```
+
+## Hook Compositor (Page-level)
+
+```ts
+export function useUserPage(userId: string) {
+  const user = useUser(userId);
+  const permissions = usePermissions();
+  const { toast } = useToast();
+
+  const handleUpdate = useCallback(async (data: UpdateUserDTO) => {
+    await updateUser.mutateAsync(data);
+    toast({ title: "Usuario atualizado" });
+  }, []);
+
+  return { user, permissions, handleUpdate };
+}
+```
+
+## Convencoes
+
+- Prefixo `use` obrigatorio
+- Interface de retorno tipada: `Use{Name}Return`
+- `useCallback` para funcoes passadas como props
+- `useMemo` apenas para computacoes realmente custosas
+- Query keys como objetos constantes
+- Hook compositor para orquestrar hooks em paginas
+- Cleanup obrigatorio em `useEffect` com subscriptions
+{{else}}
+# React Hook Patterns
+
+## Base Structure
+
+```ts
+import { useState, useCallback, useMemo } from "react";
+
+export interface UseCounterReturn {
+  count: number;
+  increment: () => void;
+  decrement: () => void;
+  reset: () => void;
+}
+
+export function useCounter(initial = 0): UseCounterReturn {
+  const [count, setCount] = useState(initial);
+
+  const increment = useCallback(() => setCount((c) => c + 1), []);
+  const decrement = useCallback(() => setCount((c) => c - 1), []);
+  const reset = useCallback(() => setCount(initial), [initial]);
+
+  return { count, increment, decrement, reset };
+}
+```
+
+## useEffect with Cleanup
+
+```ts
+import { useEffect } from "react";
+
+export function useWindowSize() {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const handler = () =>
+      setSize({ width: window.innerWidth, height: window.innerHeight });
+
+    handler();
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
+  return size;
+}
+```
+
+## React Query (TanStack Query)
+
+```ts
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+// Query keys as constants
+export const userKeys = {
+  all: ["users"] as const,
+  detail: (id: string) => ["users", id] as const,
+};
+
+export function useUsers() {
+  return useQuery({
+    queryKey: userKeys.all,
+    queryFn: () => api.getUsers(),
+  });
+}
+
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateUserDTO) => api.createUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    },
+  });
+}
+```
+
+## useMemo for Expensive Computations
+
+```ts
+const sortedItems = useMemo(
+  () => items.slice().sort((a, b) => a.name.localeCompare(b.name)),
+  [items]
+);
+```
+
+## Compositor Hook (Page-level)
+
+```ts
+export function useUserPage(userId: string) {
+  const user = useUser(userId);
+  const permissions = usePermissions();
+  const { toast } = useToast();
+
+  const handleUpdate = useCallback(async (data: UpdateUserDTO) => {
+    await updateUser.mutateAsync(data);
+    toast({ title: "User updated" });
+  }, []);
+
+  return { user, permissions, handleUpdate };
+}
+```
+
+## Conventions
+
+- `use` prefix is mandatory
+- Typed return interface: `Use{Name}Return`
+- `useCallback` for functions passed as props
+- `useMemo` only for truly expensive computations
+- Query keys as constant objects
+- Compositor hook to orchestrate hooks in pages
+- Mandatory cleanup in `useEffect` with subscriptions
+{{/if}}

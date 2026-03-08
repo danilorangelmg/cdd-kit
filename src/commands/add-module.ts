@@ -2,6 +2,7 @@ import * as p from "@clack/prompts";
 import chalk from "chalk";
 import path from "path";
 import { ROLES } from "../methodology/roles.js";
+import { getStacksForRole } from "../methodology/stacks.js";
 import { generateModule } from "../generators/module.js";
 import { generateClaudeInfra } from "../generators/claude-infra.js";
 import { generateOrchestrator } from "../generators/orchestrator.js";
@@ -56,10 +57,42 @@ export async function addModuleCommand(): Promise<void> {
     }
   );
 
+  // Stack selection (optional, based on role)
+  const stacksForRole = getStacksForRole(mod.role as string);
+  let stack: string | undefined;
+
+  if (stacksForRole.length > 0) {
+    const stackChoice = await p.select({
+      message: `Stack for ${mod.name}:`,
+      options: [
+        ...stacksForRole.map((s) => ({
+          value: s.id,
+          label: s.label,
+          hint: s.description,
+        })),
+        {
+          value: "_none",
+          label: "None / Custom",
+          hint: "No stack-specific patterns",
+        },
+      ],
+    });
+
+    if (p.isCancel(stackChoice)) {
+      p.cancel("Cancelled.");
+      process.exit(0);
+    }
+
+    if (stackChoice !== "_none") {
+      stack = stackChoice as string;
+    }
+  }
+
   const newModule: ModuleConfig = {
     name: mod.name as string,
     role: mod.role as ModuleConfig["role"],
     directory: mod.name as string,
+    ...(stack ? { stack } : {}),
   };
 
   // Add to config

@@ -1,0 +1,153 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes NestJS para Endpoints
+
+## Estrutura de Controller
+
+```typescript
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, UsePipes } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+
+@Controller('recursos')
+export class RecursoController {
+  constructor(private readonly recursoService: RecursoService) {}
+
+  @Get()
+  findAll(@Query() query: ListRecursoQuery) {
+    return this.recursoService.findAll(query);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.recursoService.findOne(id);
+  }
+
+  @Post()
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  create(@Body() dto: CreateRecursoDto) {
+    return this.recursoService.create(dto);
+  }
+
+  @Put(':id')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  update(@Param('id') id: string, @Body() dto: UpdateRecursoDto) {
+    return this.recursoService.update(id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.recursoService.remove(id);
+  }
+}
+```
+
+## DTOs com class-validator
+
+```typescript
+import { IsString, IsNotEmpty, IsOptional, IsInt, Min } from 'class-validator';
+
+export class CreateRecursoDto {
+  @IsString()
+  @IsNotEmpty()
+  nome: string;
+
+  @IsOptional()
+  @IsString()
+  descricao?: string;
+}
+```
+
+## Registro no Module
+
+```typescript
+@Module({
+  controllers: [RecursoController],
+  providers: [RecursoService],
+})
+export class RecursoModule {}
+```
+
+## Convencoes
+- Usar `ValidationPipe` com `whitelist: true` para remover campos extras
+- Guards para autenticacao/autorizacao (`@UseGuards(AuthGuard)`)
+- Interceptors para transformacao de response (`@UseInterceptors(TransformInterceptor)`)
+- Pipes customizados para validacao especifica (`@UsePipes(ParseIntPipe)`)
+- Controller delega TODA logica para o Service
+- Nomes de rota no plural e em kebab-case
+- Retornar DTOs de response, nunca entidades diretamente
+{{else}}
+# NestJS Endpoint Patterns
+
+## Controller Structure
+
+```typescript
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, UsePipes } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+
+@Controller('resources')
+export class ResourceController {
+  constructor(private readonly resourceService: ResourceService) {}
+
+  @Get()
+  findAll(@Query() query: ListResourceQuery) {
+    return this.resourceService.findAll(query);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.resourceService.findOne(id);
+  }
+
+  @Post()
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  create(@Body() dto: CreateResourceDto) {
+    return this.resourceService.create(dto);
+  }
+
+  @Put(':id')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  update(@Param('id') id: string, @Body() dto: UpdateResourceDto) {
+    return this.resourceService.update(id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.resourceService.remove(id);
+  }
+}
+```
+
+## DTOs with class-validator
+
+```typescript
+import { IsString, IsNotEmpty, IsOptional, IsInt, Min } from 'class-validator';
+
+export class CreateResourceDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+```
+
+## Module Registration
+
+```typescript
+@Module({
+  controllers: [ResourceController],
+  providers: [ResourceService],
+})
+export class ResourceModule {}
+```
+
+## Conventions
+- Use `ValidationPipe` with `whitelist: true` to strip extra fields
+- Guards for authentication/authorization (`@UseGuards(AuthGuard)`)
+- Interceptors for response transformation (`@UseInterceptors(TransformInterceptor)`)
+- Custom Pipes for specific validation (`@UsePipes(ParseIntPipe)`)
+- Controller delegates ALL logic to the Service
+- Route names in plural and kebab-case
+- Return response DTOs, never entities directly
+{{/if}}

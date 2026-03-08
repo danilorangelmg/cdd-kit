@@ -1,0 +1,227 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Playwright para Testes E2E
+
+## Page Object Model
+
+```ts
+import { type Page, type Locator } from "@playwright/test";
+
+export class LoginPage {
+  readonly emailInput: Locator;
+  readonly passwordInput: Locator;
+  readonly submitButton: Locator;
+  readonly errorMessage: Locator;
+
+  constructor(private page: Page) {
+    this.emailInput = page.getByRole("textbox", { name: "Email" });
+    this.passwordInput = page.getByRole("textbox", { name: "Senha" });
+    this.submitButton = page.getByRole("button", { name: "Entrar" });
+    this.errorMessage = page.getByRole("alert");
+  }
+
+  async goto() {
+    await this.page.goto("/login");
+  }
+
+  async login(email: string, password: string) {
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await this.submitButton.click();
+  }
+}
+```
+
+## Locators (Ordem de Preferencia)
+
+```ts
+// 1. Role (preferido)
+page.getByRole("button", { name: "Salvar" });
+page.getByRole("heading", { name: "Dashboard" });
+
+// 2. Label/Placeholder
+page.getByLabel("Email");
+page.getByPlaceholder("Digite seu email");
+
+// 3. Texto
+page.getByText("Bem-vindo");
+
+// 4. Test ID (ultimo recurso)
+page.getByTestId("submit-form");
+```
+
+## Fixtures
+
+```ts
+import { test as base } from "@playwright/test";
+import { LoginPage } from "./pages/login-page";
+
+type Fixtures = {
+  loginPage: LoginPage;
+  authenticatedPage: Page;
+};
+
+export const test = base.extend<Fixtures>({
+  loginPage: async ({ page }, use) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await use(loginPage);
+  },
+  authenticatedPage: async ({ page }, use) => {
+    await page.goto("/login");
+    await page.getByRole("textbox", { name: "Email" }).fill("admin@test.com");
+    await page.getByRole("textbox", { name: "Senha" }).fill("password");
+    await page.getByRole("button", { name: "Entrar" }).click();
+    await page.waitForURL("/dashboard");
+    await use(page);
+  },
+});
+```
+
+## Assercoes
+
+```ts
+import { expect } from "@playwright/test";
+
+await expect(page.getByRole("heading")).toHaveText("Dashboard");
+await expect(page.getByRole("button")).toBeEnabled();
+await expect(page.getByRole("alert")).not.toBeVisible();
+await expect(page).toHaveURL("/dashboard");
+await expect(page).toHaveTitle(/Dashboard/);
+```
+
+## Trace Viewer
+
+```ts
+// playwright.config.ts
+export default defineConfig({
+  use: {
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+  },
+});
+
+// Ver trace: npx playwright show-trace trace.zip
+```
+
+## Convencoes
+
+- Page Object por pagina/componente complexo
+- Locators semanticos (role > label > text > testId)
+- Fixtures para setup reutilizavel
+- `await expect` para todas as assercoes (auto-retry)
+- Nunca usar `page.waitForTimeout` (preferir `waitForURL`, `waitForResponse`)
+- Trace ativo em retries para debug
+{{else}}
+# Playwright E2E Test Patterns
+
+## Page Object Model
+
+```ts
+import { type Page, type Locator } from "@playwright/test";
+
+export class LoginPage {
+  readonly emailInput: Locator;
+  readonly passwordInput: Locator;
+  readonly submitButton: Locator;
+  readonly errorMessage: Locator;
+
+  constructor(private page: Page) {
+    this.emailInput = page.getByRole("textbox", { name: "Email" });
+    this.passwordInput = page.getByRole("textbox", { name: "Password" });
+    this.submitButton = page.getByRole("button", { name: "Sign in" });
+    this.errorMessage = page.getByRole("alert");
+  }
+
+  async goto() {
+    await this.page.goto("/login");
+  }
+
+  async login(email: string, password: string) {
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await this.submitButton.click();
+  }
+}
+```
+
+## Locators (Priority Order)
+
+```ts
+// 1. Role (preferred)
+page.getByRole("button", { name: "Save" });
+page.getByRole("heading", { name: "Dashboard" });
+
+// 2. Label/Placeholder
+page.getByLabel("Email");
+page.getByPlaceholder("Enter your email");
+
+// 3. Text
+page.getByText("Welcome");
+
+// 4. Test ID (last resort)
+page.getByTestId("submit-form");
+```
+
+## Fixtures
+
+```ts
+import { test as base } from "@playwright/test";
+import { LoginPage } from "./pages/login-page";
+
+type Fixtures = {
+  loginPage: LoginPage;
+  authenticatedPage: Page;
+};
+
+export const test = base.extend<Fixtures>({
+  loginPage: async ({ page }, use) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await use(loginPage);
+  },
+  authenticatedPage: async ({ page }, use) => {
+    await page.goto("/login");
+    await page.getByRole("textbox", { name: "Email" }).fill("admin@test.com");
+    await page.getByRole("textbox", { name: "Password" }).fill("password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL("/dashboard");
+    await use(page);
+  },
+});
+```
+
+## Assertions
+
+```ts
+import { expect } from "@playwright/test";
+
+await expect(page.getByRole("heading")).toHaveText("Dashboard");
+await expect(page.getByRole("button")).toBeEnabled();
+await expect(page.getByRole("alert")).not.toBeVisible();
+await expect(page).toHaveURL("/dashboard");
+await expect(page).toHaveTitle(/Dashboard/);
+```
+
+## Trace Viewer
+
+```ts
+// playwright.config.ts
+export default defineConfig({
+  use: {
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+  },
+});
+
+// View trace: npx playwright show-trace trace.zip
+```
+
+## Conventions
+
+- Page Object per page/complex component
+- Semantic locators (role > label > text > testId)
+- Fixtures for reusable setup
+- `await expect` for all assertions (auto-retry)
+- Never use `page.waitForTimeout` (prefer `waitForURL`, `waitForResponse`)
+- Trace enabled on retries for debugging
+{{/if}}

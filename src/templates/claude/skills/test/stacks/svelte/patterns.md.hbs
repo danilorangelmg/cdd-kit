@@ -1,0 +1,269 @@
+{{#if (eq project.language "pt-BR")}}
+# Setup de Testes Svelte (Vitest + Svelte Testing Library)
+
+## Configuracao Vitest
+
+```ts
+// vitest.config.ts
+import { defineConfig } from "vitest/config";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+
+export default defineConfig({
+  plugins: [svelte({ hot: false })],
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
+  },
+});
+```
+
+## Setup File
+
+```ts
+// src/test/setup.ts
+import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/svelte";
+import { afterEach } from "vitest";
+
+afterEach(() => {
+  cleanup();
+});
+```
+
+## Estrutura de Teste
+
+```ts
+import { render, screen } from "@testing-library/svelte";
+import { fireEvent } from "@testing-library/dom";
+import { describe, it, expect, vi } from "vitest";
+import Button from "./Button.svelte";
+
+describe("Button", () => {
+  it("renderiza com texto", () => {
+    render(Button, { props: { children: "Salvar" } });
+    expect(screen.getByRole("button", { name: "Salvar" })).toBeInTheDocument();
+  });
+
+  it("chama onclick ao clicar", async () => {
+    const onclick = vi.fn();
+    render(Button, { props: { onclick } });
+
+    await fireEvent.click(screen.getByRole("button"));
+    expect(onclick).toHaveBeenCalledOnce();
+  });
+
+  it("aplica variante correta", () => {
+    render(Button, { props: { variant: "outline" } });
+    const btn = screen.getByRole("button");
+    expect(btn.className).toContain("btn--outline");
+  });
+});
+```
+
+## Renderizando com Props
+
+```ts
+render(Component, {
+  props: {
+    title: "Titulo",
+    items: [{ id: 1, name: "Item 1" }],
+    onsubmit: vi.fn(),
+  },
+});
+```
+
+## Testando Reatividade
+
+```ts
+it("atualiza ao interagir", async () => {
+  render(Counter);
+
+  expect(screen.getByText("0")).toBeInTheDocument();
+  await fireEvent.click(screen.getByRole("button", { name: "+" }));
+  expect(screen.getByText("1")).toBeInTheDocument();
+});
+```
+
+## Componentes Wrapper para Snippets
+
+```svelte
+<!-- CardTest.test.svelte -->
+<script>
+  import Card from "./Card.svelte";
+</script>
+
+<Card>
+  {#snippet header()}
+    <h2>Titulo do Card</h2>
+  {/snippet}
+  Conteudo do body
+</Card>
+```
+
+```ts
+import CardTest from "./CardTest.test.svelte";
+
+it("renderiza snippets", () => {
+  render(CardTest);
+  expect(screen.getByText("Titulo do Card")).toBeInTheDocument();
+  expect(screen.getByText("Conteudo do body")).toBeInTheDocument();
+});
+```
+
+## Mock de Modulos
+
+```ts
+vi.mock("$app/navigation", () => ({
+  goto: vi.fn(),
+}));
+
+vi.mock("$lib/api", () => ({
+  fetchUsers: vi.fn().mockResolvedValue([{ name: "Test" }]),
+}));
+```
+
+## Convencoes
+
+- Vitest como test runner
+- `@testing-library/svelte` para render e screen
+- `@testing-library/dom` para fireEvent
+- Cleanup automatico via setup file
+- Componentes `.test.svelte` para testar snippets complexos
+- `vi.mock` para modulos SvelteKit (`$app`, `$lib`)
+- Queries por role/text (padrao Testing Library)
+{{else}}
+# Svelte Testing Setup (Vitest + Svelte Testing Library)
+
+## Vitest Configuration
+
+```ts
+// vitest.config.ts
+import { defineConfig } from "vitest/config";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+
+export default defineConfig({
+  plugins: [svelte({ hot: false })],
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
+  },
+});
+```
+
+## Setup File
+
+```ts
+// src/test/setup.ts
+import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/svelte";
+import { afterEach } from "vitest";
+
+afterEach(() => {
+  cleanup();
+});
+```
+
+## Test Structure
+
+```ts
+import { render, screen } from "@testing-library/svelte";
+import { fireEvent } from "@testing-library/dom";
+import { describe, it, expect, vi } from "vitest";
+import Button from "./Button.svelte";
+
+describe("Button", () => {
+  it("renders with text", () => {
+    render(Button, { props: { children: "Save" } });
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+  });
+
+  it("calls onclick when clicked", async () => {
+    const onclick = vi.fn();
+    render(Button, { props: { onclick } });
+
+    await fireEvent.click(screen.getByRole("button"));
+    expect(onclick).toHaveBeenCalledOnce();
+  });
+
+  it("applies correct variant", () => {
+    render(Button, { props: { variant: "outline" } });
+    const btn = screen.getByRole("button");
+    expect(btn.className).toContain("btn--outline");
+  });
+});
+```
+
+## Rendering with Props
+
+```ts
+render(Component, {
+  props: {
+    title: "Title",
+    items: [{ id: 1, name: "Item 1" }],
+    onsubmit: vi.fn(),
+  },
+});
+```
+
+## Testing Reactivity
+
+```ts
+it("updates on interaction", async () => {
+  render(Counter);
+
+  expect(screen.getByText("0")).toBeInTheDocument();
+  await fireEvent.click(screen.getByRole("button", { name: "+" }));
+  expect(screen.getByText("1")).toBeInTheDocument();
+});
+```
+
+## Wrapper Components for Snippets
+
+```svelte
+<!-- CardTest.test.svelte -->
+<script>
+  import Card from "./Card.svelte";
+</script>
+
+<Card>
+  {#snippet header()}
+    <h2>Card Title</h2>
+  {/snippet}
+  Body content
+</Card>
+```
+
+```ts
+import CardTest from "./CardTest.test.svelte";
+
+it("renders snippets", () => {
+  render(CardTest);
+  expect(screen.getByText("Card Title")).toBeInTheDocument();
+  expect(screen.getByText("Body content")).toBeInTheDocument();
+});
+```
+
+## Module Mocking
+
+```ts
+vi.mock("$app/navigation", () => ({
+  goto: vi.fn(),
+}));
+
+vi.mock("$lib/api", () => ({
+  fetchUsers: vi.fn().mockResolvedValue([{ name: "Test" }]),
+}));
+```
+
+## Conventions
+
+- Vitest as test runner
+- `@testing-library/svelte` for render and screen
+- `@testing-library/dom` for fireEvent
+- Automatic cleanup via setup file
+- `.test.svelte` components for testing complex snippets
+- `vi.mock` for SvelteKit modules (`$app`, `$lib`)
+- Query by role/text (standard Testing Library)
+{{/if}}

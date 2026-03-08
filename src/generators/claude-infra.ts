@@ -1,9 +1,10 @@
 import path from "path";
-import { renderTemplate } from "../utils/template-engine.js";
+import { renderTemplate, templateExists } from "../utils/template-engine.js";
 import { writeFile, makeExecutable, ensureDir } from "../utils/fs.js";
-import type { ProjectConfig } from "../utils/validation.js";
+import type { ProjectConfig, ModuleConfig } from "../utils/validation.js";
 import { getActiveRules } from "../methodology/rules.js";
 import { getRoleById } from "../methodology/roles.js";
+import { getStackById } from "../methodology/stacks.js";
 import { getPathMap } from "../utils/paths.js";
 
 // Role-specific agents mapping (each role gets these specialist agents)
@@ -172,24 +173,15 @@ export async function generateClaudeInfra(
 
   // Skills
   if (config.methodology.rules["tdd-enforcement"]) {
-    const tddSkill = renderTemplate("claude/skills/tdd/SKILL.md.hbs", context);
-    await writeFile(
-      path.join(claudeDir, "skills", "tdd", "SKILL.md"),
-      tddSkill
-    );
-    generatedFiles.push(".claude/skills/tdd/SKILL.md");
+    const skillDir = path.join(claudeDir, "skills", "tdd");
+    const sf = await generateSkillWithStack(skillDir, "tdd", context);
+    generatedFiles.push(...sf.map((f) => `.claude/skills/tdd/${f}`));
   }
 
   if (config.methodology.rules["feature-planning-gate"]) {
-    const planSkill = renderTemplate(
-      "claude/skills/plan-feature/SKILL.md.hbs",
-      context
-    );
-    await writeFile(
-      path.join(claudeDir, "skills", "plan-feature", "SKILL.md"),
-      planSkill
-    );
-    generatedFiles.push(".claude/skills/plan-feature/SKILL.md");
+    const skillDir = path.join(claudeDir, "skills", "plan-feature");
+    const sf = await generateSkillWithStack(skillDir, "plan-feature", context);
+    generatedFiles.push(...sf.map((f) => `.claude/skills/plan-feature/${f}`));
   }
 
   // Universal root skills (always generated)
@@ -200,15 +192,9 @@ export async function generateClaudeInfra(
     "deploy-all",
   ];
   for (const skill of universalRootSkills) {
-    const content = renderTemplate(
-      `claude/skills/${skill}/SKILL.md.hbs`,
-      context
-    );
-    await writeFile(
-      path.join(claudeDir, "skills", skill, "SKILL.md"),
-      content
-    );
-    generatedFiles.push(`.claude/skills/${skill}/SKILL.md`);
+    const skillDir = path.join(claudeDir, "skills", skill);
+    const sf = await generateSkillWithStack(skillDir, skill, context);
+    generatedFiles.push(...sf.map((f) => `.claude/skills/${skill}/${f}`));
   }
 
   // Conditional root skills
@@ -218,27 +204,15 @@ export async function generateClaudeInfra(
   );
 
   if (hasFrontend && hasBackend) {
-    const checkFlow = renderTemplate(
-      "claude/skills/check-flow/SKILL.md.hbs",
-      context
-    );
-    await writeFile(
-      path.join(claudeDir, "skills", "check-flow", "SKILL.md"),
-      checkFlow
-    );
-    generatedFiles.push(".claude/skills/check-flow/SKILL.md");
+    const skillDir = path.join(claudeDir, "skills", "check-flow");
+    const sf = await generateSkillWithStack(skillDir, "check-flow", context);
+    generatedFiles.push(...sf.map((f) => `.claude/skills/check-flow/${f}`));
   }
 
   if (config.methodology.rules["api-response-contract"]) {
-    const apiContract = renderTemplate(
-      "claude/skills/api-contract/SKILL.md.hbs",
-      context
-    );
-    await writeFile(
-      path.join(claudeDir, "skills", "api-contract", "SKILL.md"),
-      apiContract
-    );
-    generatedFiles.push(".claude/skills/api-contract/SKILL.md");
+    const skillDir = path.join(claudeDir, "skills", "api-contract");
+    const sf = await generateSkillWithStack(skillDir, "api-contract", context);
+    generatedFiles.push(...sf.map((f) => `.claude/skills/api-contract/${f}`));
   }
 
   // Verify pipeline
@@ -441,55 +415,38 @@ async function generatePerModuleClaudeInfra(
 
     // Skills — common skills (all roles)
     for (const skill of COMMON_SKILLS) {
-      const content = renderTemplate(
-        `claude/skills/${skill}/SKILL.md.hbs`,
-        modContext
-      );
-      await writeFile(
-        path.join(modClaudeDir, "skills", skill, "SKILL.md"),
-        content
-      );
-      generatedFiles.push(`${prefix}/skills/${skill}/SKILL.md`);
+      const skillDir = path.join(modClaudeDir, "skills", skill);
+      const sf = await generateSkillWithStack(skillDir, skill, modContext, mod);
+      generatedFiles.push(...sf.map((f) => `${prefix}/skills/${skill}/${f}`));
     }
 
     // Skills — role-specific skills
     const roleSkills = ROLE_SKILLS[mod.role] ?? [];
     for (const skill of roleSkills) {
-      const content = renderTemplate(
-        `claude/skills/${skill}/SKILL.md.hbs`,
-        modContext
-      );
-      await writeFile(
-        path.join(modClaudeDir, "skills", skill, "SKILL.md"),
-        content
-      );
-      generatedFiles.push(`${prefix}/skills/${skill}/SKILL.md`);
+      const skillDir = path.join(modClaudeDir, "skills", skill);
+      const sf = await generateSkillWithStack(skillDir, skill, modContext, mod);
+      generatedFiles.push(...sf.map((f) => `${prefix}/skills/${skill}/${f}`));
     }
 
     // Skills — TDD (if enabled)
     if (config.methodology.rules["tdd-enforcement"]) {
-      const tddSkill = renderTemplate(
-        "claude/skills/tdd/SKILL.md.hbs",
-        modContext
-      );
-      await writeFile(
-        path.join(modClaudeDir, "skills", "tdd", "SKILL.md"),
-        tddSkill
-      );
-      generatedFiles.push(`${prefix}/skills/tdd/SKILL.md`);
+      const skillDir = path.join(modClaudeDir, "skills", "tdd");
+      const sf = await generateSkillWithStack(skillDir, "tdd", modContext, mod);
+      generatedFiles.push(...sf.map((f) => `${prefix}/skills/tdd/${f}`));
     }
 
     // Skills — plan-feature (if feature gate enabled)
     if (config.methodology.rules["feature-planning-gate"]) {
-      const planSkill = renderTemplate(
-        "claude/skills/plan-feature/SKILL.md.hbs",
-        modContext
+      const skillDir = path.join(modClaudeDir, "skills", "plan-feature");
+      const sf = await generateSkillWithStack(
+        skillDir,
+        "plan-feature",
+        modContext,
+        mod
       );
-      await writeFile(
-        path.join(modClaudeDir, "skills", "plan-feature", "SKILL.md"),
-        planSkill
+      generatedFiles.push(
+        ...sf.map((f) => `${prefix}/skills/plan-feature/${f}`)
       );
-      generatedFiles.push(`${prefix}/skills/plan-feature/SKILL.md`);
     }
 
     // Agent memory
@@ -499,20 +456,87 @@ async function generatePerModuleClaudeInfra(
   return generatedFiles;
 }
 
+async function generateSkillWithStack(
+  skillDir: string,
+  skill: string,
+  context: Record<string, unknown>,
+  mod?: ModuleConfig
+): Promise<string[]> {
+  const files: string[] = [];
+  const stackDef = mod?.stack ? getStackById(mod.stack) : undefined;
+
+  const skillContext = {
+    ...context,
+    ...(mod ? { module: mod } : {}),
+    ...(stackDef
+      ? { stack: stackDef, stackFiles: stackDef.supportingFiles }
+      : {}),
+  };
+
+  // 1. Render SKILL.md
+  const content = renderTemplate(
+    `claude/skills/${skill}/SKILL.md.hbs`,
+    skillContext
+  );
+  await writeFile(path.join(skillDir, "SKILL.md"), content);
+  files.push("SKILL.md");
+
+  // 2. Render stack-specific supporting files
+  if (mod?.stack && stackDef) {
+    for (const sf of stackDef.supportingFiles) {
+      const tplPath = `claude/skills/${skill}/stacks/${mod.stack}/${sf}.hbs`;
+      if (templateExists(tplPath)) {
+        const supportContent = renderTemplate(tplPath, skillContext);
+        await writeFile(path.join(skillDir, sf), supportContent);
+        files.push(sf);
+      }
+    }
+  }
+
+  return files;
+}
+
 function buildAllowPermissions(config: ProjectConfig): string[] {
   const perms = ["Bash(docker compose *)"];
   const roles = new Set(config.modules.map((m) => m.role));
 
-  if (roles.has("frontend") || roles.has("mobile")) {
-    perms.push(
-      "Bash(npx vitest run *)",
-      "Bash(npm test *)",
-      "Bash(npm run typecheck)"
-    );
+  // Stack-specific test commands
+  const addedCommands = new Set<string>();
+  for (const mod of config.modules) {
+    if (mod.stack) {
+      const stackDef = getStackById(mod.stack);
+      if (stackDef) {
+        const cmd = `Bash(${stackDef.testCommand} *)`;
+        if (!addedCommands.has(cmd)) {
+          perms.push(cmd);
+          addedCommands.add(cmd);
+        }
+        continue;
+      }
+    }
+    // Fallback: role-based defaults for modules without stack
+    if (mod.role === "frontend" || mod.role === "mobile") {
+      for (const cmd of [
+        "Bash(npx vitest run *)",
+        "Bash(npm test *)",
+        "Bash(npm run typecheck)",
+      ]) {
+        if (!addedCommands.has(cmd)) {
+          perms.push(cmd);
+          addedCommands.add(cmd);
+        }
+      }
+    }
+    if (mod.role === "backend" || mod.role === "agent-ai") {
+      for (const cmd of ["Bash(python3 -m pytest *)", "Bash(make lint)"]) {
+        if (!addedCommands.has(cmd)) {
+          perms.push(cmd);
+          addedCommands.add(cmd);
+        }
+      }
+    }
   }
-  if (roles.has("backend") || roles.has("agent-ai")) {
-    perms.push("Bash(python3 -m pytest *)", "Bash(make lint)");
-  }
+
   perms.push("Bash(make test *)", "Bash(make verify *)");
   return perms;
 }
@@ -528,6 +552,7 @@ function buildContext(config: ProjectConfig): Record<string, unknown> {
     modulesWithRoles: config.modules.map((m) => ({
       ...m,
       roleInfo: getRoleById(m.role),
+      stackInfo: m.stack ? getStackById(m.stack) : undefined,
     })),
   };
 }

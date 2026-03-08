@@ -1,0 +1,243 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Drizzle ORM para Banco de Dados
+
+## Schema com pgTable
+
+```ts
+import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createId } from "@paralleldrive/cuid2";
+
+export const roleEnum = pgEnum("role", ["USER", "ADMIN"]);
+
+export const users = pgTable("users", {
+  id: text("id").$defaultFn(() => createId()).primaryKey(),
+  email: text("email").unique().notNull(),
+  name: text("name"),
+  role: roleEnum("role").default("USER").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const posts = pgTable("posts", {
+  id: text("id").$defaultFn(() => createId()).primaryKey(),
+  title: text("title").notNull(),
+  content: text("content"),
+  published: boolean("published").default(false).notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+```
+
+## Relations
+
+```ts
+export const usersRelations = relations(users, ({ many }) => ({
+  posts: many(posts),
+}));
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  author: one(users, { fields: [posts.authorId], references: [users.id] }),
+}));
+```
+
+## Queries
+
+```ts
+import { db } from "@/lib/db";
+import { users, posts } from "@/db/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
+
+// Select com filtro
+const admins = await db
+  .select()
+  .from(users)
+  .where(eq(users.role, "ADMIN"))
+  .orderBy(desc(users.createdAt))
+  .limit(10)
+  .offset(0);
+
+// Select com join
+const usersWithPosts = await db
+  .select({
+    id: users.id,
+    name: users.name,
+    postCount: sql<number>`count(${posts.id})`.as("post_count"),
+  })
+  .from(users)
+  .leftJoin(posts, eq(users.id, posts.authorId))
+  .groupBy(users.id);
+
+// Relational query (query API)
+const result = await db.query.users.findMany({
+  with: { posts: { where: eq(posts.published, true) } },
+  limit: 10,
+});
+
+// Insert
+const [newUser] = await db.insert(users).values({
+  email: "joao@test.com",
+  name: "Joao",
+}).returning();
+
+// Update
+await db.update(users)
+  .set({ name: "Joao Silva" })
+  .where(eq(users.id, userId));
+
+// Delete
+await db.delete(users).where(eq(users.id, userId));
+```
+
+## Transacoes
+
+```ts
+const result = await db.transaction(async (tx) => {
+  const [user] = await tx.insert(users).values({ email: "a@b.com", name: "A" }).returning();
+  const [post] = await tx.insert(posts).values({ title: "Post", authorId: user.id }).returning();
+  return { user, post };
+});
+```
+
+## Prepared Statements
+
+```ts
+const getUserByEmail = db
+  .select()
+  .from(users)
+  .where(eq(users.email, sql.placeholder("email")))
+  .prepare("get_user_by_email");
+
+const user = await getUserByEmail.execute({ email: "joao@test.com" });
+```
+
+## Convencoes
+
+- Schema em arquivos separados por dominio (`schema/users.ts`, `schema/posts.ts`)
+- Snake_case para nomes de colunas no banco
+- `$defaultFn` para IDs gerados (cuid2)
+- Relations separadas do schema para clareza
+- Prepared statements para queries frequentes
+- Transacoes para operacoes atomicas
+{{else}}
+# Drizzle ORM Database Patterns
+
+## Schema with pgTable
+
+```ts
+import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createId } from "@paralleldrive/cuid2";
+
+export const roleEnum = pgEnum("role", ["USER", "ADMIN"]);
+
+export const users = pgTable("users", {
+  id: text("id").$defaultFn(() => createId()).primaryKey(),
+  email: text("email").unique().notNull(),
+  name: text("name"),
+  role: roleEnum("role").default("USER").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const posts = pgTable("posts", {
+  id: text("id").$defaultFn(() => createId()).primaryKey(),
+  title: text("title").notNull(),
+  content: text("content"),
+  published: boolean("published").default(false).notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+```
+
+## Relations
+
+```ts
+export const usersRelations = relations(users, ({ many }) => ({
+  posts: many(posts),
+}));
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  author: one(users, { fields: [posts.authorId], references: [users.id] }),
+}));
+```
+
+## Queries
+
+```ts
+import { db } from "@/lib/db";
+import { users, posts } from "@/db/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
+
+// Select with filter
+const admins = await db
+  .select()
+  .from(users)
+  .where(eq(users.role, "ADMIN"))
+  .orderBy(desc(users.createdAt))
+  .limit(10)
+  .offset(0);
+
+// Select with join
+const usersWithPosts = await db
+  .select({
+    id: users.id,
+    name: users.name,
+    postCount: sql<number>`count(${posts.id})`.as("post_count"),
+  })
+  .from(users)
+  .leftJoin(posts, eq(users.id, posts.authorId))
+  .groupBy(users.id);
+
+// Relational query (query API)
+const result = await db.query.users.findMany({
+  with: { posts: { where: eq(posts.published, true) } },
+  limit: 10,
+});
+
+// Insert
+const [newUser] = await db.insert(users).values({
+  email: "john@test.com",
+  name: "John",
+}).returning();
+
+// Update
+await db.update(users)
+  .set({ name: "John Doe" })
+  .where(eq(users.id, userId));
+
+// Delete
+await db.delete(users).where(eq(users.id, userId));
+```
+
+## Transactions
+
+```ts
+const result = await db.transaction(async (tx) => {
+  const [user] = await tx.insert(users).values({ email: "a@b.com", name: "A" }).returning();
+  const [post] = await tx.insert(posts).values({ title: "Post", authorId: user.id }).returning();
+  return { user, post };
+});
+```
+
+## Prepared Statements
+
+```ts
+const getUserByEmail = db
+  .select()
+  .from(users)
+  .where(eq(users.email, sql.placeholder("email")))
+  .prepare("get_user_by_email");
+
+const user = await getUserByEmail.execute({ email: "john@test.com" });
+```
+
+## Conventions
+
+- Schema in separate files by domain (`schema/users.ts`, `schema/posts.ts`)
+- Snake_case for database column names
+- `$defaultFn` for generated IDs (cuid2)
+- Relations separated from schema for clarity
+- Prepared statements for frequent queries
+- Transactions for atomic operations
+{{/if}}

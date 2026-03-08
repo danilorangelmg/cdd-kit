@@ -1,0 +1,235 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Vue 3 para Componentes
+
+## Estrutura Base (SFC)
+
+```vue
+<script setup lang="ts">
+import { ref, computed } from "vue";
+
+interface Props {
+  label: string;
+  variant?: "default" | "outline" | "ghost";
+  disabled?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  variant: "default",
+  disabled: false,
+});
+
+const emit = defineEmits<{
+  click: [event: MouseEvent];
+}>();
+
+const isHovered = ref(false);
+
+const classes = computed(() => [
+  "btn",
+  `btn--${props.variant}`,
+  { "btn--disabled": props.disabled },
+]);
+</script>
+
+<template>
+  <button
+    :class="classes"
+    :disabled="disabled"
+    @click="emit('click', $event)"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
+  >
+    <slot />
+  </button>
+</template>
+```
+
+## defineProps e defineEmits
+
+```vue
+<script setup lang="ts">
+// Props tipadas
+const props = defineProps<{
+  title: string;
+  count?: number;
+}>();
+
+// Emits tipados
+const emit = defineEmits<{
+  update: [value: string];
+  close: [];
+}>();
+
+// Expose para refs de template
+defineExpose({ focus: () => inputRef.value?.focus() });
+</script>
+```
+
+## v-model Customizado
+
+```vue
+<script setup lang="ts">
+const model = defineModel<string>({ default: "" });
+</script>
+
+<template>
+  <input :value="model" @input="model = ($event.target as HTMLInputElement).value" />
+</template>
+```
+
+## Slots Tipados
+
+```vue
+<template>
+  <div class="card">
+    <header v-if="$slots.header">
+      <slot name="header" />
+    </header>
+    <slot :data="internalData" />
+    <footer v-if="$slots.footer">
+      <slot name="footer" />
+    </footer>
+  </div>
+</template>
+```
+
+## Teleport
+
+```vue
+<template>
+  <Teleport to="body">
+    <div v-if="isOpen" class="modal-overlay">
+      <div class="modal-content">
+        <slot />
+      </div>
+    </div>
+  </Teleport>
+</template>
+```
+
+## Convencoes
+
+- Sempre usar `<script setup lang="ts">`
+- Props via `defineProps<Interface>()` com `withDefaults` quando necessario
+- Emits via `defineEmits<{}>()` com tipagem completa
+- Usar `defineModel` para v-model customizado
+- Slots nomeados com verificacao `v-if="$slots.name"`
+- Dark mode via CSS custom properties
+{{else}}
+# Vue 3 Component Patterns
+
+## Base Structure (SFC)
+
+```vue
+<script setup lang="ts">
+import { ref, computed } from "vue";
+
+interface Props {
+  label: string;
+  variant?: "default" | "outline" | "ghost";
+  disabled?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  variant: "default",
+  disabled: false,
+});
+
+const emit = defineEmits<{
+  click: [event: MouseEvent];
+}>();
+
+const isHovered = ref(false);
+
+const classes = computed(() => [
+  "btn",
+  `btn--${props.variant}`,
+  { "btn--disabled": props.disabled },
+]);
+</script>
+
+<template>
+  <button
+    :class="classes"
+    :disabled="disabled"
+    @click="emit('click', $event)"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
+  >
+    <slot />
+  </button>
+</template>
+```
+
+## defineProps and defineEmits
+
+```vue
+<script setup lang="ts">
+// Typed props
+const props = defineProps<{
+  title: string;
+  count?: number;
+}>();
+
+// Typed emits
+const emit = defineEmits<{
+  update: [value: string];
+  close: [];
+}>();
+
+// Expose for template refs
+defineExpose({ focus: () => inputRef.value?.focus() });
+</script>
+```
+
+## Custom v-model
+
+```vue
+<script setup lang="ts">
+const model = defineModel<string>({ default: "" });
+</script>
+
+<template>
+  <input :value="model" @input="model = ($event.target as HTMLInputElement).value" />
+</template>
+```
+
+## Typed Slots
+
+```vue
+<template>
+  <div class="card">
+    <header v-if="$slots.header">
+      <slot name="header" />
+    </header>
+    <slot :data="internalData" />
+    <footer v-if="$slots.footer">
+      <slot name="footer" />
+    </footer>
+  </div>
+</template>
+```
+
+## Teleport
+
+```vue
+<template>
+  <Teleport to="body">
+    <div v-if="isOpen" class="modal-overlay">
+      <div class="modal-content">
+        <slot />
+      </div>
+    </div>
+  </Teleport>
+</template>
+```
+
+## Conventions
+
+- Always use `<script setup lang="ts">`
+- Props via `defineProps<Interface>()` with `withDefaults` when needed
+- Emits via `defineEmits<{}>()` with full typing
+- Use `defineModel` for custom v-model
+- Named slots with `v-if="$slots.name"` check
+- Dark mode via CSS custom properties
+{{/if}}

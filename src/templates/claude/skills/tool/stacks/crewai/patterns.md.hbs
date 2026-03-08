@@ -1,0 +1,219 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes CrewAI para Tools
+
+## @tool Decorator
+
+```python
+from crewai.tools import tool
+
+@tool("search_web")
+def search_web(query: str) -> str:
+    """Busca informacoes na web sobre o termo informado.
+
+    Args:
+        query: Termo de busca para pesquisar na web.
+    """
+    results = web_search_api.search(query, max_results=5)
+    return "\n".join([f"- {r.title}: {r.url}" for r in results])
+```
+
+## Tool Class (BaseTool)
+
+```python
+from crewai.tools import BaseTool
+from pydantic import BaseModel, Field
+
+class DatabaseSearchInput(BaseModel):
+    query: str = Field(description="Termo de busca no banco de dados")
+    table: str = Field(description="Nome da tabela para buscar")
+    limit: int = Field(default=10, description="Numero maximo de resultados")
+
+class DatabaseSearchTool(BaseTool):
+    name: str = "database_search"
+    description: str = "Busca registros em uma tabela especifica do banco de dados."
+    args_schema: type[BaseModel] = DatabaseSearchInput
+
+    def _run(self, query: str, table: str, limit: int = 10) -> str:
+        results = db.execute(
+            f"SELECT * FROM {table} WHERE content ILIKE %s LIMIT %s",
+            [f"%{query}%", limit],
+        )
+        if not results:
+            return "Nenhum resultado encontrado."
+        return "\n".join([f"- {r}" for r in results])
+```
+
+## Tool com Configuracao
+
+```python
+class ApiClientTool(BaseTool):
+    name: str = "api_client"
+    description: str = "Faz requisicoes para a API do servico externo."
+    base_url: str = ""
+    api_key: str = ""
+
+    def __init__(self, base_url: str, api_key: str, **kwargs):
+        super().__init__(**kwargs)
+        self.base_url = base_url
+        self.api_key = api_key
+
+    def _run(self, endpoint: str) -> str:
+        response = requests.get(
+            f"{self.base_url}/{endpoint}",
+            headers={"Authorization": f"Bearer {self.api_key}"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        return str(response.json())
+```
+
+## Registrando Tools no Agent
+
+```python
+from crewai import Agent
+
+search_tool = DatabaseSearchTool()
+api_tool = ApiClientTool(base_url="https://api.example.com", api_key="key")
+
+agent = Agent(
+    role="Analista de Dados",
+    goal="Analisar dados e gerar insights",
+    backstory="Analista experiente",
+    tools=[search_web, search_tool, api_tool],
+)
+```
+
+## Tools Built-in do CrewAI
+
+```python
+from crewai_tools import (
+    SerperDevTool,       # Busca web via Serper
+    ScrapeWebsiteTool,   # Scraping de paginas
+    FileReadTool,        # Leitura de arquivos
+    DirectoryReadTool,   # Listagem de diretorios
+    PDFSearchTool,       # Busca em PDFs
+)
+
+search = SerperDevTool()
+scraper = ScrapeWebsiteTool()
+file_reader = FileReadTool(file_path="data/report.csv")
+```
+
+## Convencoes
+
+- `@tool` para tools simples e sem estado
+- `BaseTool` para tools com configuracao ou estado
+- Docstring descritiva (o LLM usa para escolher a tool)
+- `args_schema` com Pydantic para parametros complexos
+- Usar `crewai_tools` built-in quando possivel
+- Injetar dependencias (API keys, URLs) via construtor
+{{else}}
+# CrewAI Tool Patterns
+
+## @tool Decorator
+
+```python
+from crewai.tools import tool
+
+@tool("search_web")
+def search_web(query: str) -> str:
+    """Search the web for information about the given term.
+
+    Args:
+        query: Search term to look up on the web.
+    """
+    results = web_search_api.search(query, max_results=5)
+    return "\n".join([f"- {r.title}: {r.url}" for r in results])
+```
+
+## Tool Class (BaseTool)
+
+```python
+from crewai.tools import BaseTool
+from pydantic import BaseModel, Field
+
+class DatabaseSearchInput(BaseModel):
+    query: str = Field(description="Search term for the database")
+    table: str = Field(description="Table name to search")
+    limit: int = Field(default=10, description="Maximum number of results")
+
+class DatabaseSearchTool(BaseTool):
+    name: str = "database_search"
+    description: str = "Search records in a specific database table."
+    args_schema: type[BaseModel] = DatabaseSearchInput
+
+    def _run(self, query: str, table: str, limit: int = 10) -> str:
+        results = db.execute(
+            f"SELECT * FROM {table} WHERE content ILIKE %s LIMIT %s",
+            [f"%{query}%", limit],
+        )
+        if not results:
+            return "No results found."
+        return "\n".join([f"- {r}" for r in results])
+```
+
+## Tool with Configuration
+
+```python
+class ApiClientTool(BaseTool):
+    name: str = "api_client"
+    description: str = "Makes requests to the external service API."
+    base_url: str = ""
+    api_key: str = ""
+
+    def __init__(self, base_url: str, api_key: str, **kwargs):
+        super().__init__(**kwargs)
+        self.base_url = base_url
+        self.api_key = api_key
+
+    def _run(self, endpoint: str) -> str:
+        response = requests.get(
+            f"{self.base_url}/{endpoint}",
+            headers={"Authorization": f"Bearer {self.api_key}"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        return str(response.json())
+```
+
+## Registering Tools with Agent
+
+```python
+from crewai import Agent
+
+search_tool = DatabaseSearchTool()
+api_tool = ApiClientTool(base_url="https://api.example.com", api_key="key")
+
+agent = Agent(
+    role="Data Analyst",
+    goal="Analyze data and generate insights",
+    backstory="Experienced analyst",
+    tools=[search_web, search_tool, api_tool],
+)
+```
+
+## CrewAI Built-in Tools
+
+```python
+from crewai_tools import (
+    SerperDevTool,       # Web search via Serper
+    ScrapeWebsiteTool,   # Web page scraping
+    FileReadTool,        # File reading
+    DirectoryReadTool,   # Directory listing
+    PDFSearchTool,       # PDF search
+)
+
+search = SerperDevTool()
+scraper = ScrapeWebsiteTool()
+file_reader = FileReadTool(file_path="data/report.csv")
+```
+
+## Conventions
+
+- `@tool` for simple, stateless tools
+- `BaseTool` for tools with configuration or state
+- Descriptive docstring (the LLM uses it to choose the tool)
+- `args_schema` with Pydantic for complex parameters
+- Use `crewai_tools` built-in when possible
+- Inject dependencies (API keys, URLs) via constructor
+{{/if}}

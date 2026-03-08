@@ -1,0 +1,191 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Express para Endpoints
+
+## Estrutura de Router
+
+```typescript
+import { Router, Request, Response, NextFunction } from 'express';
+import { body, param, query, validationResult } from 'express-validator';
+
+const router = Router();
+
+// Middleware de validacao
+const validate = (req: Request, res: Response, next: NextFunction) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  next();
+};
+
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const resultado = await recursoService.findAll(req.query);
+    res.json(resultado);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/',
+  [body('nome').isString().notEmpty(), body('descricao').optional().isString()],
+  validate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const recurso = await recursoService.create(req.body);
+      res.status(201).json(recurso);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.put(
+  '/:id',
+  [param('id').isString(), body('nome').isString().notEmpty()],
+  validate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const recurso = await recursoService.update(req.params.id, req.body);
+      res.json(recurso);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await recursoService.remove(req.params.id);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;
+```
+
+## Middleware de Erro
+
+```typescript
+const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof NotFoundError) return res.status(404).json({ message: err.message });
+  if (err instanceof ValidationError) return res.status(400).json({ message: err.message });
+  res.status(500).json({ message: 'Erro interno' });
+};
+```
+
+## Agrupamento de Rotas
+
+```typescript
+// app.ts
+app.use('/api/recursos', recursoRouter);
+app.use('/api/usuarios', usuarioRouter);
+app.use(errorHandler);
+```
+
+## Convencoes
+- Sempre usar `try/catch` com `next(err)` para erros async
+- Validacao via `express-validator` antes do handler
+- Middleware `validate` reutilizavel para checagem de erros
+- Router separado por recurso, montado no app principal
+- Error handler centralizado como ultimo middleware
+- Service injetado via closure ou factory function
+{{else}}
+# Express Endpoint Patterns
+
+## Router Structure
+
+```typescript
+import { Router, Request, Response, NextFunction } from 'express';
+import { body, param, query, validationResult } from 'express-validator';
+
+const router = Router();
+
+// Validation middleware
+const validate = (req: Request, res: Response, next: NextFunction) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  next();
+};
+
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await resourceService.findAll(req.query);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/',
+  [body('name').isString().notEmpty(), body('description').optional().isString()],
+  validate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const resource = await resourceService.create(req.body);
+      res.status(201).json(resource);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.put(
+  '/:id',
+  [param('id').isString(), body('name').isString().notEmpty()],
+  validate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const resource = await resourceService.update(req.params.id, req.body);
+      res.json(resource);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await resourceService.remove(req.params.id);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;
+```
+
+## Error Middleware
+
+```typescript
+const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof NotFoundError) return res.status(404).json({ message: err.message });
+  if (err instanceof ValidationError) return res.status(400).json({ message: err.message });
+  res.status(500).json({ message: 'Internal error' });
+};
+```
+
+## Route Grouping
+
+```typescript
+// app.ts
+app.use('/api/resources', resourceRouter);
+app.use('/api/users', userRouter);
+app.use(errorHandler);
+```
+
+## Conventions
+- Always use `try/catch` with `next(err)` for async errors
+- Validation via `express-validator` before the handler
+- Reusable `validate` middleware for error checking
+- Separate Router per resource, mounted on main app
+- Centralized error handler as last middleware
+- Service injected via closure or factory function
+{{/if}}

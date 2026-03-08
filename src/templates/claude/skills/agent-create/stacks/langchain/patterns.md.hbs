@@ -1,0 +1,261 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes LangChain para Criacao de Agents
+
+## AgentExecutor com ReAct
+
+```python
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "Voce e um assistente util. Use as tools disponiveis para responder."),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+tools = [search_tool, calculator_tool, weather_tool]
+
+agent = create_react_agent(llm, tools, prompt)
+executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    max_iterations=10,
+    handle_parsing_errors=True,
+)
+
+result = executor.invoke({"input": "Qual a temperatura em Sao Paulo?"})
+```
+
+## Agent com Tool Calling (Recomendado)
+
+```python
+from langchain.agents import create_tool_calling_agent
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "Voce e um assistente util."),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+agent = create_tool_calling_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+```
+
+## Memory (Historico de Conversa)
+
+```python
+from langchain_core.chat_history import InMemoryChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+
+store = {}
+
+def get_session_history(session_id: str):
+    if session_id not in store:
+        store[session_id] = InMemoryChatMessageHistory()
+    return store[session_id]
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "Voce e um assistente util."),
+    MessagesPlaceholder(variable_name="history"),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+agent_with_history = RunnableWithMessageHistory(
+    executor,
+    get_session_history,
+    input_messages_key="input",
+    history_messages_key="history",
+)
+
+result = agent_with_history.invoke(
+    {"input": "Ola!"},
+    config={"configurable": {"session_id": "user-123"}},
+)
+```
+
+## Callbacks
+
+```python
+from langchain_core.callbacks import BaseCallbackHandler
+
+class LoggingHandler(BaseCallbackHandler):
+    def on_tool_start(self, serialized, input_str, **kwargs):
+        print(f"Tool iniciada: {serialized['name']} com input: {input_str}")
+
+    def on_tool_end(self, output, **kwargs):
+        print(f"Tool finalizada: {output[:100]}")
+
+    def on_agent_action(self, action, **kwargs):
+        print(f"Agent acao: {action.tool} - {action.tool_input}")
+
+result = executor.invoke(
+    {"input": "pergunta"},
+    config={"callbacks": [LoggingHandler()]},
+)
+```
+
+## LangGraph Agent (Avancado)
+
+```python
+from langgraph.prebuilt import create_react_agent as create_langgraph_agent
+from langgraph.checkpoint.memory import MemorySaver
+
+memory = MemorySaver()
+
+graph = create_langgraph_agent(
+    model=llm,
+    tools=tools,
+    checkpointer=memory,
+)
+
+result = graph.invoke(
+    {"messages": [("human", "Pesquise sobre IA")]},
+    config={"configurable": {"thread_id": "session-1"}},
+)
+```
+
+## Convencoes
+
+- `create_tool_calling_agent` como padrao (mais confiavel que ReAct)
+- `max_iterations` para evitar loops infinitos
+- `handle_parsing_errors=True` para robustez
+- Memory via `RunnableWithMessageHistory` ou LangGraph
+- Callbacks para logging e monitoramento
+- LangGraph para fluxos complexos com estado persistente
+- Temperature 0 para agentes (decisoes deterministicas)
+{{else}}
+# LangChain Agent Creation Patterns
+
+## AgentExecutor with ReAct
+
+```python
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant. Use available tools to respond."),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+tools = [search_tool, calculator_tool, weather_tool]
+
+agent = create_react_agent(llm, tools, prompt)
+executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    max_iterations=10,
+    handle_parsing_errors=True,
+)
+
+result = executor.invoke({"input": "What is the temperature in New York?"})
+```
+
+## Agent with Tool Calling (Recommended)
+
+```python
+from langchain.agents import create_tool_calling_agent
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+agent = create_tool_calling_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+```
+
+## Memory (Conversation History)
+
+```python
+from langchain_core.chat_history import InMemoryChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+
+store = {}
+
+def get_session_history(session_id: str):
+    if session_id not in store:
+        store[session_id] = InMemoryChatMessageHistory()
+    return store[session_id]
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+    MessagesPlaceholder(variable_name="history"),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+agent_with_history = RunnableWithMessageHistory(
+    executor,
+    get_session_history,
+    input_messages_key="input",
+    history_messages_key="history",
+)
+
+result = agent_with_history.invoke(
+    {"input": "Hello!"},
+    config={"configurable": {"session_id": "user-123"}},
+)
+```
+
+## Callbacks
+
+```python
+from langchain_core.callbacks import BaseCallbackHandler
+
+class LoggingHandler(BaseCallbackHandler):
+    def on_tool_start(self, serialized, input_str, **kwargs):
+        print(f"Tool started: {serialized['name']} with input: {input_str}")
+
+    def on_tool_end(self, output, **kwargs):
+        print(f"Tool finished: {output[:100]}")
+
+    def on_agent_action(self, action, **kwargs):
+        print(f"Agent action: {action.tool} - {action.tool_input}")
+
+result = executor.invoke(
+    {"input": "question"},
+    config={"callbacks": [LoggingHandler()]},
+)
+```
+
+## LangGraph Agent (Advanced)
+
+```python
+from langgraph.prebuilt import create_react_agent as create_langgraph_agent
+from langgraph.checkpoint.memory import MemorySaver
+
+memory = MemorySaver()
+
+graph = create_langgraph_agent(
+    model=llm,
+    tools=tools,
+    checkpointer=memory,
+)
+
+result = graph.invoke(
+    {"messages": [("human", "Research about AI")]},
+    config={"configurable": {"thread_id": "session-1"}},
+)
+```
+
+## Conventions
+
+- `create_tool_calling_agent` as default (more reliable than ReAct)
+- `max_iterations` to prevent infinite loops
+- `handle_parsing_errors=True` for robustness
+- Memory via `RunnableWithMessageHistory` or LangGraph
+- Callbacks for logging and monitoring
+- LangGraph for complex flows with persistent state
+- Temperature 0 for agents (deterministic decisions)
+{{/if}}

@@ -1,0 +1,335 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes TypeORM para Banco de Dados
+
+## Entity
+
+```ts
+import {
+  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn,
+  UpdateDateColumn, OneToMany, ManyToOne, JoinColumn, Index,
+} from "typeorm";
+
+@Entity("users")
+export class User {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column({ nullable: true })
+  name: string;
+
+  @Column({ type: "enum", enum: ["USER", "ADMIN"], default: "USER" })
+  role: "USER" | "ADMIN";
+
+  @OneToMany(() => Post, (post) => post.author)
+  posts: Post[];
+
+  @CreateDateColumn({ name: "created_at" })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: "updated_at" })
+  updatedAt: Date;
+}
+
+@Entity("posts")
+export class Post {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  @Column()
+  title: string;
+
+  @Column({ nullable: true, type: "text" })
+  content: string;
+
+  @Column({ default: false })
+  published: boolean;
+
+  @ManyToOne(() => User, (user) => user.posts, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "author_id" })
+  author: User;
+
+  @Index()
+  @Column({ name: "author_id" })
+  authorId: string;
+
+  @CreateDateColumn({ name: "created_at" })
+  createdAt: Date;
+}
+```
+
+## Repository Pattern
+
+```ts
+import { AppDataSource } from "@/data-source";
+import { User } from "@/entities/user";
+
+const userRepository = AppDataSource.getRepository(User);
+
+// findMany com filtro
+const admins = await userRepository.find({
+  where: { role: "ADMIN" },
+  relations: { posts: true },
+  order: { createdAt: "DESC" },
+  skip: 0,
+  take: 10,
+});
+
+// findOne
+const user = await userRepository.findOne({
+  where: { email: "admin@test.com" },
+  select: { id: true, name: true, email: true },
+});
+
+// create + save
+const newUser = userRepository.create({
+  email: "joao@test.com",
+  name: "Joao",
+});
+await userRepository.save(newUser);
+
+// update
+await userRepository.update({ id: userId }, { name: "Joao Silva" });
+
+// delete
+await userRepository.delete({ id: userId });
+```
+
+## QueryBuilder
+
+```ts
+const usersWithPostCount = await userRepository
+  .createQueryBuilder("user")
+  .leftJoin("user.posts", "post")
+  .select("user.id", "id")
+  .addSelect("user.name", "name")
+  .addSelect("COUNT(post.id)", "postCount")
+  .groupBy("user.id")
+  .orderBy("user.createdAt", "DESC")
+  .limit(10)
+  .getRawMany();
+
+// Com where complexo
+const filtered = await userRepository
+  .createQueryBuilder("user")
+  .where("user.role = :role", { role: "ADMIN" })
+  .andWhere("user.createdAt > :date", { date: new Date("2024-01-01") })
+  .getMany();
+```
+
+## Transacoes
+
+```ts
+await AppDataSource.transaction(async (manager) => {
+  const user = manager.create(User, { email: "a@b.com", name: "A" });
+  await manager.save(user);
+  const post = manager.create(Post, { title: "Post", authorId: user.id });
+  await manager.save(post);
+});
+```
+
+## Migrations
+
+```ts
+// src/migrations/1700000000000-CreateUsers.ts
+import { MigrationInterface, QueryRunner, Table } from "typeorm";
+
+export class CreateUsers1700000000000 implements MigrationInterface {
+  async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.createTable(
+      new Table({
+        name: "users",
+        columns: [
+          { name: "id", type: "uuid", isPrimary: true, generationStrategy: "uuid", default: "uuid_generate_v4()" },
+          { name: "email", type: "varchar", isUnique: true },
+          { name: "name", type: "varchar", isNullable: true },
+          { name: "created_at", type: "timestamp", default: "now()" },
+        ],
+      }),
+    );
+  }
+
+  async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.dropTable("users");
+  }
+}
+```
+
+## Convencoes
+
+- Entities em arquivos separados por dominio
+- Snake_case com `name:` para colunas no banco
+- `@Index` em foreign keys para performance
+- `create` + `save` (nunca `insert` direto para hooks funcionarem)
+- QueryBuilder para queries complexas, Repository para CRUD simples
+- Migrations nomeadas com timestamp
+{{else}}
+# TypeORM Database Patterns
+
+## Entity
+
+```ts
+import {
+  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn,
+  UpdateDateColumn, OneToMany, ManyToOne, JoinColumn, Index,
+} from "typeorm";
+
+@Entity("users")
+export class User {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column({ nullable: true })
+  name: string;
+
+  @Column({ type: "enum", enum: ["USER", "ADMIN"], default: "USER" })
+  role: "USER" | "ADMIN";
+
+  @OneToMany(() => Post, (post) => post.author)
+  posts: Post[];
+
+  @CreateDateColumn({ name: "created_at" })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: "updated_at" })
+  updatedAt: Date;
+}
+
+@Entity("posts")
+export class Post {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  @Column()
+  title: string;
+
+  @Column({ nullable: true, type: "text" })
+  content: string;
+
+  @Column({ default: false })
+  published: boolean;
+
+  @ManyToOne(() => User, (user) => user.posts, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "author_id" })
+  author: User;
+
+  @Index()
+  @Column({ name: "author_id" })
+  authorId: string;
+
+  @CreateDateColumn({ name: "created_at" })
+  createdAt: Date;
+}
+```
+
+## Repository Pattern
+
+```ts
+import { AppDataSource } from "@/data-source";
+import { User } from "@/entities/user";
+
+const userRepository = AppDataSource.getRepository(User);
+
+// findMany with filter
+const admins = await userRepository.find({
+  where: { role: "ADMIN" },
+  relations: { posts: true },
+  order: { createdAt: "DESC" },
+  skip: 0,
+  take: 10,
+});
+
+// findOne
+const user = await userRepository.findOne({
+  where: { email: "admin@test.com" },
+  select: { id: true, name: true, email: true },
+});
+
+// create + save
+const newUser = userRepository.create({
+  email: "john@test.com",
+  name: "John",
+});
+await userRepository.save(newUser);
+
+// update
+await userRepository.update({ id: userId }, { name: "John Doe" });
+
+// delete
+await userRepository.delete({ id: userId });
+```
+
+## QueryBuilder
+
+```ts
+const usersWithPostCount = await userRepository
+  .createQueryBuilder("user")
+  .leftJoin("user.posts", "post")
+  .select("user.id", "id")
+  .addSelect("user.name", "name")
+  .addSelect("COUNT(post.id)", "postCount")
+  .groupBy("user.id")
+  .orderBy("user.createdAt", "DESC")
+  .limit(10)
+  .getRawMany();
+
+// Complex where
+const filtered = await userRepository
+  .createQueryBuilder("user")
+  .where("user.role = :role", { role: "ADMIN" })
+  .andWhere("user.createdAt > :date", { date: new Date("2024-01-01") })
+  .getMany();
+```
+
+## Transactions
+
+```ts
+await AppDataSource.transaction(async (manager) => {
+  const user = manager.create(User, { email: "a@b.com", name: "A" });
+  await manager.save(user);
+  const post = manager.create(Post, { title: "Post", authorId: user.id });
+  await manager.save(post);
+});
+```
+
+## Migrations
+
+```ts
+// src/migrations/1700000000000-CreateUsers.ts
+import { MigrationInterface, QueryRunner, Table } from "typeorm";
+
+export class CreateUsers1700000000000 implements MigrationInterface {
+  async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.createTable(
+      new Table({
+        name: "users",
+        columns: [
+          { name: "id", type: "uuid", isPrimary: true, generationStrategy: "uuid", default: "uuid_generate_v4()" },
+          { name: "email", type: "varchar", isUnique: true },
+          { name: "name", type: "varchar", isNullable: true },
+          { name: "created_at", type: "timestamp", default: "now()" },
+        ],
+      }),
+    );
+  }
+
+  async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.dropTable("users");
+  }
+}
+```
+
+## Conventions
+
+- Entities in separate files by domain
+- Snake_case with `name:` for database columns
+- `@Index` on foreign keys for performance
+- `create` + `save` (never direct `insert` for hooks to work)
+- QueryBuilder for complex queries, Repository for simple CRUD
+- Migrations named with timestamp
+{{/if}}

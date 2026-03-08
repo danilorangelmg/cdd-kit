@@ -6,6 +6,7 @@ import { generateAllModules } from "../../src/generators/module.js";
 import { generateClaudeInfra } from "../../src/generators/claude-infra.js";
 import { generateDocs } from "../../src/generators/docs.js";
 import { generateGit } from "../../src/generators/git.js";
+import { getStacksForRole, getStackById } from "../../src/methodology/stacks.js";
 import type { ProjectConfig } from "../../src/utils/validation.js";
 
 const TEST_DIR = path.join(process.cwd(), "tests", ".tmp-test-project");
@@ -114,10 +115,31 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(claude).toContain("APPEND");
     expect(claude).toContain("Orchestrator's responsibility");
 
-    // Phase 16: Expanded Rule #3 (planning gate auto-detection, SIMPLE criteria)
-    expect(claude).toContain("Auto-Detection");
+    // Phase 16/20: Expanded Rule #3 (planning gate auto-detection, SIMPLE criteria)
+    expect(claude).toContain("Mandatory auto-detection");
     expect(claude).toContain("SIMPLE");
     expect(claude).toContain("NOT a feature");
+    expect(claude).toContain("ABSOLUTE BLOCK");
+    expect(claude).toContain("Pre-implementation checklist");
+    expect(claude).toContain("Docs per module");
+
+    // Phase 20: Expanded Rule #0 (absolute delegation emphasis)
+    expect(claude).toContain("UNDER NO CIRCUMSTANCES");
+    expect(claude).toContain("Violation = complete rework");
+    expect(claude).toContain("Is the file inside a module?");
+
+    // Phase 21: Expanded Rule #5 (auto-routing)
+    expect(claude).toContain("Auto-routing");
+
+    // Phase 20: Expanded Rule #8 (context isolation, compliance stats)
+    expect(claude).toContain("Context Isolation");
+    expect(claude).toContain("~84%");
+    expect(claude).toContain("/tdd");
+
+    // Phase 20: Expanded Rule #9 (TDD sequential enforcement)
+    expect(claude).toContain("tdd-test-writer");
+    expect(claude).toContain("tdd-implementer");
+    expect(claude).toContain("Prohibitions");
 
     // Phase 9: Expanded Rule #4 (API envelope examples)
     expect(claude).toContain("VALIDATION_ERROR");
@@ -588,6 +610,11 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     expect(claude).not.toContain("Protecao E2E");
     expect(claude).not.toContain("Validacao E2E Pos-Dev");
     expect(claude).not.toContain("Formato de Entrada");
+
+    // Phase 22: Minimal should NOT have deep rule content (TDD/E2E/planning disabled)
+    expect(claude).not.toContain("BLOQUEIO ABSOLUTO");
+    expect(claude).not.toContain("Context Isolation");
+    expect(claude).not.toContain("INTOCAVEL");
   });
 
   it("generates Portuguese directory names for pt-BR", async () => {
@@ -678,10 +705,25 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     expect(claude).toContain("APPEND");
     expect(claude).toContain("Responsabilidade do orquestrador");
 
-    // Phase 16: PT-BR planning gate expansion
-    expect(claude).toContain("Auto-Deteccao");
+    // Phase 16/20: PT-BR planning gate expansion
+    expect(claude).toContain("Auto-deteccao obrigatoria");
     expect(claude).toContain("SIMPLES");
     expect(claude).toContain("NAO e feature");
+    expect(claude).toContain("BLOQUEIO ABSOLUTO");
+    expect(claude).toContain("Checklist pre-implementacao");
+
+    // Phase 20: PT-BR Rule #0 expansion
+    expect(claude).toContain("EM HIPOTESE ALGUMA");
+    expect(claude).toContain("retrabalho completo");
+
+    // Phase 21: PT-BR Rule #5 expansion
+    expect(claude).toContain("Auto-roteamento");
+
+    // Phase 20: PT-BR Rule #8 expansion
+    expect(claude).toContain("~84%");
+
+    // Phase 20: PT-BR Rule #9 expansion
+    expect(claude).toContain("Proibicoes");
   });
 });
 
@@ -743,11 +785,21 @@ describe("Project Generation (Full preset with E2E rules)", () => {
     expect(claude).toContain("features/");
     expect(claude).toContain("step-definitions/");
 
-    // Phase 9: Post-Dev E2E Validation (post-dev-e2e-validation enabled)
+    // Phase 9/21: Post-Dev E2E Validation (post-dev-e2e-validation enabled)
     expect(claude).toContain("Post-Dev E2E Validation");
-    expect(claude).toContain("Diagnostic loop");
-    expect(claude).toContain("GUARDRAIL");
+    expect(claude).toContain("UNTOUCHABLE");
     expect(claude).toContain("NEVER modify E2E tests");
+    expect(claude).toContain("Reinforces Rule #6");
+    expect(claude).toContain("BFF changes");
+    expect(claude).toContain("Root cause hypothesis");
+
+    // Phase 20: E2E Protection expansion (Rule #6)
+    expect(claude).toContain("TWO layers");
+    expect(claude).toContain("features/**/*.feature");
+    expect(claude).toContain("Safety net");
+    expect(claude).toContain("Red phase");
+    expect(claude).toContain("Green phase");
+    expect(claude).toContain("orchestrator NEVER executes");
 
     // Phase 17: E2E make commands (e2e-test-protection enabled)
     expect(claude).toContain("make test-e2e");
@@ -1101,5 +1153,184 @@ describe("Project Generation (with git submodules)", () => {
         path.join(TEST_DIR, "my-app-front", ".claude")
       )
     ).toBe(false);
+  });
+});
+
+describe("Stack Registry", () => {
+  it("returns correct stacks for each role", () => {
+    const frontendStacks = getStacksForRole("frontend");
+    expect(frontendStacks).toHaveLength(4);
+    expect(frontendStacks.map((s) => s.id)).toEqual([
+      "react",
+      "vue",
+      "angular",
+      "svelte",
+    ]);
+
+    const backendStacks = getStacksForRole("backend");
+    expect(backendStacks).toHaveLength(3);
+    expect(backendStacks.map((s) => s.id)).toEqual([
+      "nestjs",
+      "express",
+      "fastify",
+    ]);
+
+    const e2eStacks = getStacksForRole("e2e");
+    expect(e2eStacks).toHaveLength(3);
+
+    const dbStacks = getStacksForRole("database");
+    expect(dbStacks).toHaveLength(3);
+
+    const aiStacks = getStacksForRole("agent-ai");
+    expect(aiStacks).toHaveLength(2);
+
+    const mobileStacks = getStacksForRole("mobile");
+    expect(mobileStacks).toHaveLength(2);
+  });
+
+  it("returns empty array for roles without stacks", () => {
+    expect(getStacksForRole("generic")).toHaveLength(0);
+    expect(getStacksForRole("nonexistent")).toHaveLength(0);
+  });
+
+  it("finds stack by ID with correct metadata", () => {
+    const react = getStackById("react");
+    expect(react).toBeDefined();
+    expect(react!.label).toBe("React");
+    expect(react!.role).toBe("frontend");
+    expect(react!.testCommand).toBe("npx vitest run");
+    expect(react!.supportingFiles).toEqual(["patterns.md", "testing.md"]);
+
+    const nestjs = getStackById("nestjs");
+    expect(nestjs).toBeDefined();
+    expect(nestjs!.role).toBe("backend");
+    expect(nestjs!.testCommand).toBe("npx jest");
+
+    expect(getStackById("nonexistent")).toBeUndefined();
+  });
+});
+
+describe("Stack-Aware Skill Generation", () => {
+  const stackConfig: ProjectConfig = {
+    version: "1.0.0",
+    project: {
+      name: "stack-test",
+      description: "Stack test",
+      language: "en",
+    },
+    modules: [
+      { name: "web", role: "frontend", directory: "web", stack: "react" },
+      { name: "api", role: "backend", directory: "api", stack: "nestjs" },
+    ],
+    methodology: {
+      preset: "standard",
+      rules: {
+        "absolute-delegation": true,
+        "changelog-by-date": true,
+        "conditional-mermaid": false,
+        "feature-planning-gate": true,
+        "api-response-contract": true,
+        "scope-of-responsibility": true,
+        "e2e-test-protection": false,
+        "post-dev-e2e-validation": false,
+        "tdd-enforcement": true,
+        "tdd-sequential-enforcement": true,
+      },
+    },
+    git: {
+      submodules: true,
+      org: "testorg",
+      provider: "github",
+      prefix: "",
+    },
+  };
+
+  beforeEach(async () => {
+    await fs.remove(TEST_DIR);
+    await fs.ensureDir(TEST_DIR);
+  });
+
+  afterEach(async () => {
+    await fs.remove(TEST_DIR);
+  });
+
+  it("generates supporting files for modules with stack", async () => {
+    const files = await generateClaudeInfra(TEST_DIR, stackConfig);
+
+    // Frontend with React stack should have supporting files
+    expect(files).toContain("web/.claude/skills/component/SKILL.md");
+    expect(files).toContain("web/.claude/skills/component/patterns.md");
+    expect(files).toContain("web/.claude/skills/component/testing.md");
+
+    // Backend with NestJS stack should have supporting files
+    expect(files).toContain("api/.claude/skills/endpoint/SKILL.md");
+    expect(files).toContain("api/.claude/skills/endpoint/patterns.md");
+    expect(files).toContain("api/.claude/skills/endpoint/testing.md");
+
+    // Verify files exist on disk
+    expect(
+      await fs.pathExists(
+        path.join(TEST_DIR, "web", ".claude", "skills", "component", "patterns.md")
+      )
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        path.join(TEST_DIR, "api", ".claude", "skills", "endpoint", "patterns.md")
+      )
+    ).toBe(true);
+  });
+
+  it("SKILL.md is stack-agnostic (no hardcoded React)", async () => {
+    await generateClaudeInfra(TEST_DIR, stackConfig);
+    const skillMd = await fs.readFile(
+      path.join(TEST_DIR, "web", ".claude", "skills", "component", "SKILL.md"),
+      "utf-8"
+    );
+
+    // Should NOT contain React-specific content (moved to patterns.md)
+    expect(skillMd).not.toContain("forwardRef");
+    expect(skillMd).not.toContain("displayName");
+
+    // Should reference supporting files
+    expect(skillMd).toContain("patterns.md");
+    expect(skillMd).toContain("React");
+  });
+
+  it("patterns.md contains stack-specific content", async () => {
+    await generateClaudeInfra(TEST_DIR, stackConfig);
+    const patterns = await fs.readFile(
+      path.join(TEST_DIR, "web", ".claude", "skills", "component", "patterns.md"),
+      "utf-8"
+    );
+
+    // React-specific content should be in patterns.md
+    expect(patterns).toContain("forwardRef");
+    expect(patterns).toContain("cn()");
+  });
+
+  it("does NOT generate supporting files without stack (backward compat)", async () => {
+    const noStackConfig: ProjectConfig = {
+      ...stackConfig,
+      modules: [
+        { name: "web", role: "frontend", directory: "web" },
+        { name: "api", role: "backend", directory: "api" },
+      ],
+    };
+    const files = await generateClaudeInfra(TEST_DIR, noStackConfig);
+
+    // SKILL.md should exist
+    expect(files).toContain("web/.claude/skills/component/SKILL.md");
+
+    // Supporting files should NOT exist
+    expect(files).not.toContain("web/.claude/skills/component/patterns.md");
+    expect(files).not.toContain("web/.claude/skills/component/testing.md");
+  });
+
+  it("stack-agnostic skills do NOT get supporting files", async () => {
+    const files = await generateClaudeInfra(TEST_DIR, stackConfig);
+
+    // adr, diagram etc are stack-agnostic — no supporting files even with stack
+    expect(files).toContain("web/.claude/skills/adr/SKILL.md");
+    expect(files).not.toContain("web/.claude/skills/adr/patterns.md");
   });
 });

@@ -12,6 +12,7 @@ export const ModuleSchema = z.object({
     "generic",
   ]),
   directory: z.string().min(1),
+  stack: z.string().optional(),
 });
 
 export const MethodologySchema = z.object({

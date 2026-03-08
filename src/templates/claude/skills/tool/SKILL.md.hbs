@@ -8,6 +8,7 @@ description: Create Tool for LLM/MCP agents
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash
 model: sonnet
+argument-hint: "[name]"
 ---
 
 {{#if (eq project.language "pt-BR")}}
@@ -28,6 +29,9 @@ Tools sao funcoes que agentes LLM podem invocar para interagir com sistemas exte
 1. Ler tools existentes para entender o padrao
 2. Verificar como o agente invoca tools
 3. Identificar servicos/APIs que a tool vai acessar
+{{#if stack}}
+4. Ler padroes da stack em [patterns.md](patterns.md)
+{{/if}}
 
 ### Fase 1 — Definicao
 - **Nome**: verbo_substantivo (ex: `buscar_usuario`, `criar_alerta`)
@@ -78,6 +82,9 @@ Tools are functions that LLM agents can invoke to interact with external systems
 1. Read existing tools to understand the pattern
 2. Check how the agent invokes tools
 3. Identify services/APIs the tool will access
+{{#if stack}}
+4. Read stack patterns in [patterns.md](patterns.md)
+{{/if}}
 
 ### Phase 1 — Definition
 - **Name**: verb_noun (e.g., `search_user`, `create_alert`)

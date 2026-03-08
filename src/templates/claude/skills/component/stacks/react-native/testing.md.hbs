@@ -1,0 +1,121 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes de Componentes React Native
+
+## Setup com React Native Testing Library
+
+```tsx
+import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
+import { Button } from "./Button";
+
+describe("Button", () => {
+  it("renderiza com titulo correto", () => {
+    render(<Button title="Salvar" onPress={jest.fn()} />);
+    expect(screen.getByText("Salvar")).toBeTruthy();
+  });
+
+  it("chama onPress ao tocar", () => {
+    const onPress = jest.fn();
+    render(<Button title="Salvar" onPress={onPress} />);
+    fireEvent.press(screen.getByText("Salvar"));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("nao chama onPress quando desabilitado", () => {
+    const onPress = jest.fn();
+    render(<Button title="Salvar" onPress={onPress} disabled />);
+    fireEvent.press(screen.getByText("Salvar"));
+    expect(onPress).not.toHaveBeenCalled();
+  });
+});
+```
+
+## Testando com waitFor (Assincronos)
+
+```tsx
+it("exibe dados apos carregamento", async () => {
+  render(<UserProfile userId="1" />);
+  expect(screen.getByTestId("loading")).toBeTruthy();
+  await waitFor(() => {
+    expect(screen.getByText("Joao Silva")).toBeTruthy();
+  });
+});
+```
+
+## Mocking de Navegacao
+
+```tsx
+const mockNavigate = jest.fn();
+jest.mock("@react-navigation/native", () => ({
+  useNavigation: () => ({ navigate: mockNavigate }),
+  useRoute: () => ({ params: { id: "123" } }),
+}));
+```
+
+## Convencoes
+
+- Sempre usar `screen` para queries (nao destructuring do render)
+- `fireEvent.press` para toques, `fireEvent.changeText` para inputs
+- `waitFor` para assercoes assincronas
+- `testID` como fallback quando nao ha texto acessivel
+- Mock de navegacao no topo do arquivo de teste
+{{else}}
+# React Native Component Testing
+
+## Setup with React Native Testing Library
+
+```tsx
+import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
+import { Button } from "./Button";
+
+describe("Button", () => {
+  it("renders with correct title", () => {
+    render(<Button title="Save" onPress={jest.fn()} />);
+    expect(screen.getByText("Save")).toBeTruthy();
+  });
+
+  it("calls onPress when tapped", () => {
+    const onPress = jest.fn();
+    render(<Button title="Save" onPress={onPress} />);
+    fireEvent.press(screen.getByText("Save"));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not call onPress when disabled", () => {
+    const onPress = jest.fn();
+    render(<Button title="Save" onPress={onPress} disabled />);
+    fireEvent.press(screen.getByText("Save"));
+    expect(onPress).not.toHaveBeenCalled();
+  });
+});
+```
+
+## Testing with waitFor (Async)
+
+```tsx
+it("shows data after loading", async () => {
+  render(<UserProfile userId="1" />);
+  expect(screen.getByTestId("loading")).toBeTruthy();
+  await waitFor(() => {
+    expect(screen.getByText("John Doe")).toBeTruthy();
+  });
+});
+```
+
+## Mocking Navigation
+
+```tsx
+const mockNavigate = jest.fn();
+jest.mock("@react-navigation/native", () => ({
+  useNavigation: () => ({ navigate: mockNavigate }),
+  useRoute: () => ({ params: { id: "123" } }),
+}));
+```
+
+## Conventions
+
+- Always use `screen` for queries (not render destructuring)
+- `fireEvent.press` for taps, `fireEvent.changeText` for inputs
+- `waitFor` for async assertions
+- `testID` as fallback when no accessible text exists
+- Mock navigation at the top of test file
+{{/if}}

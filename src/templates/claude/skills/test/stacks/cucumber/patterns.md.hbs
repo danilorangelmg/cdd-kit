@@ -1,0 +1,293 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Cucumber para Testes BDD
+
+## Gherkin (Feature File)
+
+```gherkin
+# features/login.feature
+Funcionalidade: Login do usuario
+  Como um usuario registrado
+  Quero fazer login na plataforma
+  Para acessar minha conta
+
+  Cenario: Login com credenciais validas
+    Dado que estou na pagina de login
+    Quando preencho o email com "admin@test.com"
+    E preencho a senha com "password123"
+    E clico no botao "Entrar"
+    Entao devo ser redirecionado para "/dashboard"
+    E devo ver o titulo "Dashboard"
+
+  Cenario: Login com credenciais invalidas
+    Dado que estou na pagina de login
+    Quando preencho o email com "wrong@test.com"
+    E preencho a senha com "wrong"
+    E clico no botao "Entrar"
+    Entao devo ver a mensagem de erro "Credenciais invalidas"
+
+  Esquema do Cenario: Validacao de campos
+    Dado que estou na pagina de login
+    Quando preencho o email com "<email>"
+    E preencho a senha com "<senha>"
+    E clico no botao "Entrar"
+    Entao devo ver a mensagem de erro "<mensagem>"
+
+    Exemplos:
+      | email           | senha | mensagem               |
+      |                 | abc   | Email e obrigatorio     |
+      | test@test.com   |       | Senha e obrigatoria     |
+```
+
+## Step Definitions
+
+```ts
+import { Given, When, Then } from "@cucumber/cucumber";
+import { expect } from "@playwright/test";
+
+Given("que estou na pagina de login", async function () {
+  await this.page.goto("/login");
+});
+
+When("preencho o email com {string}", async function (email: string) {
+  await this.page.getByLabel("Email").fill(email);
+});
+
+When("preencho a senha com {string}", async function (senha: string) {
+  await this.page.getByLabel("Senha").fill(senha);
+});
+
+When("clico no botao {string}", async function (texto: string) {
+  await this.page.getByRole("button", { name: texto }).click();
+});
+
+Then("devo ser redirecionado para {string}", async function (url: string) {
+  await expect(this.page).toHaveURL(new RegExp(url));
+});
+
+Then("devo ver a mensagem de erro {string}", async function (msg: string) {
+  await expect(this.page.getByRole("alert")).toContainText(msg);
+});
+```
+
+## World Class
+
+```ts
+import { setWorldConstructor, World } from "@cucumber/cucumber";
+import { Browser, Page } from "@playwright/test";
+
+class CustomWorld extends World {
+  page!: Page;
+  browser!: Browser;
+  context: Record<string, unknown> = {};
+
+  async openBrowser() {
+    this.page = await this.browser.newPage();
+  }
+
+  async closeBrowser() {
+    await this.page.close();
+  }
+}
+
+setWorldConstructor(CustomWorld);
+```
+
+## Hooks
+
+```ts
+import { Before, After, BeforeAll, AfterAll } from "@cucumber/cucumber";
+import { chromium } from "@playwright/test";
+
+let browser: Browser;
+
+BeforeAll(async () => {
+  browser = await chromium.launch();
+});
+
+Before(async function () {
+  this.browser = browser;
+  await this.openBrowser();
+});
+
+After(async function () {
+  await this.closeBrowser();
+});
+
+AfterAll(async () => {
+  await browser.close();
+});
+```
+
+## DataTable
+
+```gherkin
+Dado que existem os seguintes usuarios:
+  | nome  | email           | papel  |
+  | Joao  | joao@test.com   | admin  |
+  | Maria | maria@test.com  | editor |
+```
+
+```ts
+Given("que existem os seguintes usuarios:", async function (dataTable) {
+  const users = dataTable.hashes(); // [{nome, email, papel}, ...]
+  for (const user of users) {
+    await this.createUser(user);
+  }
+});
+```
+
+## Convencoes
+
+- Um cenario por comportamento de negocio
+- Steps reutilizaveis e genericos (parametrizados com `{string}`)
+- World class para compartilhar estado entre steps
+- Hooks para setup/teardown do browser
+- `Esquema do Cenario` para variantes do mesmo fluxo
+- Gherkin em portugues para projetos pt-BR
+{{else}}
+# Cucumber BDD Test Patterns
+
+## Gherkin (Feature File)
+
+```gherkin
+# features/login.feature
+Feature: User login
+  As a registered user
+  I want to log in to the platform
+  So that I can access my account
+
+  Scenario: Login with valid credentials
+    Given I am on the login page
+    When I fill in the email with "admin@test.com"
+    And I fill in the password with "password123"
+    And I click the "Sign in" button
+    Then I should be redirected to "/dashboard"
+    And I should see the heading "Dashboard"
+
+  Scenario: Login with invalid credentials
+    Given I am on the login page
+    When I fill in the email with "wrong@test.com"
+    And I fill in the password with "wrong"
+    And I click the "Sign in" button
+    Then I should see the error message "Invalid credentials"
+
+  Scenario Outline: Field validation
+    Given I am on the login page
+    When I fill in the email with "<email>"
+    And I fill in the password with "<password>"
+    And I click the "Sign in" button
+    Then I should see the error message "<message>"
+
+    Examples:
+      | email           | password | message               |
+      |                 | abc      | Email is required      |
+      | test@test.com   |          | Password is required   |
+```
+
+## Step Definitions
+
+```ts
+import { Given, When, Then } from "@cucumber/cucumber";
+import { expect } from "@playwright/test";
+
+Given("I am on the login page", async function () {
+  await this.page.goto("/login");
+});
+
+When("I fill in the email with {string}", async function (email: string) {
+  await this.page.getByLabel("Email").fill(email);
+});
+
+When("I fill in the password with {string}", async function (pwd: string) {
+  await this.page.getByLabel("Password").fill(pwd);
+});
+
+When("I click the {string} button", async function (text: string) {
+  await this.page.getByRole("button", { name: text }).click();
+});
+
+Then("I should be redirected to {string}", async function (url: string) {
+  await expect(this.page).toHaveURL(new RegExp(url));
+});
+
+Then("I should see the error message {string}", async function (msg: string) {
+  await expect(this.page.getByRole("alert")).toContainText(msg);
+});
+```
+
+## World Class
+
+```ts
+import { setWorldConstructor, World } from "@cucumber/cucumber";
+import { Browser, Page } from "@playwright/test";
+
+class CustomWorld extends World {
+  page!: Page;
+  browser!: Browser;
+  context: Record<string, unknown> = {};
+
+  async openBrowser() {
+    this.page = await this.browser.newPage();
+  }
+
+  async closeBrowser() {
+    await this.page.close();
+  }
+}
+
+setWorldConstructor(CustomWorld);
+```
+
+## Hooks
+
+```ts
+import { Before, After, BeforeAll, AfterAll } from "@cucumber/cucumber";
+import { chromium } from "@playwright/test";
+
+let browser: Browser;
+
+BeforeAll(async () => {
+  browser = await chromium.launch();
+});
+
+Before(async function () {
+  this.browser = browser;
+  await this.openBrowser();
+});
+
+After(async function () {
+  await this.closeBrowser();
+});
+
+AfterAll(async () => {
+  await browser.close();
+});
+```
+
+## DataTable
+
+```gherkin
+Given the following users exist:
+  | name  | email           | role   |
+  | John  | john@test.com   | admin  |
+  | Jane  | jane@test.com   | editor |
+```
+
+```ts
+Given("the following users exist:", async function (dataTable) {
+  const users = dataTable.hashes(); // [{name, email, role}, ...]
+  for (const user of users) {
+    await this.createUser(user);
+  }
+});
+```
+
+## Conventions
+
+- One scenario per business behavior
+- Reusable, generic steps (parameterized with `{string}`)
+- World class to share state between steps
+- Hooks for browser setup/teardown
+- `Scenario Outline` for variants of the same flow
+- Write Gherkin in the project's language
+{{/if}}

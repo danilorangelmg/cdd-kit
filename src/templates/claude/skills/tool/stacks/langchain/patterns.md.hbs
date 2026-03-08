@@ -1,0 +1,135 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes de Tool LangChain
+
+## BaseTool com Pydantic Args Schema
+
+```python
+from langchain.tools import BaseTool
+from langchain.tools.base import ToolException
+from pydantic import BaseModel, Field
+from typing import Optional, Type
+
+class SearchInput(BaseModel):
+    query: str = Field(description="Termo de busca")
+    max_results: int = Field(default=10, ge=1, le=100, description="Maximo de resultados")
+
+class SearchTool(BaseTool):
+    name: str = "search_database"
+    description: str = "Busca registros no banco de dados por termo"
+    args_schema: Type[BaseModel] = SearchInput
+    handle_tool_error: bool = True
+
+    def _run(self, query: str, max_results: int = 10) -> str:
+        try:
+            results = self._search(query, max_results)
+            return f"Encontrados {len(results)} resultados para '{query}'"
+        except Exception as e:
+            raise ToolException(f"Erro na busca: {str(e)}")
+
+    async def _arun(self, query: str, max_results: int = 10) -> str:
+        results = await self._async_search(query, max_results)
+        return f"Encontrados {len(results)} resultados para '{query}'"
+```
+
+## Tool Simples com Decorador
+
+```python
+from langchain.tools import tool
+
+@tool
+def calculate_price(quantity: int, unit_price: float) -> str:
+    """Calcula preco total dado quantidade e preco unitario."""
+    total = quantity * unit_price
+    return f"Preco total: R${total:.2f}"
+```
+
+## Tratamento de Erros com ToolException
+
+```python
+from langchain.tools.base import ToolException
+
+class SafeTool(BaseTool):
+    handle_tool_error: bool = True  # retorna erro como string ao agente
+
+    def _run(self, input: str) -> str:
+        if not input.strip():
+            raise ToolException("Input nao pode ser vazio")
+        return self._process(input)
+```
+
+## Convencoes
+
+- Sempre definir `args_schema` com Pydantic para validacao automatica
+- Implementar `_arun` para suporte async
+- Usar `ToolException` (nao Exception generica) para erros tratados
+- `handle_tool_error=True` para que o agente receba o erro como texto
+- `description` clara e concisa para o agente decidir quando usar
+- Nomes em snake_case para tools
+{{else}}
+# LangChain Tool Patterns
+
+## BaseTool with Pydantic Args Schema
+
+```python
+from langchain.tools import BaseTool
+from langchain.tools.base import ToolException
+from pydantic import BaseModel, Field
+from typing import Optional, Type
+
+class SearchInput(BaseModel):
+    query: str = Field(description="Search term")
+    max_results: int = Field(default=10, ge=1, le=100, description="Maximum results")
+
+class SearchTool(BaseTool):
+    name: str = "search_database"
+    description: str = "Search database records by term"
+    args_schema: Type[BaseModel] = SearchInput
+    handle_tool_error: bool = True
+
+    def _run(self, query: str, max_results: int = 10) -> str:
+        try:
+            results = self._search(query, max_results)
+            return f"Found {len(results)} results for '{query}'"
+        except Exception as e:
+            raise ToolException(f"Search error: {str(e)}")
+
+    async def _arun(self, query: str, max_results: int = 10) -> str:
+        results = await self._async_search(query, max_results)
+        return f"Found {len(results)} results for '{query}'"
+```
+
+## Simple Tool with Decorator
+
+```python
+from langchain.tools import tool
+
+@tool
+def calculate_price(quantity: int, unit_price: float) -> str:
+    """Calculate total price given quantity and unit price."""
+    total = quantity * unit_price
+    return f"Total price: ${total:.2f}"
+```
+
+## Error Handling with ToolException
+
+```python
+from langchain.tools.base import ToolException
+
+class SafeTool(BaseTool):
+    handle_tool_error: bool = True  # returns error as string to agent
+
+    def _run(self, input: str) -> str:
+        if not input.strip():
+            raise ToolException("Input cannot be empty")
+        return self._process(input)
+```
+
+## Conventions
+
+- Always define `args_schema` with Pydantic for automatic validation
+- Implement `_arun` for async support
+- Use `ToolException` (not generic Exception) for handled errors
+- `handle_tool_error=True` so the agent receives the error as text
+- Clear and concise `description` for agent decision-making
+- snake_case names for tools
+{{/if}}

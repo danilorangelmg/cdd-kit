@@ -1,0 +1,219 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Angular para Componentes
+
+## Estrutura Base
+
+```ts
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  ChangeDetectionStrategy,
+} from "@angular/core";
+
+@Component({
+  selector: "app-button",
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <button
+      [class]="classes"
+      [disabled]="disabled"
+      (click)="handleClick($event)"
+    >
+      <ng-content />
+    </button>
+  `,
+})
+export class ButtonComponent {
+  @Input() variant: "default" | "outline" | "ghost" = "default";
+  @Input() size: "sm" | "md" | "lg" = "md";
+  @Input() disabled = false;
+
+  @Output() clicked = new EventEmitter<MouseEvent>();
+
+  get classes(): string {
+    return `btn btn--${this.variant} btn--${this.size}`;
+  }
+
+  handleClick(event: MouseEvent): void {
+    if (!this.disabled) {
+      this.clicked.emit(event);
+    }
+  }
+}
+```
+
+## Lifecycle Hooks
+
+```ts
+import { Component, OnInit, OnDestroy } from "@angular/core";
+import { Subject, takeUntil } from "rxjs";
+
+@Component({ ... })
+export class UserListComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  ngOnInit(): void {
+    this.dataService.users$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((users) => (this.users = users));
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+```
+
+## Template References
+
+```ts
+@Component({
+  template: `<input #inputRef type="text" />`,
+})
+export class SearchComponent {
+  @ViewChild("inputRef") inputRef!: ElementRef<HTMLInputElement>;
+
+  focus(): void {
+    this.inputRef.nativeElement.focus();
+  }
+}
+```
+
+## Content Projection
+
+```ts
+@Component({
+  selector: "app-card",
+  template: `
+    <div class="card">
+      <header><ng-content select="[card-header]" /></header>
+      <div class="card-body"><ng-content /></div>
+      <footer><ng-content select="[card-footer]" /></footer>
+    </div>
+  `,
+})
+export class CardComponent {}
+```
+
+## Convencoes
+
+- Sempre usar `ChangeDetectionStrategy.OnPush`
+- Componentes standalone por padrao
+- `@Output` com `EventEmitter` — nunca emitir no construtor
+- Limpar subscriptions com `takeUntil(destroy$)`
+- Usar `ng-content` com `select` para projecao nomeada
+- Getters computados para classes dinamicas
+{{else}}
+# Angular Component Patterns
+
+## Base Structure
+
+```ts
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  ChangeDetectionStrategy,
+} from "@angular/core";
+
+@Component({
+  selector: "app-button",
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <button
+      [class]="classes"
+      [disabled]="disabled"
+      (click)="handleClick($event)"
+    >
+      <ng-content />
+    </button>
+  `,
+})
+export class ButtonComponent {
+  @Input() variant: "default" | "outline" | "ghost" = "default";
+  @Input() size: "sm" | "md" | "lg" = "md";
+  @Input() disabled = false;
+
+  @Output() clicked = new EventEmitter<MouseEvent>();
+
+  get classes(): string {
+    return `btn btn--${this.variant} btn--${this.size}`;
+  }
+
+  handleClick(event: MouseEvent): void {
+    if (!this.disabled) {
+      this.clicked.emit(event);
+    }
+  }
+}
+```
+
+## Lifecycle Hooks
+
+```ts
+import { Component, OnInit, OnDestroy } from "@angular/core";
+import { Subject, takeUntil } from "rxjs";
+
+@Component({ ... })
+export class UserListComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  ngOnInit(): void {
+    this.dataService.users$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((users) => (this.users = users));
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+```
+
+## Template References
+
+```ts
+@Component({
+  template: `<input #inputRef type="text" />`,
+})
+export class SearchComponent {
+  @ViewChild("inputRef") inputRef!: ElementRef<HTMLInputElement>;
+
+  focus(): void {
+    this.inputRef.nativeElement.focus();
+  }
+}
+```
+
+## Content Projection
+
+```ts
+@Component({
+  selector: "app-card",
+  template: `
+    <div class="card">
+      <header><ng-content select="[card-header]" /></header>
+      <div class="card-body"><ng-content /></div>
+      <footer><ng-content select="[card-footer]" /></footer>
+    </div>
+  `,
+})
+export class CardComponent {}
+```
+
+## Conventions
+
+- Always use `ChangeDetectionStrategy.OnPush`
+- Standalone components by default
+- `@Output` with `EventEmitter` — never emit in constructor
+- Clean up subscriptions with `takeUntil(destroy$)`
+- Use `ng-content` with `select` for named projection
+- Computed getters for dynamic classes
+{{/if}}

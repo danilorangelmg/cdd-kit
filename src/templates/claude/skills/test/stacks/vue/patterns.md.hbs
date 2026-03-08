@@ -1,0 +1,221 @@
+{{#if (eq project.language "pt-BR")}}
+# Setup de Testes Vue (Vitest + Vue Test Utils)
+
+## Configuracao Vitest
+
+```ts
+// vitest.config.ts
+import { defineConfig } from "vitest/config";
+import vue from "@vitejs/plugin-vue";
+
+export default defineConfig({
+  plugins: [vue()],
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
+  },
+});
+```
+
+## Setup File
+
+```ts
+// src/test/setup.ts
+import { config } from "@vue/test-utils";
+
+// Stubs globais
+config.global.stubs = {
+  Teleport: true,
+  Transition: true,
+};
+```
+
+## Estrutura de Teste
+
+```ts
+import { mount, shallowMount } from "@vue/test-utils";
+import { describe, it, expect, vi } from "vitest";
+import Button from "./Button.vue";
+
+describe("Button", () => {
+  it("renderiza com props", () => {
+    const wrapper = mount(Button, {
+      props: { variant: "outline" },
+      slots: { default: "Salvar" },
+    });
+
+    expect(wrapper.text()).toContain("Salvar");
+    expect(wrapper.classes()).toContain("btn--outline");
+  });
+
+  it("emite evento ao clicar", async () => {
+    const wrapper = mount(Button);
+    await wrapper.find("button").trigger("click");
+    expect(wrapper.emitted("click")).toHaveLength(1);
+  });
+});
+```
+
+## mount vs shallowMount
+
+```ts
+// Integracao — renderiza filhos reais
+const wrapper = mount(UserCard, { props: { user: mockUser } });
+
+// Unitario — stubs componentes filhos
+const wrapper = shallowMount(UserCard, { props: { user: mockUser } });
+```
+
+## Mock de Plugins
+
+```ts
+import { createTestingPinia } from "@pinia/testing";
+import { createRouter, createMemoryHistory } from "vue-router";
+
+const wrapper = mount(Component, {
+  global: {
+    plugins: [
+      createTestingPinia({ createSpy: vi.fn }),
+      createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: "/", component: { template: "<div />" } }],
+      }),
+    ],
+    provide: { apiClient: mockApiClient },
+  },
+});
+```
+
+## Mock de Composables
+
+```ts
+vi.mock("@/composables/useAuth", () => ({
+  useAuth: () => ({
+    user: ref({ name: "Test" }),
+    isAuthenticated: ref(true),
+    logout: vi.fn(),
+  }),
+}));
+```
+
+## Convencoes
+
+- Vitest como test runner
+- `@vue/test-utils` para mount e queries
+- `mount` para integracao, `shallowMount` para unitario
+- `@pinia/testing` para mock de stores
+- Stubs globais para Teleport e Transition
+- `vi.mock` para composables externos
+- Sempre `await` em `trigger` e `setValue`
+{{else}}
+# Vue Testing Setup (Vitest + Vue Test Utils)
+
+## Vitest Configuration
+
+```ts
+// vitest.config.ts
+import { defineConfig } from "vitest/config";
+import vue from "@vitejs/plugin-vue";
+
+export default defineConfig({
+  plugins: [vue()],
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
+  },
+});
+```
+
+## Setup File
+
+```ts
+// src/test/setup.ts
+import { config } from "@vue/test-utils";
+
+// Global stubs
+config.global.stubs = {
+  Teleport: true,
+  Transition: true,
+};
+```
+
+## Test Structure
+
+```ts
+import { mount, shallowMount } from "@vue/test-utils";
+import { describe, it, expect, vi } from "vitest";
+import Button from "./Button.vue";
+
+describe("Button", () => {
+  it("renders with props", () => {
+    const wrapper = mount(Button, {
+      props: { variant: "outline" },
+      slots: { default: "Save" },
+    });
+
+    expect(wrapper.text()).toContain("Save");
+    expect(wrapper.classes()).toContain("btn--outline");
+  });
+
+  it("emits event on click", async () => {
+    const wrapper = mount(Button);
+    await wrapper.find("button").trigger("click");
+    expect(wrapper.emitted("click")).toHaveLength(1);
+  });
+});
+```
+
+## mount vs shallowMount
+
+```ts
+// Integration — renders real children
+const wrapper = mount(UserCard, { props: { user: mockUser } });
+
+// Unit — stubs child components
+const wrapper = shallowMount(UserCard, { props: { user: mockUser } });
+```
+
+## Plugin Mocking
+
+```ts
+import { createTestingPinia } from "@pinia/testing";
+import { createRouter, createMemoryHistory } from "vue-router";
+
+const wrapper = mount(Component, {
+  global: {
+    plugins: [
+      createTestingPinia({ createSpy: vi.fn }),
+      createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: "/", component: { template: "<div />" } }],
+      }),
+    ],
+    provide: { apiClient: mockApiClient },
+  },
+});
+```
+
+## Composable Mocking
+
+```ts
+vi.mock("@/composables/useAuth", () => ({
+  useAuth: () => ({
+    user: ref({ name: "Test" }),
+    isAuthenticated: ref(true),
+    logout: vi.fn(),
+  }),
+}));
+```
+
+## Conventions
+
+- Vitest as test runner
+- `@vue/test-utils` for mount and queries
+- `mount` for integration, `shallowMount` for unit
+- `@pinia/testing` for store mocking
+- Global stubs for Teleport and Transition
+- `vi.mock` for external composables
+- Always `await` on `trigger` and `setValue`
+{{/if}}

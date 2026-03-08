@@ -1,0 +1,217 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes CrewAI para Rules
+
+## Definicao de Agent
+
+```python
+from crewai import Agent
+
+researcher = Agent(
+    role="Pesquisador Senior",
+    goal="Encontrar informacoes precisas e relevantes sobre {topic}",
+    backstory=(
+        "Voce e um pesquisador experiente com profundo conhecimento "
+        "em analise de dados e busca de informacoes."
+    ),
+    verbose=True,
+    allow_delegation=False,
+    tools=[search_tool, scrape_tool],
+)
+
+writer = Agent(
+    role="Redator Tecnico",
+    goal="Escrever conteudo claro e informativo baseado na pesquisa",
+    backstory=(
+        "Voce e um redator tecnico com experiencia em "
+        "transformar dados complexos em conteudo acessivel."
+    ),
+    verbose=True,
+    allow_delegation=False,
+)
+```
+
+## Definicao de Task
+
+```python
+from crewai import Task
+
+research_task = Task(
+    description=(
+        "Pesquisar sobre {topic}. Coletar pelo menos 5 fontes confiáveis. "
+        "Focar em dados recentes e tendencias."
+    ),
+    expected_output="Relatorio com 5+ fontes, dados-chave e tendencias identificadas.",
+    agent=researcher,
+)
+
+writing_task = Task(
+    description=(
+        "Usar a pesquisa para escrever um artigo de 500 palavras. "
+        "Incluir introducao, desenvolvimento e conclusao."
+    ),
+    expected_output="Artigo formatado em Markdown com 500 palavras.",
+    agent=writer,
+    context=[research_task],  # depende da task anterior
+)
+```
+
+## Crew e Process
+
+```python
+from crewai import Crew, Process
+
+# Sequencial (padrao)
+crew = Crew(
+    agents=[researcher, writer],
+    tasks=[research_task, writing_task],
+    process=Process.sequential,
+    verbose=True,
+)
+
+# Hierarquico (com manager)
+crew = Crew(
+    agents=[researcher, writer],
+    tasks=[research_task, writing_task],
+    process=Process.hierarchical,
+    manager_llm=ChatOpenAI(model="gpt-4o"),
+    verbose=True,
+)
+
+result = crew.kickoff(inputs={"topic": "IA Generativa"})
+print(result)
+```
+
+## Configuracao via YAML
+
+```yaml
+# agents.yaml
+researcher:
+  role: "Pesquisador Senior"
+  goal: "Encontrar informacoes precisas sobre {topic}"
+  backstory: "Pesquisador experiente em analise de dados."
+
+# tasks.yaml
+research_task:
+  description: "Pesquisar sobre {topic}."
+  expected_output: "Relatorio com fontes e tendencias."
+  agent: researcher
+```
+
+## Convencoes
+
+- `role` descritivo e especifico (nunca generico)
+- `goal` com variavel `{topic}` para reutilizacao
+- `backstory` que contextualiza a expertise do agente
+- `expected_output` explicito em cada task
+- `context` para encadear dependencias entre tasks
+- `Process.sequential` por padrao, `hierarchical` para decisoes complexas
+- `allow_delegation=False` para agentes focados
+{{else}}
+# CrewAI Rule Patterns
+
+## Agent Definition
+
+```python
+from crewai import Agent
+
+researcher = Agent(
+    role="Senior Researcher",
+    goal="Find accurate and relevant information about {topic}",
+    backstory=(
+        "You are an experienced researcher with deep knowledge "
+        "in data analysis and information retrieval."
+    ),
+    verbose=True,
+    allow_delegation=False,
+    tools=[search_tool, scrape_tool],
+)
+
+writer = Agent(
+    role="Technical Writer",
+    goal="Write clear and informative content based on research",
+    backstory=(
+        "You are a technical writer experienced in "
+        "transforming complex data into accessible content."
+    ),
+    verbose=True,
+    allow_delegation=False,
+)
+```
+
+## Task Definition
+
+```python
+from crewai import Task
+
+research_task = Task(
+    description=(
+        "Research about {topic}. Collect at least 5 reliable sources. "
+        "Focus on recent data and trends."
+    ),
+    expected_output="Report with 5+ sources, key data, and identified trends.",
+    agent=researcher,
+)
+
+writing_task = Task(
+    description=(
+        "Use the research to write a 500-word article. "
+        "Include introduction, body, and conclusion."
+    ),
+    expected_output="Markdown-formatted article with 500 words.",
+    agent=writer,
+    context=[research_task],  # depends on previous task
+)
+```
+
+## Crew and Process
+
+```python
+from crewai import Crew, Process
+
+# Sequential (default)
+crew = Crew(
+    agents=[researcher, writer],
+    tasks=[research_task, writing_task],
+    process=Process.sequential,
+    verbose=True,
+)
+
+# Hierarchical (with manager)
+crew = Crew(
+    agents=[researcher, writer],
+    tasks=[research_task, writing_task],
+    process=Process.hierarchical,
+    manager_llm=ChatOpenAI(model="gpt-4o"),
+    verbose=True,
+)
+
+result = crew.kickoff(inputs={"topic": "Generative AI"})
+print(result)
+```
+
+## YAML Configuration
+
+```yaml
+# agents.yaml
+researcher:
+  role: "Senior Researcher"
+  goal: "Find accurate information about {topic}"
+  backstory: "Experienced researcher in data analysis."
+
+# tasks.yaml
+research_task:
+  description: "Research about {topic}."
+  expected_output: "Report with sources and trends."
+  agent: researcher
+```
+
+## Conventions
+
+- Descriptive and specific `role` (never generic)
+- `goal` with `{topic}` variable for reuse
+- `backstory` that contextualizes agent expertise
+- Explicit `expected_output` on each task
+- `context` to chain dependencies between tasks
+- `Process.sequential` by default, `hierarchical` for complex decisions
+- `allow_delegation=False` for focused agents
+{{/if}}

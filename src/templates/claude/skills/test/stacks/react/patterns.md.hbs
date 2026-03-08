@@ -1,0 +1,203 @@
+{{#if (eq project.language "pt-BR")}}
+# Setup de Testes React (Vitest + Testing Library)
+
+## Configuracao Vitest
+
+```ts
+// vitest.config.ts
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
+    css: true,
+  },
+});
+```
+
+## Setup File
+
+```ts
+// src/test/setup.ts
+import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/react";
+import { afterEach } from "vitest";
+
+afterEach(() => {
+  cleanup();
+});
+```
+
+## Estrutura de Teste
+
+```tsx
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+
+describe("Component", () => {
+  it("renderiza corretamente", () => {
+    render(<Component />);
+    expect(screen.getByRole("button")).toBeInTheDocument();
+  });
+});
+```
+
+## renderHook
+
+```ts
+import { renderHook, act } from "@testing-library/react";
+
+const { result } = renderHook(() => useCustomHook());
+act(() => result.current.doSomething());
+```
+
+## Mocks com vi.mock
+
+```ts
+// Mock de modulo
+vi.mock("@/services/api", () => ({
+  getUsers: vi.fn().mockResolvedValue([{ id: "1", name: "Test" }]),
+}));
+
+// Mock de componente
+vi.mock("@/components/Chart", () => ({
+  Chart: () => <div data-testid="chart-mock" />,
+}));
+
+// Spy em funcao
+const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+```
+
+## Wrapper para Providers
+
+```tsx
+function AllProviders({ children }: { children: React.ReactNode }) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>{children}</ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+const renderWithProviders = (ui: React.ReactElement) =>
+  render(ui, { wrapper: AllProviders });
+```
+
+## Convencoes
+
+- Vitest como test runner (compativel com Jest API)
+- `@testing-library/react` para render e queries
+- `userEvent` para interacoes (nunca `fireEvent`)
+- `vi.mock` no topo do arquivo (hoisted)
+- Wrapper factory para providers comuns
+- Cleanup automatico via setup file
+{{else}}
+# React Testing Setup (Vitest + Testing Library)
+
+## Vitest Configuration
+
+```ts
+// vitest.config.ts
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
+    css: true,
+  },
+});
+```
+
+## Setup File
+
+```ts
+// src/test/setup.ts
+import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/react";
+import { afterEach } from "vitest";
+
+afterEach(() => {
+  cleanup();
+});
+```
+
+## Test Structure
+
+```tsx
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+
+describe("Component", () => {
+  it("renders correctly", () => {
+    render(<Component />);
+    expect(screen.getByRole("button")).toBeInTheDocument();
+  });
+});
+```
+
+## renderHook
+
+```ts
+import { renderHook, act } from "@testing-library/react";
+
+const { result } = renderHook(() => useCustomHook());
+act(() => result.current.doSomething());
+```
+
+## Mocks with vi.mock
+
+```ts
+// Module mock
+vi.mock("@/services/api", () => ({
+  getUsers: vi.fn().mockResolvedValue([{ id: "1", name: "Test" }]),
+}));
+
+// Component mock
+vi.mock("@/components/Chart", () => ({
+  Chart: () => <div data-testid="chart-mock" />,
+}));
+
+// Function spy
+const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+```
+
+## Wrapper for Providers
+
+```tsx
+function AllProviders({ children }: { children: React.ReactNode }) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>{children}</ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+const renderWithProviders = (ui: React.ReactElement) =>
+  render(ui, { wrapper: AllProviders });
+```
+
+## Conventions
+
+- Vitest as test runner (Jest API compatible)
+- `@testing-library/react` for render and queries
+- `userEvent` for interactions (never `fireEvent`)
+- `vi.mock` at top of file (hoisted)
+- Wrapper factory for common providers
+- Automatic cleanup via setup file
+{{/if}}

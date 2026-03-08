@@ -1,0 +1,185 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Cypress para Testes E2E
+
+## Estrutura Base
+
+```ts
+describe("Login", () => {
+  beforeEach(() => {
+    cy.visit("/login");
+  });
+
+  it("faz login com credenciais validas", () => {
+    cy.get('[data-cy="email"]').type("admin@test.com");
+    cy.get('[data-cy="password"]').type("password123");
+    cy.contains("button", "Entrar").click();
+    cy.url().should("include", "/dashboard");
+    cy.contains("h1", "Dashboard").should("be.visible");
+  });
+
+  it("exibe erro com credenciais invalidas", () => {
+    cy.get('[data-cy="email"]').type("wrong@test.com");
+    cy.get('[data-cy="password"]').type("wrong");
+    cy.contains("button", "Entrar").click();
+    cy.get('[role="alert"]').should("contain", "Credenciais invalidas");
+  });
+});
+```
+
+## Seletores (Ordem de Preferencia)
+
+```ts
+cy.contains("button", "Salvar");        // texto + tag
+cy.get('[role="heading"]');              // role ARIA
+cy.get('[data-cy="submit-form"]');       // data-cy (preferido sobre id/class)
+cy.get("#email");                        // id (evitar)
+```
+
+## Custom Commands
+
+```ts
+// cypress/support/commands.ts
+Cypress.Commands.add("login", (email: string, password: string) => {
+  cy.session([email, password], () => {
+    cy.visit("/login");
+    cy.get('[data-cy="email"]').type(email);
+    cy.get('[data-cy="password"]').type(password);
+    cy.contains("button", "Entrar").click();
+    cy.url().should("include", "/dashboard");
+  });
+});
+
+// Uso
+cy.login("admin@test.com", "password123");
+```
+
+## Intercept (Mock de API)
+
+```ts
+cy.intercept("GET", "/api/users", { fixture: "users.json" }).as("getUsers");
+cy.visit("/users");
+cy.wait("@getUsers");
+cy.get("table tbody tr").should("have.length", 3);
+
+// Verificar request
+cy.intercept("POST", "/api/users").as("createUser");
+cy.contains("button", "Criar").click();
+cy.wait("@createUser").its("request.body").should("deep.include", {
+  name: "Joao",
+});
+```
+
+## Fixtures e Aliases
+
+```ts
+// cypress/fixtures/users.json
+[{ "id": 1, "name": "Joao" }, { "id": 2, "name": "Maria" }]
+
+// Uso com alias
+cy.fixture("users.json").as("usersData");
+cy.get("@usersData").then((users) => {
+  expect(users).to.have.length(2);
+});
+```
+
+## Convencoes
+
+- `data-cy` como atributo de teste (nunca classes CSS)
+- `cy.session` para login reutilizavel entre testes
+- `cy.intercept` para controlar respostas de API
+- Nunca usar `cy.wait(ms)` (preferir `cy.wait("@alias")`)
+- `should` para assercoes com retry automatico
+- Fixtures em `cypress/fixtures/` para dados de teste
+{{else}}
+# Cypress E2E Test Patterns
+
+## Base Structure
+
+```ts
+describe("Login", () => {
+  beforeEach(() => {
+    cy.visit("/login");
+  });
+
+  it("logs in with valid credentials", () => {
+    cy.get('[data-cy="email"]').type("admin@test.com");
+    cy.get('[data-cy="password"]').type("password123");
+    cy.contains("button", "Sign in").click();
+    cy.url().should("include", "/dashboard");
+    cy.contains("h1", "Dashboard").should("be.visible");
+  });
+
+  it("shows error with invalid credentials", () => {
+    cy.get('[data-cy="email"]').type("wrong@test.com");
+    cy.get('[data-cy="password"]').type("wrong");
+    cy.contains("button", "Sign in").click();
+    cy.get('[role="alert"]').should("contain", "Invalid credentials");
+  });
+});
+```
+
+## Selectors (Priority Order)
+
+```ts
+cy.contains("button", "Save");          // text + tag
+cy.get('[role="heading"]');              // ARIA role
+cy.get('[data-cy="submit-form"]');       // data-cy (preferred over id/class)
+cy.get("#email");                        // id (avoid)
+```
+
+## Custom Commands
+
+```ts
+// cypress/support/commands.ts
+Cypress.Commands.add("login", (email: string, password: string) => {
+  cy.session([email, password], () => {
+    cy.visit("/login");
+    cy.get('[data-cy="email"]').type(email);
+    cy.get('[data-cy="password"]').type(password);
+    cy.contains("button", "Sign in").click();
+    cy.url().should("include", "/dashboard");
+  });
+});
+
+// Usage
+cy.login("admin@test.com", "password123");
+```
+
+## Intercept (API Mocking)
+
+```ts
+cy.intercept("GET", "/api/users", { fixture: "users.json" }).as("getUsers");
+cy.visit("/users");
+cy.wait("@getUsers");
+cy.get("table tbody tr").should("have.length", 3);
+
+// Verify request
+cy.intercept("POST", "/api/users").as("createUser");
+cy.contains("button", "Create").click();
+cy.wait("@createUser").its("request.body").should("deep.include", {
+  name: "John",
+});
+```
+
+## Fixtures and Aliases
+
+```ts
+// cypress/fixtures/users.json
+[{ "id": 1, "name": "John" }, { "id": 2, "name": "Jane" }]
+
+// Usage with alias
+cy.fixture("users.json").as("usersData");
+cy.get("@usersData").then((users) => {
+  expect(users).to.have.length(2);
+});
+```
+
+## Conventions
+
+- `data-cy` as test attribute (never CSS classes)
+- `cy.session` for reusable login across tests
+- `cy.intercept` to control API responses
+- Never use `cy.wait(ms)` (prefer `cy.wait("@alias")`)
+- `should` for assertions with automatic retry
+- Fixtures in `cypress/fixtures/` for test data
+{{/if}}

@@ -1,0 +1,173 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes de Teste Svelte (Svelte Testing Library)
+
+## Estrutura Base
+
+```ts
+import { render, screen } from "@testing-library/svelte";
+import { fireEvent } from "@testing-library/dom";
+import Button from "./Button.svelte";
+
+describe("Button", () => {
+  it("renderiza com texto correto", () => {
+    render(Button, { props: { children: "Salvar" } });
+    expect(screen.getByRole("button", { name: "Salvar" })).toBeInTheDocument();
+  });
+
+  it("chama onclick ao clicar", async () => {
+    const onclick = vi.fn();
+    render(Button, { props: { onclick } });
+
+    await fireEvent.click(screen.getByRole("button"));
+    expect(onclick).toHaveBeenCalledOnce();
+  });
+});
+```
+
+## Renderizando com Props
+
+```ts
+render(Button, {
+  props: {
+    variant: "outline",
+    size: "lg",
+    disabled: true,
+  },
+});
+```
+
+## Testando Reatividade
+
+```ts
+import { render, screen } from "@testing-library/svelte";
+import { fireEvent } from "@testing-library/dom";
+
+it("incrementa contador ao clicar", async () => {
+  render(Counter);
+
+  const button = screen.getByRole("button");
+  expect(screen.getByText("0")).toBeInTheDocument();
+
+  await fireEvent.click(button);
+  expect(screen.getByText("1")).toBeInTheDocument();
+});
+```
+
+## Testando Slots/Snippets
+
+```ts
+import { render } from "@testing-library/svelte";
+import CardWrapper from "./CardWrapper.test.svelte";
+
+// Criar componente wrapper de teste para snippets complexos
+it("renderiza conteudo do snippet", () => {
+  render(CardWrapper);
+  expect(screen.getByText("Conteudo do Card")).toBeInTheDocument();
+});
+```
+
+## Cleanup
+
+```ts
+import { cleanup } from "@testing-library/svelte";
+
+afterEach(() => {
+  cleanup();
+});
+```
+
+## Convencoes
+
+- Usar `@testing-library/svelte` para render e screen
+- Usar `@testing-library/dom` para fireEvent
+- Props passadas no objeto `props`
+- Criar componentes wrapper `.test.svelte` para snippets complexos
+- Sempre fazer cleanup apos cada teste
+- Queries por role/text (mesma prioridade do Testing Library)
+{{else}}
+# Svelte Testing Patterns (Svelte Testing Library)
+
+## Base Structure
+
+```ts
+import { render, screen } from "@testing-library/svelte";
+import { fireEvent } from "@testing-library/dom";
+import Button from "./Button.svelte";
+
+describe("Button", () => {
+  it("renders with correct text", () => {
+    render(Button, { props: { children: "Save" } });
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+  });
+
+  it("calls onclick when clicked", async () => {
+    const onclick = vi.fn();
+    render(Button, { props: { onclick } });
+
+    await fireEvent.click(screen.getByRole("button"));
+    expect(onclick).toHaveBeenCalledOnce();
+  });
+});
+```
+
+## Rendering with Props
+
+```ts
+render(Button, {
+  props: {
+    variant: "outline",
+    size: "lg",
+    disabled: true,
+  },
+});
+```
+
+## Testing Reactivity
+
+```ts
+import { render, screen } from "@testing-library/svelte";
+import { fireEvent } from "@testing-library/dom";
+
+it("increments counter on click", async () => {
+  render(Counter);
+
+  const button = screen.getByRole("button");
+  expect(screen.getByText("0")).toBeInTheDocument();
+
+  await fireEvent.click(button);
+  expect(screen.getByText("1")).toBeInTheDocument();
+});
+```
+
+## Testing Slots/Snippets
+
+```ts
+import { render } from "@testing-library/svelte";
+import CardWrapper from "./CardWrapper.test.svelte";
+
+// Create test wrapper component for complex snippets
+it("renders snippet content", () => {
+  render(CardWrapper);
+  expect(screen.getByText("Card Content")).toBeInTheDocument();
+});
+```
+
+## Cleanup
+
+```ts
+import { cleanup } from "@testing-library/svelte";
+
+afterEach(() => {
+  cleanup();
+});
+```
+
+## Conventions
+
+- Use `@testing-library/svelte` for render and screen
+- Use `@testing-library/dom` for fireEvent
+- Props passed in the `props` object
+- Create `.test.svelte` wrapper components for complex snippets
+- Always cleanup after each test
+- Query by role/text (same Testing Library priority)
+{{/if}}

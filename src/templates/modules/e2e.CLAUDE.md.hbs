@@ -70,6 +70,28 @@ EXTERNAL_DEPENDENCIES: [changes needed in application for tests to pass]
 {{/if}}
 ```
 
+## {{#if (eq project.language "pt-BR")}}Agents & Skills{{else}}Agents & Skills{{/if}}
+
+| Agent | Skills |
+|-------|--------|
+| software-architect | `/adr`, `/tech-review`, `/diagram` |
+
+## Rules
+
+| Pattern | Rule File |
+|---------|-----------|
+{{#if (eq project.language "pt-BR")}}
+| Estilo de codigo | `.claude/rules/code/guidelines.md` |
+| Arquitetura | `.claude/rules/architecture/patterns.md` |
+| Skills | `.claude/rules/skills/auto-invoke.md` |
+| Validacao | `.claude/rules/validation/post-implementation.md` |
+{{else}}
+| Code style | `.claude/rules/code/guidelines.md` |
+| Architecture | `.claude/rules/architecture/patterns.md` |
+| Skills | `.claude/rules/skills/auto-invoke.md` |
+| Validation | `.claude/rules/validation/post-implementation.md` |
+{{/if}}
+
 ## Checklist
 
 {{#if (eq project.language "pt-BR")}}

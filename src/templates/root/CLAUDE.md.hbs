@@ -67,6 +67,26 @@ git add {directory} && git commit -m "chore: update {module} submodule ref"
 {{/if}}
 {{/if}}
 
+### Per-Module (disponiveis nos sub-agentes)
+
+**Todos os modulos**: `/adr`, `/diagram`, `/tech-review`
+
+{{#ifRule "feature-planning-gate"}}
+**Planejamento**: `/user-story`, `/acceptance-criteria`, `/backlog`
+{{/ifRule}}
+{{#if (hasRole "frontend")}}
+**Frontend**: `/component`, `/hook`, `/test`, `/ui-review`, `/accessibility`
+{{/if}}
+{{#if (hasRole "mobile")}}
+**Mobile**: `/component`, `/test`, `/ui-review`, `/accessibility`
+{{/if}}
+{{#if (hasRole "backend")}}
+**Backend**: `/endpoint`, `/service`, `/api-review`
+{{/if}}
+{{#if (hasRole "agent-ai")}}
+**Agent-AI**: `/rule`, `/tool`, `/agent-create`
+{{/if}}
+
 ## Regras Ativas
 
 {{#each activeRules}}
@@ -206,14 +226,70 @@ Antes de implementar uma feature nova:
 
 Toda delegacao concluida gera: `{{paths.docsRoot}}/{{paths.changelog}}/{modulo}/{YYYY-MM-DD}.md`
 
-Formato: Titulo, Agente, Status, Decisao, Alteracoes{{#ifRule "conditional-mermaid"}}, Diagrama Mermaid (se mudanca arquitetural){{/ifRule}}.
+### Formato de Entrada
+
+```
+**Data**: {YYYY-MM-DD}
+**Agente**: {sub-agente} | **Status**: Concluido/Falhou
+**Decisao**: {justificativa da abordagem}
+**Alteracoes**: {lista de arquivos criados/modificados}
+{{#ifRule "conditional-mermaid"}}**Diagrama**: Mermaid (se mudanca arquitetural){{/ifRule}}
+```
+{{/ifRule}}
+
+{{#ifRule "conditional-mermaid"}}
+## Diagramas Mermaid (Regra #2)
+
+| Cenario | Tipo Diagrama |
+|---------|--------------|
+| Novo endpoint | sequenceDiagram |
+| Schema DB | erDiagram |
+| Novo componente | flowchart LR |
+| Pipeline AI | flowchart TD |
+
+**Excecoes** (NAO gerar diagrama): bug fix simples, config, refactoring, CRUD basico.
 {{/ifRule}}
 
 {{#ifRule "api-response-contract"}}
 ## Contrato de Resposta API (Regra #4)
 
-Sucesso: `{"data": {...}}`
-Erro: `{"error": {"message": "...", "code": "..."}}`
+```
+Sucesso (lista): {"data": [...], "meta": {"total": N, "page": 1}}
+Sucesso (item):  {"data": {...}}
+Erro:            {"error": {"message": "...", "code": "VALIDATION_ERROR"}}
+```
+
+Todos os endpoints DEVEM seguir este envelope. Sem excecoes.
+{{/ifRule}}
+
+{{#ifRule "e2e-test-protection"}}
+## Protecao E2E (Regra #6)
+
+Protecao em 2 camadas:
+1. `chmod 555/444` nos arquivos de teste (via `make e2e-lock`)
+2. Deny rules no `settings.json` (Edit/Write bloqueados)
+
+| Diretorio | Status | Motivo |
+|-----------|--------|--------|
+| `features/` | Protegido | Cenarios BDD sao especificacao |
+| `step-definitions/` | Protegido | Passos sao contrato |
+| `support/` | Livre | Page objects, fixtures, helpers |
+{{/ifRule}}
+
+{{#ifRule "post-dev-e2e-validation"}}
+## Validacao E2E Pos-Dev (Regra #7)
+
+**Trigger**: apos implementacao que afete frontend, mobile ou BFF.
+
+Loop diagnostico (max 3 tentativas):
+1. Executar testes E2E
+2. Se FAIL → analisar output do teste
+3. Investigar codigo da APLICACAO (NUNCA o teste E2E)
+4. Corrigir e re-executar
+
+Apos 3 falhas consecutivas: **PARAR** e reportar ao usuario com diagnostico.
+
+**GUARDRAIL**: NUNCA modificar testes E2E para fazer codigo passar.
 {{/ifRule}}
 
 {{#if (or (lookup methodology.rules "tdd-enforcement") (lookup methodology.rules "feature-planning-gate"))}}
@@ -327,6 +403,26 @@ git add {directory} && git commit -m "chore: update {module} submodule ref"
 - `/check-flow` — End-to-end flow verification (types, endpoints, env vars)
 - `/api-contract` — API contract definition (Frontend-First)
 {{/if}}
+{{/if}}
+
+### Per-Module (available in sub-agents)
+
+**All modules**: `/adr`, `/diagram`, `/tech-review`
+
+{{#ifRule "feature-planning-gate"}}
+**Planning**: `/user-story`, `/acceptance-criteria`, `/backlog`
+{{/ifRule}}
+{{#if (hasRole "frontend")}}
+**Frontend**: `/component`, `/hook`, `/test`, `/ui-review`, `/accessibility`
+{{/if}}
+{{#if (hasRole "mobile")}}
+**Mobile**: `/component`, `/test`, `/ui-review`, `/accessibility`
+{{/if}}
+{{#if (hasRole "backend")}}
+**Backend**: `/endpoint`, `/service`, `/api-review`
+{{/if}}
+{{#if (hasRole "agent-ai")}}
+**Agent-AI**: `/rule`, `/tool`, `/agent-create`
 {{/if}}
 
 ## Active Rules
@@ -468,14 +564,70 @@ Before implementing a new feature:
 
 Every completed delegation generates: `{{paths.docsRoot}}/{{paths.changelog}}/{module}/{YYYY-MM-DD}.md`
 
-Format: Title, Agent, Status, Decision, Changes{{#ifRule "conditional-mermaid"}}, Mermaid Diagram (if architectural change){{/ifRule}}.
+### Entry Format
+
+```
+**Date**: {YYYY-MM-DD}
+**Agent**: {sub-agent} | **Status**: Completed/Failed
+**Decision**: {approach justification}
+**Changes**: {list of files created/modified}
+{{#ifRule "conditional-mermaid"}}**Diagram**: Mermaid (if architectural change){{/ifRule}}
+```
+{{/ifRule}}
+
+{{#ifRule "conditional-mermaid"}}
+## Mermaid Diagrams (Rule #2)
+
+| Scenario | Diagram Type |
+|----------|-------------|
+| New endpoint | sequenceDiagram |
+| DB schema | erDiagram |
+| New component | flowchart LR |
+| AI pipeline | flowchart TD |
+
+**Exceptions** (do NOT generate diagram): simple bug fix, config, refactoring, basic CRUD.
 {{/ifRule}}
 
 {{#ifRule "api-response-contract"}}
 ## API Response Contract (Rule #4)
 
-Success: `{"data": {...}}`
-Error: `{"error": {"message": "...", "code": "..."}}`
+```
+Success (list): {"data": [...], "meta": {"total": N, "page": 1}}
+Success (item): {"data": {...}}
+Error:          {"error": {"message": "...", "code": "VALIDATION_ERROR"}}
+```
+
+All endpoints MUST follow this envelope. No exceptions.
+{{/ifRule}}
+
+{{#ifRule "e2e-test-protection"}}
+## E2E Protection (Rule #6)
+
+2-layer protection:
+1. `chmod 555/444` on test files (via `make e2e-lock`)
+2. Deny rules in `settings.json` (Edit/Write blocked)
+
+| Directory | Status | Reason |
+|-----------|--------|--------|
+| `features/` | Protected | BDD scenarios are specification |
+| `step-definitions/` | Protected | Steps are contract |
+| `support/` | Free | Page objects, fixtures, helpers |
+{{/ifRule}}
+
+{{#ifRule "post-dev-e2e-validation"}}
+## Post-Dev E2E Validation (Rule #7)
+
+**Trigger**: after implementation affecting frontend, mobile, or BFF.
+
+Diagnostic loop (max 3 attempts):
+1. Run E2E tests
+2. If FAIL → analyze test output
+3. Investigate APPLICATION code (NEVER the E2E test)
+4. Fix and re-run
+
+After 3 consecutive failures: **STOP** and report to user with diagnostics.
+
+**GUARDRAIL**: NEVER modify E2E tests to make code pass.
 {{/ifRule}}
 
 {{#if (or (lookup methodology.rules "tdd-enforcement") (lookup methodology.rules "feature-planning-gate"))}}

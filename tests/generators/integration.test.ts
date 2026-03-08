@@ -105,6 +105,24 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(claude).toContain("make validate-all");
     expect(claude).toContain("make lint-frontend");
 
+    // Phase 9: Expanded Rule #1 (changelog entry format)
+    expect(claude).toContain("Entry Format");
+    expect(claude).toContain("**Agent**:");
+    expect(claude).toContain("**Decision**:");
+
+    // Phase 9: Expanded Rule #4 (API envelope examples)
+    expect(claude).toContain("VALIDATION_ERROR");
+    expect(claude).toContain("No exceptions");
+
+    // Phase 12: Per-Module skills section
+    expect(claude).toContain("Per-Module");
+    expect(claude).toContain("/adr");
+    expect(claude).toContain("/diagram");
+    expect(claude).toContain("Frontend");
+    expect(claude).toContain("/component");
+    expect(claude).toContain("Backend");
+    expect(claude).toContain("/endpoint");
+
     // Verify Makefile targets
     const makefile = await fs.readFile(path.join(TEST_DIR, "Makefile"), "utf-8");
     expect(makefile).toContain("test-frontend");
@@ -169,6 +187,30 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(dbClaude).toContain("Execution Protocol");
     expect(dbClaude).toContain("Mandatory Validation");
     expect(dbClaude).toContain("Reversible migrations");
+
+    // Phase 10: Agents & Skills table in modules
+    expect(frontClaude).toContain("Agents & Skills");
+    expect(frontClaude).toContain("frontend-specialist");
+    expect(frontClaude).toContain("software-architect");
+    expect(frontClaude).toContain("product-owner");
+
+    expect(apiClaude).toContain("Agents & Skills");
+    expect(apiClaude).toContain("backend-specialist");
+    expect(apiClaude).toContain("/endpoint");
+
+    expect(dbClaude).toContain("Agents & Skills");
+    expect(dbClaude).toContain("software-architect");
+
+    // Phase 11: Rules reference table in modules
+    expect(frontClaude).toContain("Rules");
+    expect(frontClaude).toContain("guidelines.md");
+    expect(frontClaude).toContain("patterns.md");
+    expect(frontClaude).toContain("auto-invoke.md");
+    expect(frontClaude).toContain("post-implementation.md");
+    expect(frontClaude).toContain("requirements.md");
+
+    expect(apiClaude).toContain("guidelines.md");
+    expect(dbClaude).toContain("guidelines.md");
   });
 
   it("generates .claude/ infrastructure", async () => {
@@ -492,6 +534,14 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     // Phase 6: Even generic modules should have Execution Protocol
     expect(claude).toContain("Protocolo de Execucao");
     expect(claude).toContain("Validacao Obrigatoria");
+
+    // Phase 10-11: Generic modules have Agents & Skills and Rules
+    expect(claude).toContain("Agents & Skills");
+    expect(claude).toContain("software-architect");
+    expect(claude).toContain("guidelines.md");
+    // Generic with planning disabled should NOT have product-owner or requirements
+    expect(claude).not.toContain("product-owner");
+    expect(claude).not.toContain("requirements.md");
   });
 
   it("minimal CLAUDE.md does NOT have hooks or outside-in sections", async () => {
@@ -511,6 +561,12 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     expect(claude).toContain("Skills Disponiveis");
     expect(claude).toContain("/git-commit");
     expect(claude).toContain("Contrato de Resposta dos Delegates");
+
+    // Phase 9: Minimal should NOT have conditional expanded rules
+    expect(claude).not.toContain("Diagramas Mermaid");
+    expect(claude).not.toContain("Protecao E2E");
+    expect(claude).not.toContain("Validacao E2E Pos-Dev");
+    expect(claude).not.toContain("Formato de Entrada");
   });
 
   it("generates Portuguese directory names for pt-BR", async () => {
@@ -560,6 +616,72 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     );
     expect(claude).toContain("Voce e o Orquestrador");
     expect(claude).not.toContain("You are the Orchestrator");
+  });
+});
+
+describe("Project Generation (Full preset with E2E rules)", () => {
+  const fullConfig: ProjectConfig = {
+    version: "1.0.0",
+    project: {
+      name: "full-project",
+      description: "Full test",
+      language: "en",
+    },
+    modules: [
+      { name: "web", role: "frontend", directory: "web" },
+      { name: "api", role: "backend", directory: "api" },
+      { name: "e2e", role: "e2e", directory: "e2e" },
+    ],
+    methodology: {
+      preset: "full",
+      rules: {
+        "absolute-delegation": true,
+        "changelog-by-date": true,
+        "conditional-mermaid": true,
+        "feature-planning-gate": true,
+        "api-response-contract": true,
+        "scope-of-responsibility": true,
+        "e2e-test-protection": true,
+        "post-dev-e2e-validation": true,
+        "tdd-enforcement": true,
+        "tdd-sequential-enforcement": true,
+      },
+    },
+  };
+
+  beforeEach(async () => {
+    await fs.remove(TEST_DIR);
+    await fs.ensureDir(TEST_DIR);
+  });
+
+  afterEach(async () => {
+    await fs.remove(TEST_DIR);
+  });
+
+  it("generates expanded conditional rules in root CLAUDE.md", async () => {
+    await generateOrchestrator(TEST_DIR, fullConfig);
+    const claude = await fs.readFile(
+      path.join(TEST_DIR, "CLAUDE.md"),
+      "utf-8"
+    );
+
+    // Phase 9: Mermaid diagram types (conditional-mermaid enabled)
+    expect(claude).toContain("Mermaid Diagrams");
+    expect(claude).toContain("sequenceDiagram");
+    expect(claude).toContain("erDiagram");
+    expect(claude).toContain("flowchart LR");
+
+    // Phase 9: E2E Protection (e2e-test-protection enabled)
+    expect(claude).toContain("E2E Protection");
+    expect(claude).toContain("chmod 555/444");
+    expect(claude).toContain("features/");
+    expect(claude).toContain("step-definitions/");
+
+    // Phase 9: Post-Dev E2E Validation (post-dev-e2e-validation enabled)
+    expect(claude).toContain("Post-Dev E2E Validation");
+    expect(claude).toContain("Diagnostic loop");
+    expect(claude).toContain("GUARDRAIL");
+    expect(claude).toContain("NEVER modify E2E tests");
   });
 });
 

@@ -90,6 +90,38 @@ EXTERNAL_DEPENDENCIES: [changes needed in other modules]
 {{/if}}
 ```
 
+## {{#if (eq project.language "pt-BR")}}Agents & Skills{{else}}Agents & Skills{{/if}}
+
+| Agent | Skills |
+|-------|--------|
+{{#ifRule "feature-planning-gate"}}
+| product-owner | `/user-story`, `/acceptance-criteria`, `/backlog` |
+{{/ifRule}}
+| software-architect | `/adr`, `/tech-review`, `/diagram` |
+| frontend-specialist | `/component`, `/hook`, `/test`, `/ui-review`, `/accessibility` |
+
+## Rules
+
+| Pattern | Rule File |
+|---------|-----------|
+{{#if (eq project.language "pt-BR")}}
+| Estilo de codigo | `.claude/rules/code/guidelines.md` |
+| Arquitetura | `.claude/rules/architecture/patterns.md` |
+| Skills | `.claude/rules/skills/auto-invoke.md` |
+| Validacao | `.claude/rules/validation/post-implementation.md` |
+{{#ifRule "feature-planning-gate"}}
+| Requisitos | `.claude/rules/po/requirements.md` |
+{{/ifRule}}
+{{else}}
+| Code style | `.claude/rules/code/guidelines.md` |
+| Architecture | `.claude/rules/architecture/patterns.md` |
+| Skills | `.claude/rules/skills/auto-invoke.md` |
+| Validation | `.claude/rules/validation/post-implementation.md` |
+{{#ifRule "feature-planning-gate"}}
+| Requirements | `.claude/rules/po/requirements.md` |
+{{/ifRule}}
+{{/if}}
+
 ## Checklist
 
 {{#if (eq project.language "pt-BR")}}

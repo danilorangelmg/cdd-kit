@@ -2,22 +2,18 @@
 
 > {{#if (eq project.language "pt-BR")}}Modulo backend — logica de negocio e APIs{{else}}Backend module — business logic and APIs{{/if}}
 
-## {{#if (eq project.language "pt-BR")}}Metodologia{{else}}Methodology{{/if}}
+## {{#if (eq project.language "pt-BR")}}Protocolo de Execucao{{else}}Execution Protocol{{/if}}
 
 {{#if (eq project.language "pt-BR")}}
-**SEMPRE planeje antes de executar.** Antes de escrever qualquer codigo:
-1. Leia o codigo existente e entenda o contexto
-2. Pense sobre tradeoffs e alternativas
-3. Defina a abordagem com justificativa clara
-4. Implemente
-5. Valide contra o planejado
+1. **ANALISAR** — Identificar tipo de artefato, verificar skills e regras aplicaveis
+2. **DECIDIR** — Skill existe? → invocar. Sem skill + repetitivo? → criar skill. Trivial? → implementar
+3. **EXECUTAR** — Seguir output da skill OU aplicar regras diretamente
+4. **VALIDAR** — Executar cadeia de validacao obrigatoria (lint → test → build)
 {{else}}
-**ALWAYS plan before executing.** Before writing any code:
-1. Read existing code and understand context
-2. Think about tradeoffs and alternatives
-3. Define approach with clear justification
-4. Implement
-5. Validate against the plan
+1. **ANALYZE** — Identify artifact type, check applicable skills and rules
+2. **DECIDE** — Skill exists? → invoke. No skill + repetitive? → create skill. Trivial? → implement
+3. **EXECUTE** — Follow skill output OR apply rules directly
+4. **VALIDATE** — Run mandatory validation chain (lint → test → build)
 {{/if}}
 
 ## {{#if (eq project.language "pt-BR")}}Escopo Restrito{{else}}Restricted Scope{{/if}}
@@ -58,6 +54,20 @@ This module owns **all business logic** serving the frontends.
 
 {{role.suggestedArchitecture}}
 
+## {{#if (eq project.language "pt-BR")}}Validacao Obrigatoria{{else}}Mandatory Validation{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Apos QUALQUER mudanca de codigo, executar:
+1. `make lint-{{module.name}}` — Corrigir antes de prosseguir
+2. `make test-{{module.name}}` — Todos os testes devem passar
+3. `make build` — Build deve ter sucesso (se aplicavel)
+{{else}}
+After ANY code change, run:
+1. `make lint-{{module.name}}` — Fix issues before proceeding
+2. `make test-{{module.name}}` — All tests must pass
+3. `make build` — Build must succeed (if applicable)
+{{/if}}
+
 ## {{#if (eq project.language "pt-BR")}}Contrato de Resposta{{else}}Response Contract{{/if}}
 
 ```
@@ -77,17 +87,25 @@ EXTERNAL_DEPENDENCIES: [changes needed in other modules]
 ## Checklist
 
 {{#if (eq project.language "pt-BR")}}
-- [ ] Endpoints com schemas de validacao
+- [ ] Endpoints com schemas de validacao (Pydantic/Zod/etc.)
+- [ ] Arquitetura em camadas (routes → services → repositories)
 - [ ] Injecao de dependencia
 - [ ] HTTP status codes corretos
-- [ ] Error handling estruturado
+- [ ] Error handling estruturado com hierarquia de excecoes
 - [ ] Type hints/annotations em todos os parametros
+- [ ] Async/await onde aplicavel
+- [ ] Documentacao OpenAPI/Swagger atualizada
+- [ ] Sem logica de UI (apenas dados e regras de negocio)
 - [ ] Testes unitarios em tests/
 {{else}}
-- [ ] Endpoints with validation schemas
+- [ ] Endpoints with validation schemas (Pydantic/Zod/etc.)
+- [ ] Layered architecture (routes → services → repositories)
 - [ ] Dependency injection
 - [ ] Correct HTTP status codes
-- [ ] Structured error handling
+- [ ] Structured error handling with exception hierarchy
 - [ ] Type hints/annotations on all parameters
+- [ ] Async/await where applicable
+- [ ] OpenAPI/Swagger documentation up to date
+- [ ] No UI logic (data and business rules only)
 - [ ] Unit tests in tests/
 {{/if}}

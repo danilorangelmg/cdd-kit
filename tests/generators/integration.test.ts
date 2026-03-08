@@ -71,6 +71,40 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(claude).toContain("docs/rules/");
     expect(claude).not.toContain("documentos/");
 
+    // Phase 5: 3-layer orchestration
+    expect(claude).toContain("3-Layer Orchestration");
+    expect(claude).toContain("Orchestrator");
+    expect(claude).toContain("Delegates");
+    expect(claude).toContain("Validator");
+
+    // Phase 5: Available Skills section
+    expect(claude).toContain("Available Skills");
+    expect(claude).toContain("/git-commit");
+    expect(claude).toContain("/validate-all");
+    expect(claude).toContain("/deploy-all");
+
+    // Phase 5: Delegate Response Contract
+    expect(claude).toContain("Delegate Response Contract");
+    expect(claude).toContain("FILES_CHANGED");
+    expect(claude).toContain("EXTERNAL_DEPENDENCIES");
+
+    // Phase 5: Outside-In methodology (feature-planning-gate is enabled)
+    expect(claude).toContain("Outside-In");
+
+    // Phase 5: Enforcement Hooks section (TDD + planning enabled)
+    expect(claude).toContain("Enforcement Hooks");
+    expect(claude).toContain("tdd-guard.sh");
+    expect(claude).toContain("auto-test.sh");
+    expect(claude).toContain("planning-gate.sh");
+
+    // Phase 5: Expanded Rule #5 with responsibility table
+    expect(claude).toContain("CANNOT contain");
+
+    // Phase 5: Expanded commands
+    expect(claude).toContain("make verify");
+    expect(claude).toContain("make validate-all");
+    expect(claude).toContain("make lint-frontend");
+
     // Verify Makefile targets
     const makefile = await fs.readFile(path.join(TEST_DIR, "Makefile"), "utf-8");
     expect(makefile).toContain("test-frontend");
@@ -96,6 +130,21 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(frontClaude).toContain("frontend");
     expect(frontClaude).toContain("FORBIDDEN");
 
+    // Phase 6: Execution Protocol in all modules
+    expect(frontClaude).toContain("Execution Protocol");
+    expect(frontClaude).toContain("ANALYZE");
+    expect(frontClaude).toContain("DECIDE");
+    expect(frontClaude).toContain("EXECUTE");
+    expect(frontClaude).toContain("VALIDATE");
+
+    // Phase 6: Mandatory Validation chain
+    expect(frontClaude).toContain("Mandatory Validation");
+
+    // Phase 6: Expanded frontend checklist
+    expect(frontClaude).toContain("Dark mode");
+    expect(frontClaude).toContain("No unused imports");
+    expect(frontClaude).toContain("No `any`");
+
     // Backend should have business logic scope
     const apiClaude = await fs.readFile(
       path.join(TEST_DIR, "api", "CLAUDE.md"),
@@ -103,12 +152,23 @@ describe("Project Generation (Standard preset, English)", () => {
     );
     expect(apiClaude).toContain("business logic");
 
+    // Phase 6: Backend execution protocol and expanded checklist
+    expect(apiClaude).toContain("Execution Protocol");
+    expect(apiClaude).toContain("Mandatory Validation");
+    expect(apiClaude).toContain("Layered architecture");
+    expect(apiClaude).toContain("OpenAPI/Swagger");
+
     // Database should be DDL only
     const dbClaude = await fs.readFile(
       path.join(TEST_DIR, "database", "CLAUDE.md"),
       "utf-8"
     );
     expect(dbClaude).toContain("DDL");
+
+    // Phase 6: Database execution protocol and checklist
+    expect(dbClaude).toContain("Execution Protocol");
+    expect(dbClaude).toContain("Mandatory Validation");
+    expect(dbClaude).toContain("Reversible migrations");
   });
 
   it("generates .claude/ infrastructure", async () => {
@@ -221,6 +281,51 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(planningGate).toContain("test-plans");
     expect(planningGate).not.toContain("documentos/");
 
+    // Shared test-finding library (TDD enabled)
+    expect(files).toContain(".claude/hooks/lib/find-test.sh");
+    const findTestLib = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "hooks", "lib", "find-test.sh"),
+      "utf-8"
+    );
+    expect(findTestLib).toContain("find_python_test");
+    expect(findTestLib).toContain("find_ts_test");
+    expect(findTestLib).toContain("find_go_test");
+
+    // TDD guard should source the shared library
+    const tddGuard = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "hooks", "tdd-guard.sh"),
+      "utf-8"
+    );
+    expect(tddGuard).toContain('source "$SCRIPT_DIR/lib/find-test.sh"');
+
+    // Auto-test should source the shared library and run specific tests
+    const autoTest = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "hooks", "auto-test.sh"),
+      "utf-8"
+    );
+    expect(autoTest).toContain('source "$SCRIPT_DIR/lib/find-test.sh"');
+    expect(autoTest).toContain("find_related_test");
+    expect(autoTest).toContain("run_single_test");
+
+    // Universal root skills (always generated)
+    expect(files).toContain(".claude/skills/git-commit/SKILL.md");
+    expect(files).toContain(".claude/skills/pr-create/SKILL.md");
+    expect(files).toContain(".claude/skills/validate-all/SKILL.md");
+    expect(files).toContain(".claude/skills/deploy-all/SKILL.md");
+
+    // Conditional root skills
+    // check-flow: generated when both frontend + backend exist
+    expect(files).toContain(".claude/skills/check-flow/SKILL.md");
+    // api-contract: generated when api-response-contract enabled
+    expect(files).toContain(".claude/skills/api-contract/SKILL.md");
+
+    // Settings should have allow permissions and additionalDirectories
+    const settingsJson = JSON.parse(settings);
+    expect(settingsJson.permissions.allow.length).toBeGreaterThan(0);
+    expect(settingsJson.permissions.allow).toContain("Bash(docker compose *)");
+    expect(settingsJson.permissions.allow).toContain("Bash(make test *)");
+    expect(settingsJson.permissions.additionalDirectories).toContain(".claude/skills");
+
     // Verify pipeline
     expect(files).toContain(".claude/verify/pipeline.yaml");
     expect(files).toContain(".claude/verify/run.sh");
@@ -234,6 +339,39 @@ describe("Project Generation (Standard preset, English)", () => {
 
     // Settings should reference post-dev-verify hook
     expect(settings).toContain("post-dev-verify");
+
+    // Phase 7: delegation-protocol should have Response Contract
+    const delegationProtocol = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "rules", "delegation-protocol.md"),
+      "utf-8"
+    );
+    expect(delegationProtocol).toContain("Standard Response Contract");
+    expect(delegationProtocol).toContain("FILES_CHANGED");
+    expect(delegationProtocol).toContain("EXTERNAL_DEPENDENCIES");
+
+    // Phase 7: anti-patterns should have impact and remediation
+    const antiPatterns = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "rules", "anti-patterns.md"),
+      "utf-8"
+    );
+    expect(antiPatterns).toContain("Impact");
+    expect(antiPatterns).toContain("Remediation");
+
+    // Phase 7: scope-responsibilities should have visual vs business distinction
+    const scopeResp = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "rules", "scope-responsibilities.md"),
+      "utf-8"
+    );
+    expect(scopeResp).toContain("Visual Rule");
+    expect(scopeResp).toContain("Business Rule");
+    expect(scopeResp).toContain("Violation Procedure");
+
+    // Phase 7: feature-gate content
+    const featureGate = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "rules", "feature-gate.md"),
+      "utf-8"
+    );
+    expect(featureGate).toContain("Pre-Implementation Checklist");
   });
 
   it("generates English documentation structure", async () => {
@@ -311,10 +449,25 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
 
     expect(files).not.toContain(".claude/hooks/tdd-guard.sh");
     expect(files).not.toContain(".claude/hooks/auto-test.sh");
+    expect(files).not.toContain(".claude/hooks/lib/find-test.sh");
     expect(files).not.toContain(".claude/skills/tdd/SKILL.md");
     expect(files).not.toContain(".claude/agents/tdd-test-writer.md");
     expect(files).not.toContain(".claude/agents/tdd-implementer.md");
     expect(files).not.toContain(".claude/rules/tdd/sequential-enforcement.md");
+  });
+
+  it("generates universal root skills even for minimal preset", async () => {
+    const files = await generateClaudeInfra(TEST_DIR, minimalConfig);
+
+    // Universal skills always generated
+    expect(files).toContain(".claude/skills/git-commit/SKILL.md");
+    expect(files).toContain(".claude/skills/pr-create/SKILL.md");
+    expect(files).toContain(".claude/skills/validate-all/SKILL.md");
+    expect(files).toContain(".claude/skills/deploy-all/SKILL.md");
+
+    // Conditional skills NOT generated for minimal/single-role
+    expect(files).not.toContain(".claude/skills/check-flow/SKILL.md");
+    expect(files).not.toContain(".claude/skills/api-contract/SKILL.md");
   });
 
   it("does NOT generate feature gate when disabled", async () => {
@@ -335,6 +488,29 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
       "utf-8"
     );
     expect(claude).toContain("Modulo customizado");
+
+    // Phase 6: Even generic modules should have Execution Protocol
+    expect(claude).toContain("Protocolo de Execucao");
+    expect(claude).toContain("Validacao Obrigatoria");
+  });
+
+  it("minimal CLAUDE.md does NOT have hooks or outside-in sections", async () => {
+    await generateOrchestrator(TEST_DIR, minimalConfig);
+    const claude = await fs.readFile(
+      path.join(TEST_DIR, "CLAUDE.md"),
+      "utf-8"
+    );
+
+    // Should NOT have enforcement hooks (TDD/planning disabled)
+    expect(claude).not.toContain("Enforcement Hooks");
+    expect(claude).not.toContain("tdd-guard.sh");
+    expect(claude).not.toContain("Outside-In");
+
+    // Should still have 3-layer orchestration and skills
+    expect(claude).toContain("3 Camadas");
+    expect(claude).toContain("Skills Disponiveis");
+    expect(claude).toContain("/git-commit");
+    expect(claude).toContain("Contrato de Resposta dos Delegates");
   });
 
   it("generates Portuguese directory names for pt-BR", async () => {
@@ -538,6 +714,7 @@ describe("Project Generation (with git submodules)", () => {
       ).toBe(true);
 
       // TDD hooks (TDD is enabled in submoduleConfig)
+      expect(files).toContain(`${dir}/.claude/hooks/lib/find-test.sh`);
       expect(files).toContain(`${dir}/.claude/hooks/tdd-guard.sh`);
       expect(files).toContain(`${dir}/.claude/hooks/auto-test.sh`);
       expect(files).toContain(`${dir}/.claude/hooks/tdd-eval.sh`);

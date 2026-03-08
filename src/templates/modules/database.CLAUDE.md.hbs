@@ -2,6 +2,20 @@
 
 > {{#if (eq project.language "pt-BR")}}Modulo database — Schema Registry (DDL e migrations){{else}}Database module — Schema Registry (DDL and migrations){{/if}}
 
+## {{#if (eq project.language "pt-BR")}}Protocolo de Execucao{{else}}Execution Protocol{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+1. **ANALISAR** — Identificar tipo de artefato, verificar skills e regras aplicaveis
+2. **DECIDIR** — Skill existe? → invocar. Sem skill + repetitivo? → criar skill. Trivial? → implementar
+3. **EXECUTAR** — Seguir output da skill OU aplicar regras diretamente
+4. **VALIDAR** — Executar cadeia de validacao obrigatoria (migrations → contratos → testes)
+{{else}}
+1. **ANALYZE** — Identify artifact type, check applicable skills and rules
+2. **DECIDE** — Skill exists? → invoke. No skill + repetitive? → create skill. Trivial? → implement
+3. **EXECUTE** — Follow skill output OR apply rules directly
+4. **VALIDATE** — Run mandatory validation chain (migrations → contracts → tests)
+{{/if}}
+
 ## {{#if (eq project.language "pt-BR")}}Escopo Restrito{{else}}Restricted Scope{{/if}}
 
 {{#if (eq project.language "pt-BR")}}
@@ -30,6 +44,20 @@ Work EXCLUSIVELY within the `{{module.directory}}/` directory. NEVER modify file
 
 {{role.suggestedArchitecture}}
 
+## {{#if (eq project.language "pt-BR")}}Validacao Obrigatoria{{else}}Mandatory Validation{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Apos QUALQUER mudanca de schema, executar:
+1. `make test-{{module.name}}` — Migrations up/down funcionam
+2. Verificar contratos com modulos dependentes (backend)
+3. Confirmar que migrations sao reversiveis
+{{else}}
+After ANY schema change, run:
+1. `make test-{{module.name}}` — Migrations up/down work
+2. Verify contracts with dependent modules (backend)
+3. Confirm migrations are reversible
+{{/if}}
+
 ## {{#if (eq project.language "pt-BR")}}Contrato de Resposta{{else}}Response Contract{{/if}}
 
 ```
@@ -45,3 +73,21 @@ LOCAL_VALIDATION: [schema/migration validation results]
 EXTERNAL_DEPENDENCIES: [modules that need to update models/types]
 {{/if}}
 ```
+
+## Checklist
+
+{{#if (eq project.language "pt-BR")}}
+- [ ] Schema-first: DDL antes de codigo
+- [ ] Migrations reversiveis (up + down)
+- [ ] Indices para queries frequentes
+- [ ] Constraints de integridade (FK, UNIQUE, CHECK)
+- [ ] Contratos validados com backend
+- [ ] Sem logica de negocio nas migrations
+{{else}}
+- [ ] Schema-first: DDL before code
+- [ ] Reversible migrations (up + down)
+- [ ] Indexes for frequent queries
+- [ ] Integrity constraints (FK, UNIQUE, CHECK)
+- [ ] Contracts validated with backend
+- [ ] No business logic in migrations
+{{/if}}

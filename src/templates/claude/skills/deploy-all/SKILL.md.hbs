@@ -1,0 +1,97 @@
+{{#if (eq project.language "pt-BR")}}
+# /deploy-all — Deploy com Docker Compose
+
+## Objetivo
+Orquestrar build e deploy de todos os servicos via Docker Compose com verificacao de saude.
+
+## Processo
+
+### 1. Build
+```bash
+docker compose build
+```
+
+### 2. Deploy
+```bash
+docker compose up -d
+```
+
+### 3. Verificacao de Saude
+Apos deploy, verificar status de cada servico:
+
+```bash
+docker compose ps
+```
+
+{{#each modules}}
+- **{{name}}** ({{role}}): verificar container ativo
+{{/each}}
+
+### 4. Health Checks
+Verificar endpoints de saude (se disponiveis):
+{{#modulesOfRole "backend"}}
+- `{{name}}`: `curl -s http://localhost:{porta}/health`
+{{/modulesOfRole}}
+{{#modulesOfRole "frontend"}}
+- `{{name}}`: `curl -s http://localhost:{porta}/`
+{{/modulesOfRole}}
+
+## Comandos Uteis
+- `docker compose logs -f {servico}` — acompanhar logs
+- `docker compose restart {servico}` — reiniciar servico
+- `docker compose down` — parar tudo
+- `docker compose down -v` — parar tudo e limpar volumes
+
+## Regras de Seguranca
+- NUNCA fazer deploy em producao sem aprovacao explicita do usuario
+- Para producao, usar `docker-compose.prod.yml` se existir
+- Verificar variaveis de ambiente antes do deploy (`cat .env`)
+{{else}}
+# /deploy-all — Docker Compose Deploy
+
+## Purpose
+Orchestrate build and deploy of all services via Docker Compose with health verification.
+
+## Process
+
+### 1. Build
+```bash
+docker compose build
+```
+
+### 2. Deploy
+```bash
+docker compose up -d
+```
+
+### 3. Health Verification
+After deploy, verify status of each service:
+
+```bash
+docker compose ps
+```
+
+{{#each modules}}
+- **{{name}}** ({{role}}): verify container is running
+{{/each}}
+
+### 4. Health Checks
+Verify health endpoints (if available):
+{{#modulesOfRole "backend"}}
+- `{{name}}`: `curl -s http://localhost:{port}/health`
+{{/modulesOfRole}}
+{{#modulesOfRole "frontend"}}
+- `{{name}}`: `curl -s http://localhost:{port}/`
+{{/modulesOfRole}}
+
+## Useful Commands
+- `docker compose logs -f {service}` — follow logs
+- `docker compose restart {service}` — restart service
+- `docker compose down` — stop everything
+- `docker compose down -v` — stop everything and clean volumes
+
+## Safety Rules
+- NEVER deploy to production without explicit user approval
+- For production, use `docker-compose.prod.yml` if it exists
+- Verify environment variables before deploying (`cat .env`)
+{{/if}}

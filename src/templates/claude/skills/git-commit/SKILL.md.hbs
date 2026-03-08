@@ -1,0 +1,94 @@
+{{#if (eq project.language "pt-BR")}}
+# /git-commit — Commit Estruturado
+
+## Objetivo
+Criar commits seguindo Conventional Commits com mensagens claras e descritivas.
+
+## Pre-validacao
+1. Verificar se existem mudancas staged (`git diff --cached --stat`)
+2. Se nao houver mudancas staged, avisar o usuario — staging e responsabilidade dele
+3. NUNCA fazer `git add .` automaticamente
+
+## Processo
+1. Analisar mudancas staged (`git diff --cached`)
+2. Classificar o tipo de mudanca:
+   - `feat`: nova funcionalidade
+   - `fix`: correcao de bug
+   - `refactor`: refatoracao sem mudanca de comportamento
+   - `docs`: documentacao
+   - `test`: testes
+   - `chore`: manutencao, configs
+   - `style`: formatacao, lint
+   - `perf`: performance
+   - `ci`: CI/CD
+   - `build`: build, dependencias
+3. Identificar o escopo (modulo ou area afetada)
+4. Gerar mensagem concisa (max 72 chars no titulo)
+
+## Formato
+```
+tipo(escopo): descricao curta
+
+Corpo opcional com mais detalhes sobre a mudanca.
+Por que foi feita, contexto relevante.
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+## Regras
+- Titulo sempre em letras minusculas
+- Sem ponto final no titulo
+- Corpo separado do titulo por linha em branco
+- Sempre incluir `Co-Authored-By` quando Claude participou
+- Se multiplos modulos foram alterados, usar escopo generico ou listar
+- Breaking changes: adicionar `!` apos o tipo — `feat!: mudanca incompativel`
+{{else}}
+# /git-commit — Structured Commit
+
+## Purpose
+Create commits following Conventional Commits with clear, descriptive messages.
+
+## Pre-validation
+1. Check for staged changes (`git diff --cached --stat`)
+2. If no staged changes, warn the user — staging is their responsibility
+3. NEVER run `git add .` automatically
+
+## Process
+1. Analyze staged changes (`git diff --cached`)
+2. Classify the change type:
+   - `feat`: new feature
+   - `fix`: bug fix
+   - `refactor`: refactoring without behavior change
+   - `docs`: documentation
+   - `test`: tests
+   - `chore`: maintenance, configs
+   - `style`: formatting, lint
+   - `perf`: performance
+   - `ci`: CI/CD
+   - `build`: build, dependencies
+3. Identify the scope (module or affected area)
+4. Generate concise message (max 72 chars in title)
+
+## Format
+```
+type(scope): short description
+
+Optional body with more details about the change.
+Why it was made, relevant context.
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+## Rules
+- Title always in lowercase
+- No period at end of title
+- Body separated from title by blank line
+- Always include `Co-Authored-By` when Claude participated
+- If multiple modules were changed, use generic scope or list them
+- Breaking changes: add `!` after type — `feat!: breaking change`
+{{/if}}
+
+## Modules
+{{#each modules}}
+- `{{name}}` ({{role}}) — `{{directory}}/`
+{{/each}}

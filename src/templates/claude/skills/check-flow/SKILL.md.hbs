@@ -1,0 +1,103 @@
+{{#if (eq project.language "pt-BR")}}
+# /check-flow — Verificacao de Fluxo End-to-End
+
+## Objetivo
+Verificar integridade de fluxos entre frontend e backend: tipos, endpoints e variaveis de ambiente.
+
+## 1. Verificacao de Types/DTOs
+Comparar interfaces/tipos do frontend com modelos de resposta do backend:
+{{#modulesOfRole "frontend"}}
+- **{{name}}**: `{{directory}}/src/types/` — interfaces que o frontend espera
+{{/modulesOfRole}}
+{{#modulesOfRole "backend"}}
+- **{{name}}**: `{{directory}}/src/` — modelos/schemas de resposta
+{{/modulesOfRole}}
+
+**Checklist por tipo:**
+- [ ] Campos obrigatorios presentes em ambos os lados
+- [ ] Tipos compativeis (string/number/boolean/Date)
+- [ ] Campos opcionais marcados corretamente
+- [ ] Enums sincronizados
+
+## 2. Verificacao de Endpoints
+Verificar que chamadas de API do frontend correspondem a rotas do backend:
+{{#modulesOfRole "frontend"}}
+- **{{name}}**: `{{directory}}/src/services/` — chamadas HTTP
+{{/modulesOfRole}}
+{{#modulesOfRole "backend"}}
+- **{{name}}**: `{{directory}}/src/` — rotas/endpoints definidos
+{{/modulesOfRole}}
+
+**Checklist por endpoint:**
+- [ ] URL path existe no backend
+- [ ] Metodo HTTP correto (GET/POST/PUT/DELETE)
+- [ ] Parametros de path/query compativeis
+- [ ] Body request compativel com schema esperado
+{{#ifRule "api-response-contract"}}
+- [ ] Resposta segue envelope padrao: `{ "data": ... }` ou `{ "error": ... }`
+{{/ifRule}}
+
+## 3. Verificacao de Variaveis de Ambiente
+- Verificar que todas as `process.env.*` ou `os.environ.*` referenciadas existem em `.env.example`
+- Verificar que nenhuma variavel critica esta ausente
+
+## Relatorio
+Para cada verificacao, gerar:
+```
+=== Check Flow ===
+[Types]    ComponentX ↔ EndpointY: ✅ Compativel / ❌ Campo Z ausente
+[Endpoint] GET /api/resource: ✅ Existe / ❌ Nao encontrado
+[Env]      API_URL: ✅ Definida / ❌ Ausente em .env.example
+```
+{{else}}
+# /check-flow — End-to-End Flow Verification
+
+## Purpose
+Verify integrity of flows between frontend and backend: types, endpoints, and environment variables.
+
+## 1. Types/DTOs Verification
+Compare frontend interfaces/types with backend response models:
+{{#modulesOfRole "frontend"}}
+- **{{name}}**: `{{directory}}/src/types/` — interfaces the frontend expects
+{{/modulesOfRole}}
+{{#modulesOfRole "backend"}}
+- **{{name}}**: `{{directory}}/src/` — response models/schemas
+{{/modulesOfRole}}
+
+**Per-type checklist:**
+- [ ] Required fields present on both sides
+- [ ] Compatible types (string/number/boolean/Date)
+- [ ] Optional fields marked correctly
+- [ ] Enums synchronized
+
+## 2. Endpoint Verification
+Verify frontend API calls match backend routes:
+{{#modulesOfRole "frontend"}}
+- **{{name}}**: `{{directory}}/src/services/` — HTTP calls
+{{/modulesOfRole}}
+{{#modulesOfRole "backend"}}
+- **{{name}}**: `{{directory}}/src/` — defined routes/endpoints
+{{/modulesOfRole}}
+
+**Per-endpoint checklist:**
+- [ ] URL path exists in backend
+- [ ] Correct HTTP method (GET/POST/PUT/DELETE)
+- [ ] Path/query parameters compatible
+- [ ] Request body compatible with expected schema
+{{#ifRule "api-response-contract"}}
+- [ ] Response follows standard envelope: `{ "data": ... }` or `{ "error": ... }`
+{{/ifRule}}
+
+## 3. Environment Variables Verification
+- Verify all `process.env.*` or `os.environ.*` references exist in `.env.example`
+- Verify no critical variables are missing
+
+## Report
+For each verification, generate:
+```
+=== Check Flow ===
+[Types]    ComponentX ↔ EndpointY: ✅ Compatible / ❌ Field Z missing
+[Endpoint] GET /api/resource: ✅ Exists / ❌ Not found
+[Env]      API_URL: ✅ Defined / ❌ Missing in .env.example
+```
+{{/if}}

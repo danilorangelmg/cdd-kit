@@ -2,6 +2,20 @@
 
 > {{#if (eq project.language "pt-BR")}}Modulo customizado{{else}}Custom module{{/if}}
 
+## {{#if (eq project.language "pt-BR")}}Protocolo de Execucao{{else}}Execution Protocol{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+1. **ANALISAR** — Identificar tipo de artefato, verificar skills e regras aplicaveis
+2. **DECIDIR** — Skill existe? → invocar. Sem skill + repetitivo? → criar skill. Trivial? → implementar
+3. **EXECUTAR** — Seguir output da skill OU aplicar regras diretamente
+4. **VALIDAR** — Executar cadeia de validacao obrigatoria (lint → test)
+{{else}}
+1. **ANALYZE** — Identify artifact type, check applicable skills and rules
+2. **DECIDE** — Skill exists? → invoke. No skill + repetitive? → create skill. Trivial? → implement
+3. **EXECUTE** — Follow skill output OR apply rules directly
+4. **VALIDATE** — Run mandatory validation chain (lint → test)
+{{/if}}
+
 ## {{#if (eq project.language "pt-BR")}}Escopo Restrito{{else}}Restricted Scope{{/if}}
 
 {{#if (eq project.language "pt-BR")}}
@@ -17,6 +31,18 @@ Work EXCLUSIVELY within the `{{module.directory}}/` directory. NEVER modify file
 ## {{#if (eq project.language "pt-BR")}}Escopo{{else}}Scope{{/if}}
 
 <!-- {{#if (eq project.language "pt-BR")}}Defina o escopo deste modulo: o que PODE e NAO PODE conter{{else}}Define this module's scope: what it CAN and CANNOT contain{{/if}} -->
+
+## {{#if (eq project.language "pt-BR")}}Validacao Obrigatoria{{else}}Mandatory Validation{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+Apos QUALQUER mudanca de codigo, executar:
+1. `make lint-{{module.name}}` — Corrigir antes de prosseguir
+2. `make test-{{module.name}}` — Todos os testes devem passar
+{{else}}
+After ANY code change, run:
+1. `make lint-{{module.name}}` — Fix issues before proceeding
+2. `make test-{{module.name}}` — All tests must pass
+{{/if}}
 
 ## {{#if (eq project.language "pt-BR")}}Contrato de Resposta{{else}}Response Contract{{/if}}
 

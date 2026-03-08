@@ -10,36 +10,50 @@ globs: ["**/*"]
 
 **Errado**: Adicionar "quando chamado pelo orquestrador, faca X" no CLAUDE.md de um modulo.
 **Correto**: Toda logica de delegacao fica no repo root. Modulos sao auto-contidos.
+**Impacto**: ~30% perda de precisao — modulo perde standalone capability.
+**Remediacao**: Deletar instrucoes de delegacao do modulo. Re-delegar com contexto injetado via Task tool.
 
 ## 2. Criterios de validacao genericos
 
 **Errado**: "Verifique se esta tudo funcionando."
 **Correto**: Validacao em 3 niveis — Sintaxe (lint), Funcional (testes), Integracao (contratos).
+**Impacto**: ~50% dos bugs escapam para integracao.
+**Remediacao**: Substituir por checklist explicito: `make lint-{modulo} && make test-{modulo} && make verify-{modulo}`.
 
 ## 3. Tudo sequencial
 
 **Errado**: Executar todos os modulos em sequencia mesmo quando independentes.
 **Correto**: Paralelizar quando nao ha dependencia de dados.
+**Impacto**: Tempo de execucao 2-3x maior que o necessario.
+**Remediacao**: Consultar Execution Strategies no CLAUDE.md root. Fixes independentes → paralelo.
 
 ## 4. Orquestrador implementa em modulos (VIOLACAO CRITICA)
 
 **Errado**: O orquestrador edita arquivos dentro de modulos diretamente.
 **Correto**: SEMPRE delegar via Task tool. Mesmo tarefas "triviais".
+**Impacto**: Quebra isolamento total. Hooks de TDD/planning nao sao acionados.
+**Remediacao**: Desfazer mudancas diretas. Re-delegar ao sub-agente correto.
 
 ## 5. Validacao apenas no final
 
 **Errado**: Implementar tudo e so validar no fim.
 **Correto**: Validar cada modulo ao termino. Validacao cross-project ao final.
+**Impacto**: Erros em cascata — correcao 3-5x mais cara.
+**Remediacao**: Adicionar step de validacao apos cada delegacao. Usar `/validate-all` ao final.
 
 ## 6. Sub-agentes sem restricao de diretorio
 
 **Errado**: Dar acesso total ao repositorio.
 **Correto**: Cada sub-agente trabalha EXCLUSIVAMENTE dentro do seu diretorio.
+**Impacto**: Mudancas nao-autorizadas em modulos adjacentes. Conflitos de merge.
+**Remediacao**: Verificar "Escopo Restrito" no CLAUDE.md do modulo. Rejeitar entrega se editou fora do escopo.
 
 ## 7. Logica de negocio no frontend (VIOLACAO DE ESCOPO)
 
 **Errado**: Validacoes de dominio, calculos de negocio no frontend.
 **Correto**: Toda logica no backend. Frontends consomem dados ja processados via API.
+**Impacto**: Duplicacao de regras, inconsistencia entre plataformas, seguranca comprometida.
+**Remediacao**: Identificar logica de negocio → mover para backend → substituir por chamada API no frontend.
 {{else}}
 # Orchestration Anti-Patterns
 
@@ -47,34 +61,48 @@ globs: ["**/*"]
 
 **Wrong**: Adding "when called by orchestrator, do X" in a module's CLAUDE.md.
 **Correct**: All delegation logic stays in root repo. Modules are self-contained.
+**Impact**: ~30% precision loss — module loses standalone capability.
+**Remediation**: Delete delegation instructions from module. Re-delegate with context injected via Task tool.
 
 ## 2. Generic validation criteria
 
 **Wrong**: "Check if everything is working."
 **Correct**: 3-level validation — Syntax (lint), Functional (tests), Integration (contracts).
+**Impact**: ~50% of bugs escape to integration.
+**Remediation**: Replace with explicit checklist: `make lint-{module} && make test-{module} && make verify-{module}`.
 
 ## 3. Everything sequential
 
 **Wrong**: Running all modules sequentially even when independent.
 **Correct**: Parallelize when there's no data dependency.
+**Impact**: Execution time 2-3x longer than necessary.
+**Remediation**: Consult Execution Strategies in root CLAUDE.md. Independent fixes → parallel.
 
 ## 4. Orchestrator implements in modules (CRITICAL VIOLATION)
 
 **Wrong**: The orchestrator edits files inside modules directly.
 **Correct**: ALWAYS delegate via Task tool. Even "trivial" tasks.
+**Impact**: Breaks total isolation. TDD/planning hooks are not triggered.
+**Remediation**: Undo direct changes. Re-delegate to the correct sub-agent.
 
 ## 5. Validation only at the end
 
 **Wrong**: Implement everything and only validate at the end.
 **Correct**: Validate each module on completion. Cross-project validation at the end.
+**Impact**: Cascading errors — correction 3-5x more expensive.
+**Remediation**: Add validation step after each delegation. Use `/validate-all` at the end.
 
 ## 6. Sub-agents without directory restriction
 
 **Wrong**: Giving full repository access.
 **Correct**: Each sub-agent works EXCLUSIVELY within its directory.
+**Impact**: Unauthorized changes in adjacent modules. Merge conflicts.
+**Remediation**: Check "Restricted Scope" in module's CLAUDE.md. Reject delivery if edited outside scope.
 
 ## 7. Business logic in frontend (SCOPE VIOLATION)
 
 **Wrong**: Domain validations, business calculations in frontend.
 **Correct**: All logic in backend. Frontends consume pre-processed data via API.
+**Impact**: Rule duplication, cross-platform inconsistency, compromised security.
+**Remediation**: Identify business logic → move to backend → replace with API call in frontend.
 {{/if}}

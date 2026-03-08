@@ -29,6 +29,19 @@ globs: ["**/*"]
 {{/if}}
 {{/each}}
 
+## Regra Visual vs Regra de Negocio
+
+| Tipo | Exemplo | Pertence a |
+|------|---------|------------|
+| **Regra Visual** | Formatar CPF como `xxx.xxx.xxx-xx` | Frontend |
+| **Regra Visual** | Mostrar badge "Novo" se criado < 24h | Frontend |
+| **Regra Visual** | Ordenar lista por nome (local) | Frontend |
+| **Regra de Negocio** | Validar se CPF e valido (digitos verificadores) | Backend |
+| **Regra de Negocio** | Calcular desconto baseado em regras de fidelidade | Backend |
+| **Regra de Negocio** | Decidir se usuario pode acessar recurso | Backend |
+| **Regra de Motor** | Executar pipeline de processamento de dados | Agent-AI |
+| **Regra de Motor** | Classificar texto com LLM | Agent-AI |
+
 ## Roteamento de Escopo
 
 ```
@@ -39,6 +52,14 @@ Nova logica identificada
     ├─ Schema/DDL? → Database
     └─ Duvida? → Backend (default seguro)
 ```
+
+## Procedimento de Violacao
+
+Quando logica e identificada no modulo errado:
+1. **Identificar** — Localizar o codigo fora do escopo
+2. **Mover** — Transferir para o modulo correto (via delegacao)
+3. **Substituir** — No modulo original, substituir por chamada API ou referencia
+4. **Validar** — Testar ambos os modulos apos a mudanca
 {{else}}
 # Rule #5 — Scope of Responsibility per Module
 
@@ -66,6 +87,19 @@ Nova logica identificada
 {{/if}}
 {{/each}}
 
+## Visual Rule vs Business Rule
+
+| Type | Example | Belongs to |
+|------|---------|------------|
+| **Visual Rule** | Format phone as `(xxx) xxx-xxxx` | Frontend |
+| **Visual Rule** | Show "New" badge if created < 24h | Frontend |
+| **Visual Rule** | Sort list by name (local) | Frontend |
+| **Business Rule** | Validate if phone number is valid (format + area code) | Backend |
+| **Business Rule** | Calculate discount based on loyalty rules | Backend |
+| **Business Rule** | Decide if user can access resource | Backend |
+| **Engine Rule** | Run data processing pipeline | Agent-AI |
+| **Engine Rule** | Classify text with LLM | Agent-AI |
+
 ## Scope Routing
 
 ```
@@ -76,4 +110,12 @@ New logic identified
     ├─ Schema/DDL? → Database
     └─ Uncertain? → Backend (safe default)
 ```
+
+## Violation Procedure
+
+When logic is identified in the wrong module:
+1. **Identify** — Locate the out-of-scope code
+2. **Move** — Transfer to the correct module (via delegation)
+3. **Replace** — In the original module, replace with API call or reference
+4. **Validate** — Test both modules after the change
 {{/if}}

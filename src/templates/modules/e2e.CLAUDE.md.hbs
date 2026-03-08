@@ -2,6 +2,20 @@
 
 > {{#if (eq project.language "pt-BR")}}Modulo E2E — testes end-to-end{{else}}E2E module — end-to-end tests{{/if}}
 
+## {{#if (eq project.language "pt-BR")}}Protocolo de Execucao{{else}}Execution Protocol{{/if}}
+
+{{#if (eq project.language "pt-BR")}}
+1. **ANALISAR** — Identificar cenario de teste, verificar features existentes
+2. **DECIDIR** — Feature existe? → atualizar. Nova? → criar com BDD/Gherkin
+3. **EXECUTAR** — Escrever features, step definitions, page objects
+4. **VALIDAR** — Executar testes E2E e verificar resultados
+{{else}}
+1. **ANALYZE** — Identify test scenario, check existing features
+2. **DECIDE** — Feature exists? → update. New? → create with BDD/Gherkin
+3. **EXECUTE** — Write features, step definitions, page objects
+4. **VALIDATE** — Run E2E tests and verify results
+{{/if}}
+
 ## {{#if (eq project.language "pt-BR")}}Escopo Restrito{{else}}Restricted Scope{{/if}}
 
 {{#if (eq project.language "pt-BR")}}
@@ -39,3 +53,37 @@ Testes sao protegidos por `chmod 555/444`. Apenas desbloqueados na fase Red (`ma
 Tests are protected by `chmod 555/444`. Only unlocked during Red phase (`make e2e-unlock`). Auto-locked after use (`make e2e-lock`).
 {{/if}}
 {{/ifRule}}
+
+## {{#if (eq project.language "pt-BR")}}Contrato de Resposta{{else}}Response Contract{{/if}}
+
+```
+{{#if (eq project.language "pt-BR")}}
+ARQUIVOS_ALTERADOS: [lista de arquivos criados/modificados]
+RESUMO: [o que foi feito em 1-2 frases]
+VALIDACAO_LOCAL: [resultado da execucao dos testes E2E]
+DEPENDENCIAS_EXTERNAS: [mudancas necessarias na aplicacao para testes passarem]
+{{else}}
+FILES_CHANGED: [list of files created/modified]
+SUMMARY: [what was done in 1-2 sentences]
+LOCAL_VALIDATION: [E2E test execution results]
+EXTERNAL_DEPENDENCIES: [changes needed in application for tests to pass]
+{{/if}}
+```
+
+## Checklist
+
+{{#if (eq project.language "pt-BR")}}
+- [ ] Features em Gherkin claras e legíveis
+- [ ] Step definitions reutilizaveis
+- [ ] Page Objects para encapsular interacoes
+- [ ] Dados de teste isolados (fixtures)
+- [ ] Screenshots em falhas
+- [ ] NUNCA modificar testes para fazer codigo passar
+{{else}}
+- [ ] Clear and readable Gherkin features
+- [ ] Reusable step definitions
+- [ ] Page Objects to encapsulate interactions
+- [ ] Isolated test data (fixtures)
+- [ ] Screenshots on failures
+- [ ] NEVER modify tests to make code pass
+{{/if}}

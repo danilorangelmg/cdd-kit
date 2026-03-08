@@ -117,6 +117,19 @@ Handlebars.registerHelper(
   }
 );
 Handlebars.registerHelper(
+  "hasRole",
+  function (
+    this: unknown,
+    role: string,
+    options: Handlebars.HelperOptions
+  ) {
+    const modules = (options.data?.root?.modules ?? []) as Array<{
+      role: string;
+    }>;
+    return modules.some((m) => m.role === role);
+  }
+);
+Handlebars.registerHelper(
   "modulesOfRole",
   function (
     this: unknown,

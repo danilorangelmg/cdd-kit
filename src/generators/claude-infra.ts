@@ -68,6 +68,16 @@ export async function generateClaudeInfra(
 
   // Hooks (TDD enforcement)
   if (config.methodology.rules["tdd-enforcement"]) {
+    // Shared test-finding library
+    const findTestLib = renderTemplate(
+      "claude/hooks/lib/find-test.sh.hbs",
+      context
+    );
+    const findTestPath = path.join(claudeDir, "hooks", "lib", "find-test.sh");
+    await writeFile(findTestPath, findTestLib);
+    await makeExecutable(findTestPath);
+    generatedFiles.push(".claude/hooks/lib/find-test.sh");
+
     const hooks = ["tdd-guard.sh", "auto-test.sh", "tdd-eval.sh"];
     for (const hook of hooks) {
       const content = renderTemplate(`claude/hooks/${hook}.hbs`, context);
@@ -182,6 +192,55 @@ export async function generateClaudeInfra(
     generatedFiles.push(".claude/skills/plan-feature/SKILL.md");
   }
 
+  // Universal root skills (always generated)
+  const universalRootSkills = [
+    "git-commit",
+    "pr-create",
+    "validate-all",
+    "deploy-all",
+  ];
+  for (const skill of universalRootSkills) {
+    const content = renderTemplate(
+      `claude/skills/${skill}/SKILL.md.hbs`,
+      context
+    );
+    await writeFile(
+      path.join(claudeDir, "skills", skill, "SKILL.md"),
+      content
+    );
+    generatedFiles.push(`.claude/skills/${skill}/SKILL.md`);
+  }
+
+  // Conditional root skills
+  const hasFrontend = config.modules.some((m) => m.role === "frontend");
+  const hasBackend = config.modules.some(
+    (m) => m.role === "backend" || m.role === "agent-ai"
+  );
+
+  if (hasFrontend && hasBackend) {
+    const checkFlow = renderTemplate(
+      "claude/skills/check-flow/SKILL.md.hbs",
+      context
+    );
+    await writeFile(
+      path.join(claudeDir, "skills", "check-flow", "SKILL.md"),
+      checkFlow
+    );
+    generatedFiles.push(".claude/skills/check-flow/SKILL.md");
+  }
+
+  if (config.methodology.rules["api-response-contract"]) {
+    const apiContract = renderTemplate(
+      "claude/skills/api-contract/SKILL.md.hbs",
+      context
+    );
+    await writeFile(
+      path.join(claudeDir, "skills", "api-contract", "SKILL.md"),
+      apiContract
+    );
+    generatedFiles.push(".claude/skills/api-contract/SKILL.md");
+  }
+
   // Verify pipeline
   const verifyPipeline = renderTemplate(
     "claude/verify/pipeline.yaml.hbs",
@@ -251,6 +310,16 @@ async function generatePerModuleClaudeInfra(
 
     // Hooks (if TDD enabled)
     if (config.methodology.rules["tdd-enforcement"]) {
+      // Shared test-finding library
+      const findTestLib = renderTemplate(
+        "claude/hooks/lib/find-test.sh.hbs",
+        modContext
+      );
+      const findTestPath = path.join(modClaudeDir, "hooks", "lib", "find-test.sh");
+      await writeFile(findTestPath, findTestLib);
+      await makeExecutable(findTestPath);
+      generatedFiles.push(`${prefix}/hooks/lib/find-test.sh`);
+
       const hooks = ["tdd-guard.sh", "auto-test.sh", "tdd-eval.sh"];
       for (const hook of hooks) {
         const content = renderTemplate(`claude/hooks/${hook}.hbs`, modContext);
@@ -430,6 +499,24 @@ async function generatePerModuleClaudeInfra(
   return generatedFiles;
 }
 
+function buildAllowPermissions(config: ProjectConfig): string[] {
+  const perms = ["Bash(docker compose *)"];
+  const roles = new Set(config.modules.map((m) => m.role));
+
+  if (roles.has("frontend") || roles.has("mobile")) {
+    perms.push(
+      "Bash(npx vitest run *)",
+      "Bash(npm test *)",
+      "Bash(npm run typecheck)"
+    );
+  }
+  if (roles.has("backend") || roles.has("agent-ai")) {
+    perms.push("Bash(python3 -m pytest *)", "Bash(make lint)");
+  }
+  perms.push("Bash(make test *)", "Bash(make verify *)");
+  return perms;
+}
+
 function buildContext(config: ProjectConfig): Record<string, unknown> {
   const activeRules = getActiveRules(config.methodology.rules);
   const paths = getPathMap(config.project.language);
@@ -437,6 +524,7 @@ function buildContext(config: ProjectConfig): Record<string, unknown> {
     ...config,
     activeRules,
     paths,
+    allowPermissions: buildAllowPermissions(config),
     modulesWithRoles: config.modules.map((m) => ({
       ...m,
       roleInfo: getRoleById(m.role),

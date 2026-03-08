@@ -1,0 +1,119 @@
+{{#if (eq project.language "pt-BR")}}
+# /validate-all — Validacao Cross-Project
+
+## Objetivo
+Validacao em 3 niveis de todos os modulos do projeto, garantindo consistencia entre eles.
+
+## Nivel 1: Sintaxe (Lint)
+Executar lint em cada modulo:
+{{#each modules}}
+- `{{name}}` ({{role}}): `cd {{directory}} && make lint`
+{{/each}}
+
+## Nivel 2: Funcional (Testes)
+Executar testes unitarios em cada modulo:
+{{#each modules}}
+- `{{name}}` ({{role}}): `cd {{directory}} && make test`
+{{/each}}
+
+## Nivel 3: Integracao (Contratos Cross-Project)
+{{#if (and (hasRole "frontend") (hasRole "backend"))}}
+Verificar consistencia entre frontends e backends:
+
+### Types/DTOs
+- Comparar tipos/interfaces do frontend com modelos de resposta do backend
+- Verificar que campos obrigatorios estao presentes em ambos os lados
+{{#modulesOfRole "frontend"}}
+- Frontend: `{{directory}}/src/types/`
+{{/modulesOfRole}}
+{{#modulesOfRole "backend"}}
+- Backend: `{{directory}}/src/` (modelos de resposta)
+{{/modulesOfRole}}
+
+### Endpoints
+- Verificar que chamadas de API do frontend correspondem a rotas existentes no backend
+- Validar compatibilidade de parametros (path, query, body)
+
+### Variaveis de Ambiente
+- Verificar que todas as variaveis referenciadas no codigo existem em `.env.example`
+{{else}}
+Verificacao de integracao nao aplicavel (projeto single-role).
+{{/if}}
+
+## Relatorio
+Gerar relatorio consolidado:
+```
+=== Validacao Cross-Project ===
+--- Nivel 1: Sintaxe ---
+{{#each modules}}
+  {{name}}: ✅ PASS / ❌ FAIL
+{{/each}}
+--- Nivel 2: Funcional ---
+{{#each modules}}
+  {{name}}: ✅ PASS / ❌ FAIL
+{{/each}}
+--- Nivel 3: Integracao ---
+  Types: ✅ / ❌
+  Endpoints: ✅ / ❌
+  Env vars: ✅ / ❌
+```
+{{else}}
+# /validate-all — Cross-Project Validation
+
+## Purpose
+3-level validation of all project modules, ensuring cross-project consistency.
+
+## Level 1: Syntax (Lint)
+Run lint on each module:
+{{#each modules}}
+- `{{name}}` ({{role}}): `cd {{directory}} && make lint`
+{{/each}}
+
+## Level 2: Functional (Tests)
+Run unit tests on each module:
+{{#each modules}}
+- `{{name}}` ({{role}}): `cd {{directory}} && make test`
+{{/each}}
+
+## Level 3: Integration (Cross-Project Contracts)
+{{#if (and (hasRole "frontend") (hasRole "backend"))}}
+Verify consistency between frontends and backends:
+
+### Types/DTOs
+- Compare frontend types/interfaces with backend response models
+- Verify required fields are present on both sides
+{{#modulesOfRole "frontend"}}
+- Frontend: `{{directory}}/src/types/`
+{{/modulesOfRole}}
+{{#modulesOfRole "backend"}}
+- Backend: `{{directory}}/src/` (response models)
+{{/modulesOfRole}}
+
+### Endpoints
+- Verify frontend API calls match existing backend routes
+- Validate parameter compatibility (path, query, body)
+
+### Environment Variables
+- Verify all variables referenced in code exist in `.env.example`
+{{else}}
+Integration validation not applicable (single-role project).
+{{/if}}
+
+## Report
+Generate consolidated report:
+```
+=== Cross-Project Validation ===
+--- Level 1: Syntax ---
+{{#each modules}}
+  {{name}}: ✅ PASS / ❌ FAIL
+{{/each}}
+--- Level 2: Functional ---
+{{#each modules}}
+  {{name}}: ✅ PASS / ❌ FAIL
+{{/each}}
+--- Level 3: Integration ---
+  Types: ✅ / ❌
+  Endpoints: ✅ / ❌
+  Env vars: ✅ / ❌
+```
+{{/if}}

@@ -1,0 +1,141 @@
+{{#if (eq project.language "pt-BR")}}
+# /api-contract — Definicao de Contrato API (Frontend-First)
+
+## Objetivo
+Definir contratos de API partindo da perspectiva do frontend (Outside-In), garantindo que o backend implemente exatamente o que o frontend precisa.
+
+## Entrada
+Argumento: nome da tela, feature ou modulo. Ex: `/api-contract Dashboard`
+
+## Processo (5 etapas)
+
+### Etapa 1: Explorar Tela/Feature
+{{#modulesOfRole "frontend"}}
+- Explorar `{{directory}}/src/` — pages, hooks, services, types, mocks
+{{/modulesOfRole}}
+- Identificar todas as chamadas de API existentes e planejadas
+- Mapear dados necessarios por componente
+
+### Etapa 2: Classificar Queries
+Para cada chamada de API identificada:
+- **Existente**: ja implementada no backend → documentar contrato atual
+- **Mock**: usando dados ficticios → definir contrato real
+- **Nova**: necessaria mas inexistente → projetar contrato
+
+### Etapa 3: Definir Contratos
+Para cada endpoint, definir:
+```typescript
+// Endpoint: GET /api/v1/resource
+interface Request {
+  // Path params, query params
+}
+interface Response {
+  data: {
+    // Campos que o frontend precisa
+  }
+}
+```
+{{#ifRule "api-response-contract"}}
+**Regra #4**: Todas as respostas DEVEM usar envelope padrao:
+- Sucesso: `{ "data": { ... } }`
+- Erro: `{ "error": { "message": "...", "code": "..." } }`
+{{/ifRule}}
+
+### Etapa 4: Cenarios de Erro
+Para cada endpoint, definir:
+| HTTP Code | Error Code | Descricao | Acao Frontend |
+|-----------|-----------|-----------|---------------|
+| 400 | VALIDATION_ERROR | Dados invalidos | Mostrar erros nos campos |
+| 401 | UNAUTHORIZED | Nao autenticado | Redirecionar para login |
+| 404 | NOT_FOUND | Recurso nao existe | Mostrar estado vazio |
+| 500 | INTERNAL_ERROR | Erro interno | Mostrar mensagem generica |
+
+### Etapa 5: Cadeia de Dependencias
+Mapear dependencias entre queries:
+```
+Query A (independente)
+Query B (independente)  → podem rodar em paralelo
+Query C (depende de A)  → deve aguardar A
+```
+
+## Saida
+Documento em: `{{docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{feature}-contratos-api.md`
+
+## Modulos
+{{#modulesOfRole "frontend"}}
+- Frontend: `{{name}}` → `{{directory}}/`
+{{/modulesOfRole}}
+{{#modulesOfRole "backend"}}
+- Backend: `{{name}}` → `{{directory}}/`
+{{/modulesOfRole}}
+{{else}}
+# /api-contract — API Contract Definition (Frontend-First)
+
+## Purpose
+Define API contracts from the frontend perspective (Outside-In), ensuring the backend implements exactly what the frontend needs.
+
+## Input
+Argument: screen name, feature, or module. Ex: `/api-contract Dashboard`
+
+## Process (5 steps)
+
+### Step 1: Explore Screen/Feature
+{{#modulesOfRole "frontend"}}
+- Explore `{{directory}}/src/` — pages, hooks, services, types, mocks
+{{/modulesOfRole}}
+- Identify all existing and planned API calls
+- Map required data per component
+
+### Step 2: Classify Queries
+For each identified API call:
+- **Existing**: already implemented in backend → document current contract
+- **Mock**: using fake data → define real contract
+- **New**: needed but non-existent → design contract
+
+### Step 3: Define Contracts
+For each endpoint, define:
+```typescript
+// Endpoint: GET /api/v1/resource
+interface Request {
+  // Path params, query params
+}
+interface Response {
+  data: {
+    // Fields the frontend needs
+  }
+}
+```
+{{#ifRule "api-response-contract"}}
+**Rule #4**: All responses MUST use standard envelope:
+- Success: `{ "data": { ... } }`
+- Error: `{ "error": { "message": "...", "code": "..." } }`
+{{/ifRule}}
+
+### Step 4: Error Scenarios
+For each endpoint, define:
+| HTTP Code | Error Code | Description | Frontend Action |
+|-----------|-----------|-------------|-----------------|
+| 400 | VALIDATION_ERROR | Invalid data | Show field errors |
+| 401 | UNAUTHORIZED | Not authenticated | Redirect to login |
+| 404 | NOT_FOUND | Resource not found | Show empty state |
+| 500 | INTERNAL_ERROR | Internal error | Show generic message |
+
+### Step 5: Dependency Chain
+Map dependencies between queries:
+```
+Query A (independent)
+Query B (independent)  → can run in parallel
+Query C (depends on A) → must wait for A
+```
+
+## Output
+Document at: `{{docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{feature}-api-contracts.md`
+
+## Modules
+{{#modulesOfRole "frontend"}}
+- Frontend: `{{name}}` → `{{directory}}/`
+{{/modulesOfRole}}
+{{#modulesOfRole "backend"}}
+- Backend: `{{name}}` → `{{directory}}/`
+{{/modulesOfRole}}
+{{/if}}

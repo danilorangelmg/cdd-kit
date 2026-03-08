@@ -20,6 +20,10 @@ globs: ["**/*"]
 7. TDD (Red): testes escritos e falhando? Se NAO → escrever ANTES
 8. TDD (Green): so implementar apos testes existirem e falharem
 {{/ifRule}}
+{{#ifRule "post-dev-e2e-validation"}}
+9. E2E: cenarios E2E existem para esta feature? Se NAO → escrever ANTES (somente features com fluxo visual)
+10. Apos implementacao, executar testes E2E. Se FAIL → corrigir na APLICACAO, NUNCA no teste E2E (max 3 tentativas)
+{{/ifRule}}
 
 ## Estrutura de Docs por Feature
 
@@ -51,6 +55,10 @@ globs: ["**/*"]
 {{#ifRule "tdd-enforcement"}}
 7. TDD (Red): tests written and failing? If NO → write BEFORE
 8. TDD (Green): only implement after tests exist and fail
+{{/ifRule}}
+{{#ifRule "post-dev-e2e-validation"}}
+9. E2E: do E2E scenarios exist for this feature? If NO → write BEFORE (only features with visual flow)
+10. After implementation, run E2E tests. If FAIL → fix in APPLICATION, NEVER in E2E test (max 3 attempts)
 {{/ifRule}}
 
 ## Docs Structure per Feature

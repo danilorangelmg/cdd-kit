@@ -98,7 +98,11 @@
     ]
   },
   "permissions": {
-    "allow": [],
+    "allow": [
+{{#each allowPermissions}}
+      "{{this}}"{{#unless @last}},{{/unless}}
+{{/each}}
+    ],
     "deny": [
 {{#ifRule "e2e-test-protection"}}
 {{#modulesOfRole "e2e"}}
@@ -110,6 +114,9 @@
       "Write(/{{directory}}/support/**)"{{#unless @last}},{{/unless}}
 {{/modulesOfRole}}
 {{/ifRule}}
+    ],
+    "additionalDirectories": [
+      ".claude/skills"
     ]
   }
 }

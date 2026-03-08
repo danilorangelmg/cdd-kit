@@ -1,0 +1,89 @@
+{{#if (eq project.language "pt-BR")}}
+# /pr-create — Criar Pull Request
+
+## Objetivo
+Criar pull requests no GitHub com titulo descritivo, corpo estruturado e checklist de testes.
+
+## Pre-checks
+1. Verificar autenticacao `gh` (`gh auth status`)
+2. Verificar que NAO esta na branch main/master
+3. Verificar que existem commits nao publicados (`git log origin/HEAD..HEAD`)
+
+## Processo
+1. Detectar branch base (argumento explicito ou branch default do repo)
+2. Listar commits da branch (`git log base..HEAD --oneline`)
+3. Gerar titulo:
+   - Se commit unico: usar mensagem do commit
+   - Se multiplos: resumir o conjunto de mudancas
+   - Max 70 caracteres
+4. Gerar corpo com template
+5. Fazer push se necessario (`git push -u origin HEAD`)
+6. Criar PR via `gh pr create`
+
+## Template do Corpo
+```markdown
+## Summary
+- Bullet points descrevendo as mudancas principais
+
+## Changes
+{{#each modules}}
+- [ ] `{{name}}`: (descrever mudancas neste modulo)
+{{/each}}
+
+## Test plan
+- [ ] Testes unitarios passando
+- [ ] Lint sem erros
+- [ ] Build sem erros
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
+## Flags
+- `--draft`: criar como draft PR
+- `--base <branch>`: especificar branch base
+- `--title <titulo>`: titulo customizado
+{{else}}
+# /pr-create — Create Pull Request
+
+## Purpose
+Create GitHub pull requests with descriptive title, structured body, and test checklist.
+
+## Pre-checks
+1. Verify `gh` authentication (`gh auth status`)
+2. Verify NOT on main/master branch
+3. Verify unpushed commits exist (`git log origin/HEAD..HEAD`)
+
+## Process
+1. Detect base branch (explicit argument or repo default branch)
+2. List branch commits (`git log base..HEAD --oneline`)
+3. Generate title:
+   - Single commit: use commit message
+   - Multiple: summarize the change set
+   - Max 70 characters
+4. Generate body from template
+5. Push if needed (`git push -u origin HEAD`)
+6. Create PR via `gh pr create`
+
+## Body Template
+```markdown
+## Summary
+- Bullet points describing the main changes
+
+## Changes
+{{#each modules}}
+- [ ] `{{name}}`: (describe changes in this module)
+{{/each}}
+
+## Test plan
+- [ ] Unit tests passing
+- [ ] Lint clean
+- [ ] Build clean
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
+## Flags
+- `--draft`: create as draft PR
+- `--base <branch>`: specify base branch
+- `--title <title>`: custom title
+{{/if}}

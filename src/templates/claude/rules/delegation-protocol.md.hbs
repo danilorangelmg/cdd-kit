@@ -34,6 +34,19 @@ Max ~50 linhas. Referenciar arquivos por caminho.
 Retornar: ARQUIVOS_ALTERADOS, RESUMO, VALIDACAO_LOCAL, DEPENDENCIAS_EXTERNAS
 ```
 
+## Contrato de Resposta Padrao
+
+Todo delegate DEVE retornar este formato ao orquestrador:
+
+```
+ARQUIVOS_ALTERADOS: [lista com caminhos relativos]
+RESUMO: [1-2 frases do que foi feito]
+VALIDACAO_LOCAL: [resultado de lint, testes, build]
+DEPENDENCIAS_EXTERNAS: [mudancas necessarias em outros modulos, ou "nenhuma"]
+```
+
+O orquestrador usa `DEPENDENCIAS_EXTERNAS` para acionar delegates adicionais em cascata.
+
 ## Fluxo de Orquestracao
 
 {{#ifRule "feature-planning-gate"}}
@@ -44,13 +57,32 @@ Retornar: ARQUIVOS_ALTERADOS, RESUMO, VALIDACAO_LOCAL, DEPENDENCIAS_EXTERNAS
 3. **Ordenar** — Sequencia pelo grafo de dependencias
 {{#ifRule "tdd-enforcement"}}
 4. **Testar (Red)** — `tdd-test-writer` escreve testes falhando
+{{#ifRule "post-dev-e2e-validation"}}
+4.5. **E2E (Red)** — Se feature com fluxo E2E, escrever/atualizar cenarios E2E
+{{/ifRule}}
 5. **Implementar (Green)** — `tdd-implementer` implementa minimo
+{{#ifRule "post-dev-e2e-validation"}}
+5.5. **E2E (Green)** — Executar testes E2E. Se FAIL → diagnosticar → corrigir na aplicacao (NUNCA no teste) → rerun (max 3x)
+{{/ifRule}}
 {{else}}
 4. **Implementar** — Delegar ao agente correto
 {{/ifRule}}
 6. **Integrar** — Verificar DEPENDENCIAS_EXTERNAS
 7. **Validar** — Apenas modulos afetados
 8. **Reportar** — Consolidar resultado
+
+{{#ifRule "post-dev-e2e-validation"}}
+### Loop Diagnostico E2E
+
+Quando testes E2E falham apos implementacao:
+
+1. **Analisar** — Identificar causa raiz no output do teste
+2. **Corrigir** — Ajustar codigo da APLICACAO (NUNCA o teste E2E)
+3. **Re-executar** — Rodar testes E2E novamente
+4. **Repetir** — Max 3 tentativas. Se persistir, escalar ao usuario.
+
+**GUARDRAIL**: NUNCA modificar testes E2E para fazer codigo passar.
+{{/ifRule}}
 
 {{#ifRule "tdd-sequential-enforcement"}}
 ### Context Isolation (Regra #9)
@@ -101,6 +133,19 @@ Max ~50 lines. Reference files by path.
 Return: FILES_CHANGED, SUMMARY, LOCAL_VALIDATION, EXTERNAL_DEPENDENCIES
 ```
 
+## Standard Response Contract
+
+Every delegate MUST return this format to the orchestrator:
+
+```
+FILES_CHANGED: [list with relative paths]
+SUMMARY: [1-2 sentences of what was done]
+LOCAL_VALIDATION: [lint, tests, build results]
+EXTERNAL_DEPENDENCIES: [changes needed in other modules, or "none"]
+```
+
+The orchestrator uses `EXTERNAL_DEPENDENCIES` to trigger additional delegates in cascade.
+
 ## Orchestration Flow
 
 {{#ifRule "feature-planning-gate"}}
@@ -111,13 +156,32 @@ Return: FILES_CHANGED, SUMMARY, LOCAL_VALIDATION, EXTERNAL_DEPENDENCIES
 3. **Order** — Sequence by dependency graph
 {{#ifRule "tdd-enforcement"}}
 4. **Test (Red)** — `tdd-test-writer` writes failing tests
+{{#ifRule "post-dev-e2e-validation"}}
+4.5. **E2E (Red)** — If feature with E2E flow, write/update E2E scenarios
+{{/ifRule}}
 5. **Implement (Green)** — `tdd-implementer` implements minimum
+{{#ifRule "post-dev-e2e-validation"}}
+5.5. **E2E (Green)** — Run E2E tests. If FAIL → diagnose → fix in application (NEVER in test) → rerun (max 3x)
+{{/ifRule}}
 {{else}}
 4. **Implement** — Delegate to the correct agent
 {{/ifRule}}
 6. **Integrate** — Verify EXTERNAL_DEPENDENCIES
 7. **Validate** — Only affected modules
 8. **Report** — Consolidate result
+
+{{#ifRule "post-dev-e2e-validation"}}
+### E2E Diagnostic Loop
+
+When E2E tests fail after implementation:
+
+1. **Analyze** — Identify root cause from test output
+2. **Fix** — Adjust APPLICATION code (NEVER the E2E test)
+3. **Re-run** — Run E2E tests again
+4. **Repeat** — Max 3 attempts. If persists, escalate to user.
+
+**GUARDRAIL**: NEVER modify E2E tests to make code pass.
+{{/ifRule}}
 
 {{#ifRule "tdd-sequential-enforcement"}}
 ### Context Isolation (Rule #9)

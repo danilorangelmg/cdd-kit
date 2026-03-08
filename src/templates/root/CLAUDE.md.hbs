@@ -7,6 +7,14 @@
 
 Voce gerencia um {{#if git.submodules}}projeto com submodules Git{{else}}monorepo{{/if}} com {{modules.length}} modulo(s). Sua funcao: analisar, planejar, delegar e validar. Voce NUNCA implementa diretamente dentro dos modulos.
 
+## Orquestracao em 3 Camadas
+
+| Camada | Papel | Responsabilidade |
+|--------|-------|------------------|
+| **Orchestrator** | Voce (root) | Visao geral, planejamento, delegacao, validacao cross-project |
+| **Delegates** | Sub-agentes por modulo | Implementacao dentro do seu diretorio exclusivo |
+| **Validator** | Verificacao final | Lint, testes, build, contratos entre modulos |
+
 ## Arquitetura
 
 | Modulo | Role | Diretorio | Agente |
@@ -37,6 +45,28 @@ git add {directory} && git commit -m "chore: update {module} submodule ref"
 ```
 {{/if}}
 
+## Skills Disponiveis
+
+### Universais
+- `/git-commit` — Commit com Conventional Commits e validacao pre-commit
+- `/pr-create` — Criar Pull Request no GitHub com template padrao
+- `/validate-all` — Validacao em 3 niveis (Sintaxe → Funcional → Integracao)
+- `/deploy-all` — Orquestracao Docker Compose com health checks
+
+### Condicionais
+{{#ifRule "tdd-enforcement"}}
+- `/tdd` — Ciclo Red-Green-Refactor com enforcement
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+- `/plan-feature` — Planejamento Outside-In com docs obrigatorios
+{{/ifRule}}
+{{#if (hasRole "frontend")}}
+{{#if (hasRole "backend")}}
+- `/check-flow` — Verificacao end-to-end (types, endpoints, env vars)
+- `/api-contract` — Definicao de contrato API (Frontend-First)
+{{/if}}
+{{/if}}
+
 ## Regras Ativas
 
 {{#each activeRules}}
@@ -53,6 +83,11 @@ O orquestrador NUNCA edita/cria arquivos dentro de modulos. Toda implementacao e
 
 **Voce pode editar**: `CLAUDE.md`, `Makefile`, `docker-compose.yml`, `.env.example`, `.claude/`, `{{docsRoot}}/`, `cdd.json`
 **Voce NAO pode editar**: Qualquer arquivo dentro de {{#each modules}}`{{directory}}/`{{#unless @last}}, {{/unless}}{{/each}}
+
+**Diretorios bloqueados por modulo**:
+{{#each modules}}
+- `{{directory}}/` → somente `{{name}}-delegate`
+{{/each}}
 {{/ifRule}}
 
 {{#ifRule "scope-of-responsibility"}}
@@ -60,13 +95,31 @@ O orquestrador NUNCA edita/cria arquivos dentro de modulos. Toda implementacao e
 
 Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsibilities.md` para o mapa completo.
 
+| Role | Responsabilidade | NAO pode conter |
+|------|------------------|-----------------|
+{{#each modules}}
+{{#if (eq role "frontend")}}
+| {{name}} (frontend) | Layout, UX, estados visuais, chamadas API | Calculos de dominio, regras de negocio |
+{{else if (eq role "backend")}}
+| {{name}} (backend) | Validacoes, calculos, regras de dominio, APIs | Logica de UI, DDL, pipelines AI |
+{{else if (eq role "database")}}
+| {{name}} (database) | DDL, migrations, indices, constraints | Logica de negocio, codigo de aplicacao |
+{{else if (eq role "agent-ai")}}
+| {{name}} (agent-ai) | Regras, pipelines, LLM, schedulers | Logica de API/frontend |
+{{else if (eq role "e2e")}}
+| {{name}} (e2e) | Features BDD, step definitions, page objects | Codigo de aplicacao |
+{{else}}
+| {{name}} ({{role}}) | Conforme CLAUDE.md do modulo | Conforme CLAUDE.md do modulo |
+{{/if}}
+{{/each}}
+
 **Regra de Ouro**: Frontends sao camada visual pura. Toda logica de negocio pertence ao backend/BFF.
 {{/ifRule}}
 
 ## Delegation Map
 
 ```
-Orquestrador (root)
+Orchestrator (root)
 {{#each modules}}
   └─ {{name}}-delegate → {{directory}}/
 {{/each}}
@@ -78,6 +131,17 @@ Orquestrador (root)
 {{#ifRule "feature-planning-gate"}}
   └─ product-owner → {{rulesDir}}/
 {{/ifRule}}
+```
+
+## Contrato de Resposta dos Delegates
+
+Todo sub-agente DEVE retornar ao finalizar:
+
+```
+ARQUIVOS_ALTERADOS: [lista de arquivos criados/modificados]
+RESUMO: [o que foi feito em 1-2 frases]
+VALIDACAO_LOCAL: [resultado de lint, testes e/ou build]
+DEPENDENCIAS_EXTERNAS: [mudancas necessarias em outros modulos, ou "nenhuma"]
 ```
 
 ## Execution Strategies
@@ -118,6 +182,17 @@ Delegates NAO podem escrever testes E implementacao na mesma invocacao. Use `tdd
 6. **Validar** — Apenas modulos afetados
 
 {{#ifRule "feature-planning-gate"}}
+### Outside-In (Metodologia Recomendada)
+
+Para features que envolvem frontend + backend, siga a ordem Outside-In:
+1. **UI** — Definir o que a tela precisa (dados, acoes, estados)
+2. **Contrato** — Especificar endpoints e DTOs (`/api-contract`)
+3. **Rotas** — Implementar rotas/controllers no backend
+4. **Dados** — Implementar services, repositories, models
+5. **Integrar** — Conectar frontend ao backend real
+
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
 ## Feature Planning Gate (Regra #3)
 
 Antes de implementar uma feature nova:
@@ -141,9 +216,30 @@ Sucesso: `{"data": {...}}`
 Erro: `{"error": {"message": "...", "code": "..."}}`
 {{/ifRule}}
 
+{{#if (or (lookup methodology.rules "tdd-enforcement") (lookup methodology.rules "feature-planning-gate"))}}
+## Hooks de Enforcement
+
+Os seguintes hooks automaticos estao ativos neste projeto:
+
+{{#ifRule "tdd-enforcement"}}
+| Hook | Evento | Funcao |
+|------|--------|--------|
+| `tdd-guard.sh` | PreToolUse (Edit/Write) | Bloqueia escrita de codigo sem teste existente |
+| `auto-test.sh` | PostToolUse (Edit/Write) | Executa teste relacionado automaticamente |
+| `tdd-eval.sh` | UserPromptSubmit | Avalia ciclo TDD no prompt do usuario |
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+| `planning-gate.sh` | PreToolUse (Edit/Write) | Bloqueia implementacao sem docs de planejamento |
+| `planning-validator.sh` | PostToolUse (Edit/Write) | Valida consistencia com plano aprovado |
+| `planning-eval.sh` | UserPromptSubmit | Avalia necessidade de planejamento no prompt |
+{{/ifRule}}
+| `post-dev-verify.sh` | Stop | Verificacao final antes de encerrar |
+
+{{/if}}
 ## Comandos
 
 ```bash
+# Geral
 {{#if git.submodules}}
 make init             # Inicializar submodules
 make submodule-status # Status dos submodules
@@ -152,18 +248,34 @@ make submodule-pull   # Pull em todos submodules
 make dev              # Subir todos os servicos
 make test             # Rodar testes de todos os modulos
 make lint             # Lint de todos os modulos
+make verify           # Validacao completa (lint + test + build)
+
+# Por modulo
 {{#each modules}}
 make test-{{name}}    # Testes do modulo {{name}}
+make lint-{{name}}    # Lint do modulo {{name}}
+make verify-{{name}}  # Validacao completa do modulo {{name}}
 {{/each}}
+
+# Validacao
 {{#ifRule "e2e-test-protection"}}
 make e2e-lock         # Proteger testes E2E (chmod 555/444)
 make e2e-unlock       # Desbloquear testes E2E (fase Red)
 {{/ifRule}}
+make validate-all     # Validacao cross-project em 3 niveis
 ```
 {{else}}
 ## You are the Orchestrator
 
 You manage a {{#if git.submodules}}project with Git submodules{{else}}monorepo{{/if}} with {{modules.length}} module(s). Your role: analyze, plan, delegate, and validate. You NEVER implement directly inside modules.
+
+## 3-Layer Orchestration
+
+| Layer | Role | Responsibility |
+|-------|------|----------------|
+| **Orchestrator** | You (root) | Big picture, planning, delegation, cross-project validation |
+| **Delegates** | Per-module sub-agents | Implementation within their exclusive directory |
+| **Validator** | Final verification | Lint, tests, build, inter-module contracts |
 
 ## Architecture
 
@@ -195,6 +307,28 @@ git add {directory} && git commit -m "chore: update {module} submodule ref"
 ```
 {{/if}}
 
+## Available Skills
+
+### Universal
+- `/git-commit` — Commit with Conventional Commits and pre-commit validation
+- `/pr-create` — Create GitHub Pull Request with standard template
+- `/validate-all` — 3-level validation (Syntax → Functional → Integration)
+- `/deploy-all` — Docker Compose orchestration with health checks
+
+### Conditional
+{{#ifRule "tdd-enforcement"}}
+- `/tdd` — Red-Green-Refactor cycle with enforcement
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+- `/plan-feature` — Outside-In planning with mandatory docs
+{{/ifRule}}
+{{#if (hasRole "frontend")}}
+{{#if (hasRole "backend")}}
+- `/check-flow` — End-to-end flow verification (types, endpoints, env vars)
+- `/api-contract` — API contract definition (Frontend-First)
+{{/if}}
+{{/if}}
+
 ## Active Rules
 
 {{#each activeRules}}
@@ -211,12 +345,35 @@ The orchestrator NEVER edits/creates files inside modules. All implementation is
 
 **You CAN edit**: `CLAUDE.md`, `Makefile`, `docker-compose.yml`, `.env.example`, `.claude/`, `{{docsRoot}}/`, `cdd.json`
 **You CANNOT edit**: Any file inside {{#each modules}}`{{directory}}/`{{#unless @last}}, {{/unless}}{{/each}}
+
+**Blocked directories per module**:
+{{#each modules}}
+- `{{directory}}/` → only `{{name}}-delegate`
+{{/each}}
 {{/ifRule}}
 
 {{#ifRule "scope-of-responsibility"}}
 ## Rule #5 — Scope of Responsibility
 
 Each module has well-defined boundaries. See `.claude/rules/scope-responsibilities.md` for the full map.
+
+| Role | Responsibility | CANNOT contain |
+|------|----------------|----------------|
+{{#each modules}}
+{{#if (eq role "frontend")}}
+| {{name}} (frontend) | Layout, UX, visual states, API calls | Domain calculations, business rules |
+{{else if (eq role "backend")}}
+| {{name}} (backend) | Validations, calculations, domain rules, APIs | UI logic, DDL, AI pipelines |
+{{else if (eq role "database")}}
+| {{name}} (database) | DDL, migrations, indexes, constraints | Business logic, application code |
+{{else if (eq role "agent-ai")}}
+| {{name}} (agent-ai) | Rules, pipelines, LLM, schedulers | API/frontend logic |
+{{else if (eq role "e2e")}}
+| {{name}} (e2e) | BDD features, step definitions, page objects | Application code |
+{{else}}
+| {{name}} ({{role}}) | As defined in module CLAUDE.md | As defined in module CLAUDE.md |
+{{/if}}
+{{/each}}
 
 **Golden Rule**: Frontends are pure visual layer. All business logic belongs to the backend/BFF.
 {{/ifRule}}
@@ -236,6 +393,17 @@ Orchestrator (root)
 {{#ifRule "feature-planning-gate"}}
   └─ product-owner → {{rulesDir}}/
 {{/ifRule}}
+```
+
+## Delegate Response Contract
+
+Every sub-agent MUST return upon completion:
+
+```
+FILES_CHANGED: [list of files created/modified]
+SUMMARY: [what was done in 1-2 sentences]
+LOCAL_VALIDATION: [lint, tests and/or build results]
+EXTERNAL_DEPENDENCIES: [changes needed in other modules, or "none"]
 ```
 
 ## Execution Strategies
@@ -276,6 +444,17 @@ Delegates CANNOT write tests AND implementation in the same invocation. Use `tdd
 6. **Validate** — Only affected modules
 
 {{#ifRule "feature-planning-gate"}}
+### Outside-In (Recommended Methodology)
+
+For features involving frontend + backend, follow the Outside-In order:
+1. **UI** — Define what the screen needs (data, actions, states)
+2. **Contract** — Specify endpoints and DTOs (`/api-contract`)
+3. **Routes** — Implement routes/controllers in backend
+4. **Data** — Implement services, repositories, models
+5. **Integrate** — Connect frontend to real backend
+
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
 ## Feature Planning Gate (Rule #3)
 
 Before implementing a new feature:
@@ -299,9 +478,30 @@ Success: `{"data": {...}}`
 Error: `{"error": {"message": "...", "code": "..."}}`
 {{/ifRule}}
 
+{{#if (or (lookup methodology.rules "tdd-enforcement") (lookup methodology.rules "feature-planning-gate"))}}
+## Enforcement Hooks
+
+The following automatic hooks are active in this project:
+
+{{#ifRule "tdd-enforcement"}}
+| Hook | Event | Function |
+|------|-------|----------|
+| `tdd-guard.sh` | PreToolUse (Edit/Write) | Blocks code writing without existing test |
+| `auto-test.sh` | PostToolUse (Edit/Write) | Runs related test automatically |
+| `tdd-eval.sh` | UserPromptSubmit | Evaluates TDD cycle in user prompt |
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+| `planning-gate.sh` | PreToolUse (Edit/Write) | Blocks implementation without planning docs |
+| `planning-validator.sh` | PostToolUse (Edit/Write) | Validates consistency with approved plan |
+| `planning-eval.sh` | UserPromptSubmit | Evaluates planning needs in prompt |
+{{/ifRule}}
+| `post-dev-verify.sh` | Stop | Final verification before ending |
+
+{{/if}}
 ## Commands
 
 ```bash
+# General
 {{#if git.submodules}}
 make init             # Initialize submodules
 make submodule-status # Submodule status
@@ -310,12 +510,20 @@ make submodule-pull   # Pull all submodules
 make dev              # Start all services
 make test             # Run tests for all modules
 make lint             # Lint all modules
+make verify           # Full validation (lint + test + build)
+
+# Per module
 {{#each modules}}
 make test-{{name}}    # Tests for {{name}} module
+make lint-{{name}}    # Lint for {{name}} module
+make verify-{{name}}  # Full validation for {{name}} module
 {{/each}}
+
+# Validation
 {{#ifRule "e2e-test-protection"}}
 make e2e-lock         # Protect E2E tests (chmod 555/444)
 make e2e-unlock       # Unlock E2E tests (Red phase)
 {{/ifRule}}
+make validate-all     # Cross-project 3-level validation
 ```
 {{/if}}

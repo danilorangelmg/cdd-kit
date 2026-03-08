@@ -16,6 +16,10 @@ if [ -z "$FILE_PATH" ]; then
 fi
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Load shared test-finding functions
+source "$SCRIPT_DIR/lib/find-test.sh"
 
 # Only check source code files
 case "$FILE_PATH" in
@@ -74,27 +78,32 @@ if [ -z "$REL_PATH" ]; then
   exit 0
 fi
 
-# Search for corresponding test file
+# Search for corresponding test file using shared library
 FILENAME=$(basename "$REL_PATH" | sed -E 's/\.(py|ts|tsx|js|jsx|go|rs|java|kt|rb|swift)$//')
 TEST_FILE=""
 
-# Python: test_{filename}.py
-TEST_FILE=$(find "$MODULE_DIR/tests" -name "test_${FILENAME}.py" -o -name "test_${FILENAME}.*" 2>/dev/null | head -1)
+case "$FILE_PATH" in
+  *.py)
+    TEST_FILE=$(find_python_test "$REL_PATH" "$MODULE_DIR")
+    ;;
+  *.ts|*.tsx|*.js|*.jsx)
+    TEST_FILE=$(find_ts_test "$REL_PATH" "$MODULE_DIR")
+    ;;
+  *.go)
+    TEST_FILE=$(find_go_test "$REL_PATH" "$MODULE_DIR")
+    ;;
+esac
 
-# JS/TS: {filename}.test.{ext} or {filename}.spec.{ext}
 if [ -z "$TEST_FILE" ]; then
-  TEST_FILE=$(find "$MODULE_DIR/tests" "$MODULE_DIR/src" -name "${FILENAME}.test.*" -o -name "${FILENAME}.spec.*" 2>/dev/null | head -1)
-fi
-
-# Go: {filename}_test.go
-if [ -z "$TEST_FILE" ]; then
-  TEST_FILE=$(find "$MODULE_DIR" -name "${FILENAME}_test.go" 2>/dev/null | head -1)
-fi
-
-if [ -z "$TEST_FILE" ]; then
+{{#if (eq project.language "pt-BR")}}
+  echo "TDD Guard: Bloqueado. Nenhum teste encontrado para '${MODULE}/src/${REL_PATH}'." >&2
+  echo "Escreva o teste primeiro (fase Red): ${MODULE}/tests/test_${FILENAME}.*" >&2
+  echo "Lembre-se: escreva o teste ANTES de implementar. O teste deve FALHAR inicialmente." >&2
+{{else}}
   echo "TDD Guard: Blocked. No test found for '${MODULE}/src/${REL_PATH}'." >&2
   echo "Write the test first (Red phase): ${MODULE}/tests/test_${FILENAME}.*" >&2
   echo "Remember: write the test BEFORE implementing. The test should FAIL initially." >&2
+{{/if}}
   exit 2
 fi
 

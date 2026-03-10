@@ -1,0 +1,255 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Django para Services
+
+## Service Baseado em Classe
+
+```python
+from django.db import transaction
+
+from .models import Recurso
+from .exceptions import NaoEncontradoError
+
+
+class RecursoService:
+    """Service para operacoes de dominio de Recurso."""
+
+    def listar_todos(self, filtros: dict | None = None) -> list[Recurso]:
+        queryset = Recurso.objects.all()
+        if filtros:
+            queryset = queryset.filter(**filtros)
+        return list(queryset)
+
+    def buscar_por_id(self, id: int) -> Recurso:
+        try:
+            return Recurso.objects.get(pk=id)
+        except Recurso.DoesNotExist:
+            raise NaoEncontradoError(f"Recurso {id} nao encontrado")
+
+    def criar(self, dados: dict) -> Recurso:
+        return Recurso.objects.create(**dados)
+
+    @transaction.atomic
+    def atualizar(self, id: int, dados: dict) -> Recurso:
+        recurso = self.buscar_por_id(id)
+        for campo, valor in dados.items():
+            setattr(recurso, campo, valor)
+        recurso.save()
+        return recurso
+
+    @transaction.atomic
+    def remover(self, id: int) -> None:
+        recurso = self.buscar_por_id(id)
+        recurso.delete()
+```
+
+## Padrao Manager/QuerySet
+
+```python
+from django.db import models
+
+
+class RecursoQuerySet(models.QuerySet):
+    def ativos(self) -> "RecursoQuerySet":
+        return self.filter(ativo=True)
+
+    def por_categoria(self, categoria: str) -> "RecursoQuerySet":
+        return self.filter(categoria=categoria)
+
+
+class RecursoManager(models.Manager):
+    def get_queryset(self) -> RecursoQuerySet:
+        return RecursoQuerySet(self.model, using=self._db)
+
+    def ativos(self) -> RecursoQuerySet:
+        return self.get_queryset().ativos()
+
+
+class Recurso(models.Model):
+    nome = models.CharField(max_length=255)
+    categoria = models.CharField(max_length=100)
+    ativo = models.BooleanField(default=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    objects = RecursoManager()
+
+    class Meta:
+        ordering = ["-criado_em"]
+```
+
+## Transacoes Compostas
+
+```python
+from django.db import transaction
+
+
+class PedidoService:
+    """Service com operacoes transacionais compostas."""
+
+    @transaction.atomic
+    def criar_pedido_com_itens(
+        self,
+        dados_pedido: dict,
+        itens: list[dict],
+    ) -> "Pedido":
+        pedido = Pedido.objects.create(**dados_pedido)
+        for item_dados in itens:
+            ItemPedido.objects.create(pedido=pedido, **item_dados)
+        pedido.calcular_total()
+        pedido.save()
+        return pedido
+```
+
+## Erros de Dominio
+
+```python
+class NaoEncontradoError(Exception):
+    """Lancada quando entidade nao e encontrada."""
+    pass
+
+
+class ValidacaoError(Exception):
+    """Lancada quando regra de negocio e violada."""
+    pass
+
+
+class OperacaoNaoPermitidaError(Exception):
+    """Lancada quando operacao nao e permitida no estado atual."""
+    pass
+```
+
+## Convencoes
+- Service como classe Python pura (sem heranca de framework)
+- Manager/QuerySet customizado para queries reutilizaveis no modelo
+- `transaction.atomic()` para operacoes que alteram multiplos registros
+- Erros de dominio customizados (sem usar erros HTTP no service)
+- Service nao conhece DRF (sem Request/Response)
+- Um service por dominio, metodos com responsabilidade unica
+{{else}}
+# Django Service Patterns
+
+## Class-Based Service
+
+```python
+from django.db import transaction
+
+from .models import Resource
+from .exceptions import NotFoundError
+
+
+class ResourceService:
+    """Service for Resource domain operations."""
+
+    def find_all(self, filters: dict | None = None) -> list[Resource]:
+        queryset = Resource.objects.all()
+        if filters:
+            queryset = queryset.filter(**filters)
+        return list(queryset)
+
+    def find_by_id(self, id: int) -> Resource:
+        try:
+            return Resource.objects.get(pk=id)
+        except Resource.DoesNotExist:
+            raise NotFoundError(f"Resource {id} not found")
+
+    def create(self, data: dict) -> Resource:
+        return Resource.objects.create(**data)
+
+    @transaction.atomic
+    def update(self, id: int, data: dict) -> Resource:
+        resource = self.find_by_id(id)
+        for field, value in data.items():
+            setattr(resource, field, value)
+        resource.save()
+        return resource
+
+    @transaction.atomic
+    def remove(self, id: int) -> None:
+        resource = self.find_by_id(id)
+        resource.delete()
+```
+
+## Manager/QuerySet Pattern
+
+```python
+from django.db import models
+
+
+class ResourceQuerySet(models.QuerySet):
+    def active(self) -> "ResourceQuerySet":
+        return self.filter(is_active=True)
+
+    def by_category(self, category: str) -> "ResourceQuerySet":
+        return self.filter(category=category)
+
+
+class ResourceManager(models.Manager):
+    def get_queryset(self) -> ResourceQuerySet:
+        return ResourceQuerySet(self.model, using=self._db)
+
+    def active(self) -> ResourceQuerySet:
+        return self.get_queryset().active()
+
+
+class Resource(models.Model):
+    name = models.CharField(max_length=255)
+    category = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = ResourceManager()
+
+    class Meta:
+        ordering = ["-created_at"]
+```
+
+## Composed Transactions
+
+```python
+from django.db import transaction
+
+
+class OrderService:
+    """Service with composed transactional operations."""
+
+    @transaction.atomic
+    def create_order_with_items(
+        self,
+        order_data: dict,
+        items: list[dict],
+    ) -> "Order":
+        order = Order.objects.create(**order_data)
+        for item_data in items:
+            OrderItem.objects.create(order=order, **item_data)
+        order.calculate_total()
+        order.save()
+        return order
+```
+
+## Domain Errors
+
+```python
+class NotFoundError(Exception):
+    """Raised when entity is not found."""
+    pass
+
+
+class ValidationError(Exception):
+    """Raised when a business rule is violated."""
+    pass
+
+
+class OperationNotAllowedError(Exception):
+    """Raised when operation is not allowed in current state."""
+    pass
+```
+
+## Conventions
+- Service as plain Python class (no framework inheritance)
+- Custom Manager/QuerySet for reusable model queries
+- `transaction.atomic()` for operations that modify multiple records
+- Custom domain errors (don't use HTTP errors in the service)
+- Service doesn't know DRF (no Request/Response)
+- One service per domain, single-responsibility methods
+{{/if}}

@@ -1,0 +1,197 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes FastAPI para Services
+
+## Instanciacao Direta com Mocks
+
+```python
+import pytest
+from unittest.mock import AsyncMock
+
+from recurso.service import RecursoService
+from recurso.repository import RecursoRepository
+from recurso.errors import NotFoundError
+
+
+@pytest.fixture
+def mock_repository():
+    repository = AsyncMock(spec=RecursoRepository)
+    repository.find_many = AsyncMock(return_value=[])
+    repository.find_by_id = AsyncMock(return_value=None)
+    repository.create = AsyncMock()
+    repository.update = AsyncMock()
+    repository.delete = AsyncMock()
+    return repository
+
+
+@pytest.fixture
+def servico(mock_repository):
+    return RecursoService(mock_repository)
+```
+
+## Testes de Metodos
+
+```python
+@pytest.mark.asyncio
+async def test_find_one_encontrado(servico, mock_repository):
+    recurso = {"id": "1", "nome": "Teste"}
+    mock_repository.find_by_id.return_value = recurso
+
+    resultado = await servico.find_one("1")
+
+    assert resultado == recurso
+    mock_repository.find_by_id.assert_called_once_with("1")
+
+
+@pytest.mark.asyncio
+async def test_find_one_nao_encontrado(servico, mock_repository):
+    mock_repository.find_by_id.return_value = None
+
+    with pytest.raises(NotFoundError):
+        await servico.find_one("999")
+
+
+@pytest.mark.asyncio
+async def test_create_recurso(servico, mock_repository):
+    dados = {"nome": "Novo"}
+    criado = {"id": "1", **dados}
+    mock_repository.create.return_value = criado
+
+    resultado = await servico.create(dados)
+
+    assert resultado == criado
+    mock_repository.create.assert_called_once_with(dados)
+
+
+@pytest.mark.asyncio
+async def test_update_verifica_existencia(servico, mock_repository):
+    mock_repository.find_by_id.return_value = None
+
+    with pytest.raises(NotFoundError):
+        await servico.update("999", {"nome": "X"})
+
+    mock_repository.update.assert_not_called()
+```
+
+## Factory de Dados de Teste
+
+```python
+from recurso.model import Recurso
+from datetime import datetime
+
+
+def criar_recurso(**override) -> dict:
+    padrao = {
+        "id": "1",
+        "nome": "Recurso Padrao",
+        "criado_em": datetime(2024, 1, 1),
+    }
+    return {**padrao, **override}
+```
+
+## Convencoes
+- Instanciar service diretamente com `RecursoService(mock_repository)`
+- Mockar repositorio via `AsyncMock(spec=RecursoRepository)`
+- Testar cada metodo publico isoladamente com `pytest.mark.asyncio`
+- Testar lancamento de erros de dominio customizados com `pytest.raises`
+- Verificar que repositorio nao e chamado em cenarios de erro
+- Usar factory functions para dados de teste reutilizaveis
+- Sem mocks de FastAPI (service nao conhece HTTP)
+{{else}}
+# FastAPI Service Testing
+
+## Direct Instantiation with Mocks
+
+```python
+import pytest
+from unittest.mock import AsyncMock
+
+from resource.service import ResourceService
+from resource.repository import ResourceRepository
+from resource.errors import NotFoundError
+
+
+@pytest.fixture
+def mock_repository():
+    repository = AsyncMock(spec=ResourceRepository)
+    repository.find_many = AsyncMock(return_value=[])
+    repository.find_by_id = AsyncMock(return_value=None)
+    repository.create = AsyncMock()
+    repository.update = AsyncMock()
+    repository.delete = AsyncMock()
+    return repository
+
+
+@pytest.fixture
+def service(mock_repository):
+    return ResourceService(mock_repository)
+```
+
+## Method Tests
+
+```python
+@pytest.mark.asyncio
+async def test_find_one_found(service, mock_repository):
+    resource = {"id": "1", "name": "Test"}
+    mock_repository.find_by_id.return_value = resource
+
+    result = await service.find_one("1")
+
+    assert result == resource
+    mock_repository.find_by_id.assert_called_once_with("1")
+
+
+@pytest.mark.asyncio
+async def test_find_one_not_found(service, mock_repository):
+    mock_repository.find_by_id.return_value = None
+
+    with pytest.raises(NotFoundError):
+        await service.find_one("999")
+
+
+@pytest.mark.asyncio
+async def test_create_resource(service, mock_repository):
+    data = {"name": "New"}
+    created = {"id": "1", **data}
+    mock_repository.create.return_value = created
+
+    result = await service.create(data)
+
+    assert result == created
+    mock_repository.create.assert_called_once_with(data)
+
+
+@pytest.mark.asyncio
+async def test_update_verifies_existence(service, mock_repository):
+    mock_repository.find_by_id.return_value = None
+
+    with pytest.raises(NotFoundError):
+        await service.update("999", {"name": "X"})
+
+    mock_repository.update.assert_not_called()
+```
+
+## Test Data Factory
+
+```python
+from resource.model import Resource
+from datetime import datetime
+
+
+def create_resource(**override) -> dict:
+    defaults = {
+        "id": "1",
+        "name": "Default Resource",
+        "created_at": datetime(2024, 1, 1),
+    }
+    return {**defaults, **override}
+```
+
+## Conventions
+- Instantiate service directly with `ResourceService(mock_repository)`
+- Mock repository via `AsyncMock(spec=ResourceRepository)`
+- Test each public method in isolation with `pytest.mark.asyncio`
+- Test custom domain error throwing with `pytest.raises`
+- Verify repository is not called in error scenarios
+- Use factory functions for reusable test data
+- No FastAPI mocks (service doesn't know HTTP)
+{{/if}}

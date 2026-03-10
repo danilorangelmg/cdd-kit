@@ -1,0 +1,255 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Django para Endpoints
+
+## Estrutura de View (DRF ViewSet)
+
+```python
+from rest_framework import viewsets, status, serializers
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+
+from .models import Recurso
+from .serializers import RecursoSerializer
+from .services import RecursoService
+
+
+class RecursoViewSet(viewsets.ViewSet):
+    """ViewSet para operacoes CRUD de Recurso."""
+
+    def __init__(self, **kwargs: object) -> None:
+        super().__init__(**kwargs)
+        self.service = RecursoService()
+
+    def list(self, request) -> Response:
+        filtros = request.query_params.dict()
+        resultado = self.service.listar_todos(filtros)
+        serializer = RecursoSerializer(resultado, many=True)
+        return Response(serializer.data)
+
+    def create(self, request) -> Response:
+        serializer = RecursoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        recurso = self.service.criar(serializer.validated_data)
+        return Response(
+            RecursoSerializer(recurso).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def retrieve(self, request, pk: str | None = None) -> Response:
+        recurso = self.service.buscar_por_id(pk)
+        serializer = RecursoSerializer(recurso)
+        return Response(serializer.data)
+
+    def update(self, request, pk: str | None = None) -> Response:
+        serializer = RecursoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        recurso = self.service.atualizar(pk, serializer.validated_data)
+        return Response(RecursoSerializer(recurso).data)
+
+    def destroy(self, request, pk: str | None = None) -> Response:
+        self.service.remover(pk)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+```
+
+## Serializer
+
+```python
+from rest_framework import serializers
+from .models import Recurso
+
+
+class RecursoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recurso
+        fields = ["id", "nome", "descricao", "criado_em", "atualizado_em"]
+        read_only_fields = ["id", "criado_em", "atualizado_em"]
+```
+
+## Tratamento de Erros
+
+```python
+from rest_framework.views import exception_handler
+from rest_framework.response import Response
+from rest_framework import status
+
+
+class NaoEncontradoError(Exception):
+    pass
+
+
+class ValidacaoError(Exception):
+    pass
+
+
+def tratamento_de_excecao_customizado(exc, context) -> Response | None:
+    response = exception_handler(exc, context)
+    if response is not None:
+        return response
+
+    if isinstance(exc, NaoEncontradoError):
+        return Response(
+            {"mensagem": str(exc)},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    if isinstance(exc, ValidacaoError):
+        return Response(
+            {"mensagem": str(exc)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return Response(
+        {"mensagem": "Erro interno"},
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )
+```
+
+## Configuracao de URLs
+
+```python
+# urls.py
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import RecursoViewSet
+
+router = DefaultRouter()
+router.register(r"recursos", RecursoViewSet, basename="recurso")
+
+urlpatterns = [
+    path("api/", include(router.urls)),
+]
+```
+
+## Convencoes
+- Usar ViewSet do DRF para endpoints CRUD padrao
+- Serializers para validacao e serializacao de entrada/saida
+- Service injetado no ViewSet (sem logica de negocio na view)
+- Exception handler customizado no `settings.py` via `EXCEPTION_HANDLER`
+- URLs configuradas com `DefaultRouter` para rotas RESTful automaticas
+- Type hints em todos os metodos e parametros
+{{else}}
+# Django Endpoint Patterns
+
+## View Structure (DRF ViewSet)
+
+```python
+from rest_framework import viewsets, status, serializers
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+
+from .models import Resource
+from .serializers import ResourceSerializer
+from .services import ResourceService
+
+
+class ResourceViewSet(viewsets.ViewSet):
+    """ViewSet for Resource CRUD operations."""
+
+    def __init__(self, **kwargs: object) -> None:
+        super().__init__(**kwargs)
+        self.service = ResourceService()
+
+    def list(self, request) -> Response:
+        filters = request.query_params.dict()
+        result = self.service.find_all(filters)
+        serializer = ResourceSerializer(result, many=True)
+        return Response(serializer.data)
+
+    def create(self, request) -> Response:
+        serializer = ResourceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        resource = self.service.create(serializer.validated_data)
+        return Response(
+            ResourceSerializer(resource).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def retrieve(self, request, pk: str | None = None) -> Response:
+        resource = self.service.find_by_id(pk)
+        serializer = ResourceSerializer(resource)
+        return Response(serializer.data)
+
+    def update(self, request, pk: str | None = None) -> Response:
+        serializer = ResourceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        resource = self.service.update(pk, serializer.validated_data)
+        return Response(ResourceSerializer(resource).data)
+
+    def destroy(self, request, pk: str | None = None) -> Response:
+        self.service.remove(pk)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+```
+
+## Serializer
+
+```python
+from rest_framework import serializers
+from .models import Resource
+
+
+class ResourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resource
+        fields = ["id", "name", "description", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+```
+
+## Error Handling
+
+```python
+from rest_framework.views import exception_handler
+from rest_framework.response import Response
+from rest_framework import status
+
+
+class NotFoundError(Exception):
+    pass
+
+
+class ValidationError(Exception):
+    pass
+
+
+def custom_exception_handler(exc, context) -> Response | None:
+    response = exception_handler(exc, context)
+    if response is not None:
+        return response
+
+    if isinstance(exc, NotFoundError):
+        return Response(
+            {"message": str(exc)},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    if isinstance(exc, ValidationError):
+        return Response(
+            {"message": str(exc)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return Response(
+        {"message": "Internal error"},
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )
+```
+
+## URL Configuration
+
+```python
+# urls.py
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ResourceViewSet
+
+router = DefaultRouter()
+router.register(r"resources", ResourceViewSet, basename="resource")
+
+urlpatterns = [
+    path("api/", include(router.urls)),
+]
+```
+
+## Conventions
+- Use DRF ViewSet for standard CRUD endpoints
+- Serializers for input/output validation and serialization
+- Service injected in ViewSet (no business logic in the view)
+- Custom exception handler in `settings.py` via `EXCEPTION_HANDLER`
+- URLs configured with `DefaultRouter` for automatic RESTful routes
+- Type hints on all methods and parameters
+{{/if}}

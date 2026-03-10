@@ -19,6 +19,23 @@
 - Documentacao em funcoes publicas
 
 ### Nomenclatura
+{{#if (and stack (eq stack.language "python"))}}
+| Tipo | Padrao | Exemplo |
+|------|--------|---------|
+| Variaveis/funcoes | snake_case | `get_user_name` |
+| Classes/tipos | PascalCase | `UserService` |
+| Constantes | SCREAMING_SNAKE | `MAX_RETRIES` |
+| Arquivos | snake_case | `user_service.py` |
+| Enums (valores) | SCREAMING_SNAKE | `STATUS_ACTIVE` |
+{{else if (and stack (eq stack.language "dart"))}}
+| Tipo | Padrao | Exemplo |
+|------|--------|---------|
+| Variaveis/funcoes | camelCase | `getUserName` |
+| Classes/tipos | PascalCase | `UserService` |
+| Constantes | camelCase | `maxRetries` |
+| Arquivos | snake_case | `user_service.dart` |
+| Enums (valores) | camelCase | `statusActive` |
+{{else}}
 | Tipo | Padrao | Exemplo |
 |------|--------|---------|
 | Variaveis/funcoes | camelCase | `getUserName` |
@@ -26,6 +43,7 @@
 | Constantes | SCREAMING_SNAKE | `MAX_RETRIES` |
 | Arquivos | kebab-case | `user-service.ts` |
 | Enums (valores) | SCREAMING_SNAKE | `STATUS_ACTIVE` |
+{{/if}}
 
 ### Organizacao de Imports
 1. Stdlib / built-in
@@ -49,6 +67,257 @@
 - [ ] Sem `any` (se linguagem tipada)
 - [ ] Sem magic numbers (usar constantes nomeadas)
 - [ ] Interfaces/abstractions para contratos de servico
+
+{{#if (and stack (eq stack.language "python"))}}
+## Regras SonarQube — Python
+
+### S3776 — Cognitive Complexity <= 15
+Funcoes NAO devem ter Cognitive Complexity acima de 15. Se ultrapassar, extrair blocos logicos em metodos auxiliares privados (`_metodo`). Usar early returns para reduzir nesting.
+
+### S1192 — Strings duplicadas
+Strings literais NAO devem ser duplicadas (3+ ocorrencias). Extrair como constante de modulo:
+
+```python
+# ERRADO
+Field(description="Message unique identifier")  # 3x
+
+# CORRETO
+_DESC_MESSAGE_ID = "Message unique identifier"
+Field(description=_DESC_MESSAGE_ID)
+```
+
+### S1172 — Parametros nao usados
+Todo parametro de funcao DEVE ser utilizado. Se obrigatorio pela interface/Protocol mas nao usado, prefixar com `_` (ex: `_name`, `_session`).
+
+### S7503 — async sem await
+Funcoes `async` DEVEM conter pelo menos um `await`. Se nao ha I/O assincrono, remover `async`. Excecao: funcoes que implementam um Protocol/ABC async.
+
+### S2737 — Except vazio
+Blocos `except` NAO devem ser vazios. Adicionar log ou re-raise:
+
+```python
+# ERRADO
+except Exception:
+    pass
+
+# CORRETO
+except Exception:
+    logger.warning("Operacao falhou", exc_info=True)
+```
+
+### S125 — Codigo comentado
+Secoes de codigo comentado DEVEM ser removidas. Se necessario preservar, converter em issue/TODO com referencia.
+
+### S2068 — Credenciais hardcoded
+NUNCA incluir senhas, tokens ou credenciais diretamente no codigo. Usar variaveis de ambiente.
+
+### S1135 — TODO comments
+TODOs devem ter referencia a issue/ticket. Remover TODOs obsoletos.
+
+{{#if (eq module.stack "fastapi")}}
+### S8396 — Pydantic: Optional com default obrigatorio
+Todo campo `Optional[X]` ou `X | None` em Pydantic models DEVE ter `= None` explicito:
+
+```python
+# ERRADO
+campo: Optional[str]
+
+# CORRETO
+campo: Optional[str] = None
+```
+
+### S8409 — FastAPI: Nao duplicar response_model
+Quando a funcao tem return type annotation, NAO usar `response_model=`:
+
+```python
+# ERRADO
+@router.post("/foo", response_model=FooResponse)
+async def foo() -> FooResponse: ...
+
+# CORRETO
+@router.post("/foo")
+async def foo() -> FooResponse: ...
+```
+
+### S8414 — CORSMiddleware deve ser ultimo
+CORSMiddleware DEVE ser adicionado por ultimo na chain de middlewares do FastAPI (LIFO).
+{{/if}}
+
+### Checklist de Code Review — Python
+- [ ] Tipos anotados em todos os parametros e retornos
+- [ ] Sem `Any` implicito
+- [ ] Imports organizados
+- [ ] Sem codigo morto (variaveis, imports, funcoes)
+- [ ] Excecoes com mensagem descritiva
+- [ ] Testes cobrindo caminho feliz e erros
+- [ ] Sem segredos hardcoded
+- [ ] Cognitive Complexity <= 15
+- [ ] Sem parametros nao utilizados (ou `_` prefixados)
+- [ ] Funcoes async contem await (ou Protocol)
+{{/if}}
+
+{{#if (and stack (eq stack.language "typescript"))}}
+## Regras SonarQube — TypeScript
+
+### S3776 — Cognitive Complexity <= 15
+Funcoes NAO devem ter Cognitive Complexity acima de 15. Extrair subfuncoes para reduzir complexidade.
+
+### S3358 — Ternarios nao devem ser aninhados
+Extrair em variaveis ou funcoes auxiliares:
+
+```tsx
+// ERRADO
+const x = a ? b : c ? d : e;
+
+// CORRETO
+const fallback = c ? d : e;
+const x = a ? b : fallback;
+```
+
+### S6582 — Preferir optional chaining
+```tsx
+// ERRADO
+obj && obj.prop
+
+// CORRETO
+obj?.prop
+```
+
+### S7764 — Preferir template literals
+```tsx
+// ERRADO
+"Hello " + name + "!"
+
+// CORRETO
+`Hello ${name}!`
+```
+
+### S3863 — Unificar imports do mesmo modulo
+```tsx
+// ERRADO
+import { A } from "mod";
+import { B } from "mod";
+
+// CORRETO
+import { A, B } from "mod";
+```
+
+### S7772 — Prefixo node: para built-in modules
+```tsx
+// ERRADO
+import path from "path"
+
+// CORRETO
+import path from "node:path"
+```
+
+### S1192 — Strings duplicadas
+Strings literais NAO devem ser duplicadas (3+ ocorrencias). Extrair como constante.
+
+### S125 — Codigo comentado
+Secoes de codigo comentado DEVEM ser removidas.
+
+### S4325 — Casts e assertions redundantes
+Remover casts (`as Type`) e non-null assertions (`!`) quando o tipo ja e garantido pelo contexto.
+
+### S1874 — APIs deprecated
+NAO usar APIs marcadas como deprecated. Atualizar para a versao atual.
+
+{{#if (or (eq module.role "frontend") (eq module.role "mobile"))}}
+### S6759 — React props devem ser Readonly
+TODOS os tipos de props de componentes DEVEM usar `Readonly<>`:
+
+```tsx
+// ERRADO
+function MyComponent({ foo }: { foo: string }) { ... }
+
+// CORRETO
+function MyComponent({ foo }: Readonly<{ foo: string }>) { ... }
+```
+
+### S6819 — Preferir tags semanticas a ARIA roles
+Usar tags HTML semanticas (`<button>`, `<nav>`, `<main>`) em vez de `role="..."`.
+
+### S6479 — Nao usar index como key em listas
+Listas JSX NAO devem usar index como key. Usar ID unico do objeto:
+
+```tsx
+// ERRADO
+items.map((item, i) => <Card key={i} />)
+
+// CORRETO
+items.map(item => <Card key={item.id} />)
+```
+
+### S6767 — Remover props tipadas nao usadas
+Props declaradas no tipo mas nao consumidas no componente DEVEM ser removidas.
+{{/if}}
+
+### Checklist de Code Review — TypeScript
+- [ ] Types corretos (sem `any`)
+- [ ] Optional chaining usado (`?.`)
+- [ ] Template literals (sem concatenacao)
+- [ ] Imports unificados por modulo
+- [ ] Sem codigo comentado
+- [ ] Sem casts/assertions redundantes
+- [ ] Cognitive Complexity <= 15
+- [ ] Sem APIs deprecated
+- [ ] Testes cobrindo caminho feliz e erros
+{{#if (or (eq module.role "frontend") (eq module.role "mobile"))}}
+- [ ] Props com Readonly<>
+- [ ] Tags semanticas HTML
+- [ ] Keys unicos em listas (sem index)
+{{/if}}
+{{/if}}
+
+{{#if (and stack (eq stack.language "dart"))}}
+## Regras — Dart
+
+### Preferir final para variaveis locais
+Usar `final` para variaveis que nao sao reatribuidas.
+
+### Usar const constructors
+Quando possivel, usar `const` em constructors para otimizar rebuilds.
+
+### Avoid print() in production
+Usar logger estruturado em vez de `print()`.
+
+### Null safety
+Usar null safety patterns corretamente (`?`, `!`, `??`, `?.`).
+
+### Checklist de Code Review — Dart
+- [ ] `final` em variaveis locais nao reatribuidas
+- [ ] `const` constructors onde possivel
+- [ ] Sem `print()` em producao
+- [ ] Null safety correto
+- [ ] Testes cobrindo caminho feliz e erros
+{{/if}}
+
+{{#if (not stack)}}
+{{#if (or (eq module.role "frontend") (eq module.role "mobile"))}}
+## Regras Adicionais — Frontend
+
+### Cognitive Complexity <= 15
+Funcoes NAO devem ter Cognitive Complexity acima de 15.
+
+### Sem ternarios aninhados
+Extrair em variaveis ou funcoes auxiliares.
+
+### Preferir optional chaining (`?.`)
+### Preferir template literals sobre concatenacao
+### Unificar imports do mesmo modulo
+{{else if (eq module.role "agent-ai")}}
+## Regras Adicionais — Python
+
+### Cognitive Complexity <= 15
+Funcoes NAO devem ter Cognitive Complexity acima de 15.
+
+### Parametros nao usados devem ser prefixados com `_`
+### Funcoes async devem conter await
+### Except vazio proibido — adicionar log ou re-raise
+### Credenciais hardcoded proibidas — usar variaveis de ambiente
+{{/if}}
+{{/if}}
 {{else}}
 # Code Guidelines — {{module.name}}
 
@@ -70,6 +339,23 @@
 - Documentation on public functions
 
 ### Naming
+{{#if (and stack (eq stack.language "python"))}}
+| Type | Pattern | Example |
+|------|---------|---------|
+| Variables/functions | snake_case | `get_user_name` |
+| Classes/types | PascalCase | `UserService` |
+| Constants | SCREAMING_SNAKE | `MAX_RETRIES` |
+| Files | snake_case | `user_service.py` |
+| Enums (values) | SCREAMING_SNAKE | `STATUS_ACTIVE` |
+{{else if (and stack (eq stack.language "dart"))}}
+| Type | Pattern | Example |
+|------|---------|---------|
+| Variables/functions | camelCase | `getUserName` |
+| Classes/types | PascalCase | `UserService` |
+| Constants | camelCase | `maxRetries` |
+| Files | snake_case | `user_service.dart` |
+| Enums (values) | camelCase | `statusActive` |
+{{else}}
 | Type | Pattern | Example |
 |------|---------|---------|
 | Variables/functions | camelCase | `getUserName` |
@@ -77,6 +363,7 @@
 | Constants | SCREAMING_SNAKE | `MAX_RETRIES` |
 | Files | kebab-case | `user-service.ts` |
 | Enums (values) | SCREAMING_SNAKE | `STATUS_ACTIVE` |
+{{/if}}
 
 ### Import Organization
 1. Stdlib / built-in
@@ -100,4 +387,255 @@
 - [ ] No `any` (if typed language)
 - [ ] No magic numbers (use named constants)
 - [ ] Interfaces/abstractions for service contracts
+
+{{#if (and stack (eq stack.language "python"))}}
+## SonarQube Rules — Python
+
+### S3776 — Cognitive Complexity <= 15
+Functions MUST NOT have Cognitive Complexity above 15. Extract logical blocks into private helper methods (`_method`). Use early returns to reduce nesting.
+
+### S1192 — Duplicate strings
+String literals MUST NOT be duplicated (3+ occurrences). Extract as module constant:
+
+```python
+# WRONG
+Field(description="Message unique identifier")  # 3x
+
+# CORRECT
+_DESC_MESSAGE_ID = "Message unique identifier"
+Field(description=_DESC_MESSAGE_ID)
+```
+
+### S1172 — Unused parameters
+All function parameters MUST be used. If required by interface/Protocol but unused, prefix with `_` (e.g., `_name`, `_session`).
+
+### S7503 — async without await
+`async` functions MUST contain at least one `await`. If no async I/O, remove `async`. Exception: functions implementing an async Protocol/ABC.
+
+### S2737 — Empty except
+`except` blocks MUST NOT be empty. Add logging or re-raise:
+
+```python
+# WRONG
+except Exception:
+    pass
+
+# CORRECT
+except Exception:
+    logger.warning("Operation failed", exc_info=True)
+```
+
+### S125 — Commented-out code
+Commented-out code sections MUST be removed. If preservation needed, convert to issue/TODO with reference.
+
+### S2068 — Hardcoded credentials
+NEVER include passwords, tokens, or credentials directly in code. Use environment variables.
+
+### S1135 — TODO comments
+TODOs must reference an issue/ticket. Remove obsolete TODOs.
+
+{{#if (eq module.stack "fastapi")}}
+### S8396 — Pydantic: Optional with required default
+Every `Optional[X]` or `X | None` field in Pydantic models MUST have `= None` explicit:
+
+```python
+# WRONG
+field: Optional[str]
+
+# CORRECT
+field: Optional[str] = None
+```
+
+### S8409 — FastAPI: Don't duplicate response_model
+When function has return type annotation, do NOT use `response_model=`:
+
+```python
+# WRONG
+@router.post("/foo", response_model=FooResponse)
+async def foo() -> FooResponse: ...
+
+# CORRECT
+@router.post("/foo")
+async def foo() -> FooResponse: ...
+```
+
+### S8414 — CORSMiddleware must be last
+CORSMiddleware MUST be added last in the FastAPI middleware chain (LIFO).
+{{/if}}
+
+### Code Review Checklist — Python
+- [ ] Type annotations on all parameters and returns
+- [ ] No implicit `Any`
+- [ ] Organized imports
+- [ ] No dead code (variables, imports, functions)
+- [ ] Exceptions with descriptive messages
+- [ ] Tests covering happy path and errors
+- [ ] No hardcoded secrets
+- [ ] Cognitive Complexity <= 15
+- [ ] No unused parameters (or `_` prefixed)
+- [ ] async functions contain await (or Protocol)
+{{/if}}
+
+{{#if (and stack (eq stack.language "typescript"))}}
+## SonarQube Rules — TypeScript
+
+### S3776 — Cognitive Complexity <= 15
+Functions MUST NOT have Cognitive Complexity above 15. Extract subfunctions to reduce complexity.
+
+### S3358 — No nested ternary operators
+Extract into variables or helper functions:
+
+```tsx
+// WRONG
+const x = a ? b : c ? d : e;
+
+// CORRECT
+const fallback = c ? d : e;
+const x = a ? b : fallback;
+```
+
+### S6582 — Prefer optional chaining
+```tsx
+// WRONG
+obj && obj.prop
+
+// CORRECT
+obj?.prop
+```
+
+### S7764 — Prefer template literals
+```tsx
+// WRONG
+"Hello " + name + "!"
+
+// CORRECT
+`Hello ${name}!`
+```
+
+### S3863 — Unify imports from same module
+```tsx
+// WRONG
+import { A } from "mod";
+import { B } from "mod";
+
+// CORRECT
+import { A, B } from "mod";
+```
+
+### S7772 — node: prefix for built-in modules
+```tsx
+// WRONG
+import path from "path"
+
+// CORRECT
+import path from "node:path"
+```
+
+### S1192 — Duplicate strings
+String literals MUST NOT be duplicated (3+ occurrences). Extract as constant.
+
+### S125 — Commented-out code
+Commented-out code sections MUST be removed.
+
+### S4325 — Redundant casts and assertions
+Remove casts (`as Type`) and non-null assertions (`!`) when type is already guaranteed by context.
+
+### S1874 — Deprecated APIs
+Do NOT use APIs marked as deprecated. Update to current version.
+
+{{#if (or (eq module.role "frontend") (eq module.role "mobile"))}}
+### S6759 — Component props must be Readonly
+ALL component props types MUST use `Readonly<>`:
+
+```tsx
+// WRONG
+function MyComponent({ foo }: { foo: string }) { ... }
+
+// CORRECT
+function MyComponent({ foo }: Readonly<{ foo: string }>) { ... }
+```
+
+### S6819 — Prefer semantic HTML tags over ARIA roles
+Use semantic HTML tags (`<button>`, `<nav>`, `<main>`) instead of `role="..."`.
+
+### S6479 — Don't use index as key in lists
+JSX lists MUST NOT use index as key. Use unique object ID:
+
+```tsx
+// WRONG
+items.map((item, i) => <Card key={i} />)
+
+// CORRECT
+items.map(item => <Card key={item.id} />)
+```
+
+### S6767 — Remove unused typed props
+Props declared in type but not consumed in component MUST be removed.
+{{/if}}
+
+### Code Review Checklist — TypeScript
+- [ ] Correct types (no `any`)
+- [ ] Optional chaining used (`?.`)
+- [ ] Template literals (no concatenation)
+- [ ] Unified imports per module
+- [ ] No commented-out code
+- [ ] No redundant casts/assertions
+- [ ] Cognitive Complexity <= 15
+- [ ] No deprecated APIs
+- [ ] Tests covering happy path and errors
+{{#if (or (eq module.role "frontend") (eq module.role "mobile"))}}
+- [ ] Props with Readonly<>
+- [ ] Semantic HTML tags
+- [ ] Unique keys in lists (no index)
+{{/if}}
+{{/if}}
+
+{{#if (and stack (eq stack.language "dart"))}}
+## Rules — Dart
+
+### Prefer final for local variables
+Use `final` for variables that are not reassigned.
+
+### Use const constructors
+When possible, use `const` in constructors to optimize rebuilds.
+
+### Avoid print() in production
+Use structured logger instead of `print()`.
+
+### Null safety
+Use null safety patterns correctly (`?`, `!`, `??`, `?.`).
+
+### Code Review Checklist — Dart
+- [ ] `final` on non-reassigned local variables
+- [ ] `const` constructors where possible
+- [ ] No `print()` in production
+- [ ] Correct null safety
+- [ ] Tests covering happy path and errors
+{{/if}}
+
+{{#if (not stack)}}
+{{#if (or (eq module.role "frontend") (eq module.role "mobile"))}}
+## Additional Rules — Frontend
+
+### Cognitive Complexity <= 15
+Functions MUST NOT have Cognitive Complexity above 15.
+
+### No nested ternary operators
+Extract into variables or helper functions.
+
+### Prefer optional chaining (`?.`)
+### Prefer template literals over concatenation
+### Unify imports from same module
+{{else if (eq module.role "agent-ai")}}
+## Additional Rules — Python
+
+### Cognitive Complexity <= 15
+Functions MUST NOT have Cognitive Complexity above 15.
+
+### Unused parameters must be prefixed with `_`
+### async functions must contain await
+### Empty except prohibited — add logging or re-raise
+### Hardcoded credentials prohibited — use environment variables
+{{/if}}
+{{/if}}
 {{/if}}

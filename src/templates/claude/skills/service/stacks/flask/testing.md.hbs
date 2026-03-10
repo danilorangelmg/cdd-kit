@@ -1,0 +1,203 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes Flask para Services
+
+## Instanciacao Direta com Mocks
+
+```python
+import pytest
+from unittest.mock import MagicMock
+
+from recurso.service import RecursoService
+from recurso.repository import RecursoRepository
+from recurso.errors import NotFoundError
+
+
+@pytest.fixture()
+def mock_repositorio() -> MagicMock:
+    return MagicMock(spec=RecursoRepository)
+
+
+@pytest.fixture()
+def service(mock_repositorio: MagicMock) -> RecursoService:
+    return RecursoService(repository=mock_repositorio)
+```
+
+## Testes de Metodos
+
+```python
+class TestRecursoService:
+    def test_find_one_deve_retornar_recurso_quando_encontrado(
+        self, service: RecursoService, mock_repositorio: MagicMock
+    ) -> None:
+        recurso = {"id": "1", "nome": "Teste"}
+        mock_repositorio.find_by_id.return_value = recurso
+
+        resultado = service.find_one("1")
+
+        assert resultado == recurso
+        mock_repositorio.find_by_id.assert_called_once_with("1")
+
+    def test_find_one_deve_lancar_not_found_quando_inexistente(
+        self, service: RecursoService, mock_repositorio: MagicMock
+    ) -> None:
+        mock_repositorio.find_by_id.return_value = None
+
+        with pytest.raises(NotFoundError):
+            service.find_one("999")
+
+    def test_create_deve_criar_e_retornar_recurso(
+        self, service: RecursoService, mock_repositorio: MagicMock
+    ) -> None:
+        dados = {"nome": "Novo"}
+        criado = {"id": "1", **dados}
+        mock_repositorio.create.return_value = criado
+
+        resultado = service.create(dados)
+
+        assert resultado == criado
+        mock_repositorio.create.assert_called_once_with(dados)
+
+    def test_update_deve_verificar_existencia_antes_de_atualizar(
+        self, service: RecursoService, mock_repositorio: MagicMock
+    ) -> None:
+        mock_repositorio.find_by_id.return_value = None
+
+        with pytest.raises(NotFoundError):
+            service.update("999", {"nome": "X"})
+
+        mock_repositorio.update.assert_not_called()
+
+    def test_remove_deve_verificar_existencia_antes_de_remover(
+        self, service: RecursoService, mock_repositorio: MagicMock
+    ) -> None:
+        mock_repositorio.find_by_id.return_value = None
+
+        with pytest.raises(NotFoundError):
+            service.remove("999")
+
+        mock_repositorio.delete.assert_not_called()
+```
+
+## Factory de Dados de Teste
+
+```python
+def criar_recurso(**override: object) -> dict:
+    return {
+        "id": "1",
+        "nome": "Recurso Padrao",
+        "criado_em": "2024-01-01T00:00:00",
+        **override,
+    }
+```
+
+## Convencoes
+- Instanciar service diretamente com `RecursoService(...)` — sem framework de DI
+- Mockar repositorio via `MagicMock(spec=...)` para type safety
+- Testar cada metodo publico isoladamente
+- Testar lancamento de erros de dominio customizados
+- Verificar que repositorio nao e chamado em cenarios de erro
+- Usar factory functions para dados de teste reutilizaveis
+- Sem mocks de Flask (service nao conhece HTTP)
+- Fixtures do pytest para setup reutilizavel
+{{else}}
+# Flask Service Testing
+
+## Direct Instantiation with Mocks
+
+```python
+import pytest
+from unittest.mock import MagicMock
+
+from resource.service import ResourceService
+from resource.repository import ResourceRepository
+from resource.errors import NotFoundError
+
+
+@pytest.fixture()
+def mock_repository() -> MagicMock:
+    return MagicMock(spec=ResourceRepository)
+
+
+@pytest.fixture()
+def service(mock_repository: MagicMock) -> ResourceService:
+    return ResourceService(repository=mock_repository)
+```
+
+## Method Tests
+
+```python
+class TestResourceService:
+    def test_find_one_should_return_resource_when_found(
+        self, service: ResourceService, mock_repository: MagicMock
+    ) -> None:
+        resource = {"id": "1", "name": "Test"}
+        mock_repository.find_by_id.return_value = resource
+
+        result = service.find_one("1")
+
+        assert result == resource
+        mock_repository.find_by_id.assert_called_once_with("1")
+
+    def test_find_one_should_raise_not_found_when_missing(
+        self, service: ResourceService, mock_repository: MagicMock
+    ) -> None:
+        mock_repository.find_by_id.return_value = None
+
+        with pytest.raises(NotFoundError):
+            service.find_one("999")
+
+    def test_create_should_create_and_return_resource(
+        self, service: ResourceService, mock_repository: MagicMock
+    ) -> None:
+        data = {"name": "New"}
+        created = {"id": "1", **data}
+        mock_repository.create.return_value = created
+
+        result = service.create(data)
+
+        assert result == created
+        mock_repository.create.assert_called_once_with(data)
+
+    def test_update_should_verify_existence_before_updating(
+        self, service: ResourceService, mock_repository: MagicMock
+    ) -> None:
+        mock_repository.find_by_id.return_value = None
+
+        with pytest.raises(NotFoundError):
+            service.update("999", {"name": "X"})
+
+        mock_repository.update.assert_not_called()
+
+    def test_remove_should_verify_existence_before_removing(
+        self, service: ResourceService, mock_repository: MagicMock
+    ) -> None:
+        mock_repository.find_by_id.return_value = None
+
+        with pytest.raises(NotFoundError):
+            service.remove("999")
+
+        mock_repository.delete.assert_not_called()
+```
+
+## Test Data Factory
+
+```python
+def create_resource(**override: object) -> dict:
+    return {
+        "id": "1",
+        "name": "Default Resource",
+        "created_at": "2024-01-01T00:00:00",
+        **override,
+    }
+```
+
+## Conventions
+- Instantiate service directly with `ResourceService(...)` — no DI framework
+- Mock repository via `MagicMock(spec=...)` for type safety
+- Test each public method in isolation
+- Test custom domain error raising
+- Verify repository is not called in error scenarios
+- Use factory functions for reusable test data
+- No Flask mocks (service doesn't know HTTP)
+- pytest fixtures for reusable setup
+{{/if}}

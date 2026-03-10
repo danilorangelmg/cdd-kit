@@ -24,6 +24,28 @@ Trabalhe EXCLUSIVAMENTE dentro do diretorio `{{module.directory}}/`. NUNCA modif
 
 Ao iniciar, leia `{{module.directory}}/CLAUDE.md` para carregar o contexto do modulo.
 
+{{#if stack}}
+## Stack
+
+- {{stack.label}} ({{stack.language}})
+- Test runner: {{stack.testRunner}} (`{{stack.testCommand}}`)
+- Lint: `{{stack.lintCommand}}`
+{{/if}}
+
+{{#if (and role (ne role.id "generic"))}}
+## Escopo de Negocio (Regra #5)
+
+**PERMITIDO**: {{join role.scope.allowed "; "}}.
+
+**PROIBIDO** (pertence a outros modulos): {{join role.scope.forbidden "; "}}.
+
+Se durante a implementacao identificar logica fora do escopo → reportar em `DEPENDENCIAS_EXTERNAS`.
+
+## Padrao Arquitetural
+
+**{{role.suggestedArchitecture}}**
+{{/if}}
+
 ## Contrato de Resposta
 
 Ao finalizar a tarefa, SEMPRE retorne:
@@ -31,9 +53,48 @@ Ao finalizar a tarefa, SEMPRE retorne:
 ```
 ARQUIVOS_ALTERADOS: [lista de arquivos criados/modificados]
 RESUMO: [o que foi feito em 1-2 frases]
-VALIDACAO_LOCAL: [resultado de lint e/ou testes]
+VALIDACAO_LOCAL: [resultado de {{#if stack}}{{stack.lintCommand}} e/ou {{stack.testCommand}}{{else}}lint e/ou testes{{/if}}]
 DEPENDENCIAS_EXTERNAS: [mudancas necessarias em outros modulos]
 ```
+
+{{#if (and role (ne role.id "generic"))}}
+## Checklist
+
+{{#if (or (eq role.id "frontend") (eq role.id "mobile"))}}
+- [ ] Componentes usam biblioteca UI padrao quando disponivel
+- [ ] Mobile-first responsivo
+- [ ] Estados loading/error/empty tratados
+- [ ] Acessibilidade WCAG AA (contraste 4.5:1, foco, teclado)
+- [ ] Testes unitarios
+{{/if}}
+{{#if (eq role.id "backend")}}
+- [ ] Endpoints async com schemas de validacao
+- [ ] Injecao de dependencia configurada
+- [ ] HTTP status codes corretos (201 create, 204 delete, 404 not found)
+- [ ] Error handling com hierarquia de excecoes
+- [ ] Type hints em todos os parametros e retornos
+- [ ] Testes unitarios
+{{/if}}
+{{#if (eq role.id "agent-ai")}}
+- [ ] Separacao clara entre logica deterministica e LLM
+- [ ] Testes unitarios para regras deterministicas
+- [ ] Logging estruturado para tracing
+- [ ] Error handling robusto (retry, fallback)
+- [ ] Testes unitarios
+{{/if}}
+{{#if (eq role.id "database")}}
+- [ ] Migrations up/down reversiveis
+- [ ] Indices para queries frequentes
+- [ ] Constraints de integridade referencial
+- [ ] Testes de schema/migration
+{{/if}}
+{{#if (eq role.id "e2e")}}
+- [ ] Page Objects isolados e reutilizaveis
+- [ ] Dados de teste independentes (sem estado compartilhado)
+- [ ] Screenshots em falhas
+- [ ] Testes idempotentes
+{{/if}}
+{{/if}}
 {{else}}
 You are a **Sub-Agent** for the `{{module.name}}` module in the {{project.name}} project.
 
@@ -52,6 +113,28 @@ Work EXCLUSIVELY within the `{{module.directory}}/` directory. NEVER modify file
 
 On start, read `{{module.directory}}/CLAUDE.md` to load the module context.
 
+{{#if stack}}
+## Stack
+
+- {{stack.label}} ({{stack.language}})
+- Test runner: {{stack.testRunner}} (`{{stack.testCommand}}`)
+- Lint: `{{stack.lintCommand}}`
+{{/if}}
+
+{{#if (and role (ne role.id "generic"))}}
+## Business Scope (Rule #5)
+
+**ALLOWED**: {{join role.scope.allowed "; "}}.
+
+**FORBIDDEN** (belongs to other modules): {{join role.scope.forbidden "; "}}.
+
+If during implementation you identify logic outside scope → report in `EXTERNAL_DEPENDENCIES`.
+
+## Architectural Pattern
+
+**{{role.suggestedArchitecture}}**
+{{/if}}
+
 ## Response Contract
 
 When completing a task, ALWAYS return:
@@ -59,7 +142,46 @@ When completing a task, ALWAYS return:
 ```
 FILES_CHANGED: [list of files created/modified]
 SUMMARY: [what was done in 1-2 sentences]
-LOCAL_VALIDATION: [lint and/or test results]
+LOCAL_VALIDATION: [result of {{#if stack}}{{stack.lintCommand}} and/or {{stack.testCommand}}{{else}}lint and/or tests{{/if}}]
 EXTERNAL_DEPENDENCIES: [changes needed in other modules]
 ```
+
+{{#if (and role (ne role.id "generic"))}}
+## Checklist
+
+{{#if (or (eq role.id "frontend") (eq role.id "mobile"))}}
+- [ ] Components use standard UI library when available
+- [ ] Mobile-first responsive
+- [ ] Loading/error/empty states handled
+- [ ] WCAG AA accessibility (contrast 4.5:1, focus, keyboard)
+- [ ] Unit tests
+{{/if}}
+{{#if (eq role.id "backend")}}
+- [ ] Async endpoints with validation schemas
+- [ ] Dependency injection configured
+- [ ] Correct HTTP status codes (201 create, 204 delete, 404 not found)
+- [ ] Error handling with exception hierarchy
+- [ ] Type hints on all parameters and returns
+- [ ] Unit tests
+{{/if}}
+{{#if (eq role.id "agent-ai")}}
+- [ ] Clear separation between deterministic logic and LLM
+- [ ] Unit tests for deterministic rules
+- [ ] Structured logging for tracing
+- [ ] Robust error handling (retry, fallback)
+- [ ] Unit tests
+{{/if}}
+{{#if (eq role.id "database")}}
+- [ ] Reversible up/down migrations
+- [ ] Indexes for frequent queries
+- [ ] Referential integrity constraints
+- [ ] Schema/migration tests
+{{/if}}
+{{#if (eq role.id "e2e")}}
+- [ ] Isolated and reusable Page Objects
+- [ ] Independent test data (no shared state)
+- [ ] Screenshots on failures
+- [ ] Idempotent tests
+{{/if}}
+{{/if}}
 {{/if}}

@@ -1,0 +1,227 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Flask para Services
+
+## Service Baseado em Classe
+
+```python
+from dataclasses import dataclass
+
+
+class RecursoService:
+    def __init__(self, repository: "RecursoRepository") -> None:
+        self._repository = repository
+
+    def find_all(self, filtros: dict | None = None) -> list[dict]:
+        return self._repository.find_many(filtros)
+
+    def find_one(self, recurso_id: str) -> dict:
+        recurso = self._repository.find_by_id(recurso_id)
+        if recurso is None:
+            raise NotFoundError(f"Recurso {recurso_id} nao encontrado")
+        return recurso
+
+    def create(self, dados: dict) -> dict:
+        return self._repository.create(dados)
+
+    def update(self, recurso_id: str, dados: dict) -> dict:
+        self.find_one(recurso_id)
+        return self._repository.update(recurso_id, dados)
+
+    def remove(self, recurso_id: str) -> None:
+        self.find_one(recurso_id)
+        self._repository.delete(recurso_id)
+```
+
+## Padrao Repository
+
+```python
+from abc import ABC, abstractmethod
+
+
+class RecursoRepository(ABC):
+    @abstractmethod
+    def find_many(self, filtros: dict | None = None) -> list[dict]:
+        ...
+
+    @abstractmethod
+    def find_by_id(self, recurso_id: str) -> dict | None:
+        ...
+
+    @abstractmethod
+    def create(self, dados: dict) -> dict:
+        ...
+
+    @abstractmethod
+    def update(self, recurso_id: str, dados: dict) -> dict:
+        ...
+
+    @abstractmethod
+    def delete(self, recurso_id: str) -> None:
+        ...
+
+
+class SQLAlchemyRecursoRepository(RecursoRepository):
+    def __init__(self, session: "Session") -> None:
+        self._session = session
+
+    def find_by_id(self, recurso_id: str) -> dict | None:
+        recurso = self._session.get(RecursoModel, recurso_id)
+        return recurso.to_dict() if recurso else None
+
+    # ...demais metodos
+```
+
+## Erros de Dominio
+
+```python
+class NotFoundError(Exception):
+    """Recurso nao encontrado."""
+
+
+class ValidationError(Exception):
+    """Dados de entrada invalidos."""
+```
+
+## Factory Pattern para App
+
+```python
+from flask import Flask
+
+
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.config.from_prefixed_env()
+
+    # composicao de dependencias
+    session = create_session(app.config["DATABASE_URL"])
+    repositorio = SQLAlchemyRecursoRepository(session)
+    recurso_service = RecursoService(repositorio)
+
+    from recurso.router import create_recurso_bp
+    app.register_blueprint(create_recurso_bp(recurso_service))
+
+    return app
+```
+
+## Convencoes
+- Service recebe dependencias via construtor (sem decorators)
+- Composicao manual no factory `create_app()` (composition root)
+- Interface de repositorio via `ABC` para desacoplamento
+- Erros de dominio customizados (sem usar erros HTTP)
+- Service nao conhece Flask (sem request/response)
+- Um service por dominio, metodos com responsabilidade unica
+- Type hints em todos os metodos publicos
+{{else}}
+# Flask Service Patterns
+
+## Class-Based Service
+
+```python
+from dataclasses import dataclass
+
+
+class ResourceService:
+    def __init__(self, repository: "ResourceRepository") -> None:
+        self._repository = repository
+
+    def find_all(self, filters: dict | None = None) -> list[dict]:
+        return self._repository.find_many(filters)
+
+    def find_one(self, resource_id: str) -> dict:
+        resource = self._repository.find_by_id(resource_id)
+        if resource is None:
+            raise NotFoundError(f"Resource {resource_id} not found")
+        return resource
+
+    def create(self, data: dict) -> dict:
+        return self._repository.create(data)
+
+    def update(self, resource_id: str, data: dict) -> dict:
+        self.find_one(resource_id)
+        return self._repository.update(resource_id, data)
+
+    def remove(self, resource_id: str) -> None:
+        self.find_one(resource_id)
+        self._repository.delete(resource_id)
+```
+
+## Repository Pattern
+
+```python
+from abc import ABC, abstractmethod
+
+
+class ResourceRepository(ABC):
+    @abstractmethod
+    def find_many(self, filters: dict | None = None) -> list[dict]:
+        ...
+
+    @abstractmethod
+    def find_by_id(self, resource_id: str) -> dict | None:
+        ...
+
+    @abstractmethod
+    def create(self, data: dict) -> dict:
+        ...
+
+    @abstractmethod
+    def update(self, resource_id: str, data: dict) -> dict:
+        ...
+
+    @abstractmethod
+    def delete(self, resource_id: str) -> None:
+        ...
+
+
+class SQLAlchemyResourceRepository(ResourceRepository):
+    def __init__(self, session: "Session") -> None:
+        self._session = session
+
+    def find_by_id(self, resource_id: str) -> dict | None:
+        resource = self._session.get(ResourceModel, resource_id)
+        return resource.to_dict() if resource else None
+
+    # ...other methods
+```
+
+## Domain Errors
+
+```python
+class NotFoundError(Exception):
+    """Resource not found."""
+
+
+class ValidationError(Exception):
+    """Invalid input data."""
+```
+
+## Factory Pattern for App
+
+```python
+from flask import Flask
+
+
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.config.from_prefixed_env()
+
+    # dependency composition
+    session = create_session(app.config["DATABASE_URL"])
+    repository = SQLAlchemyResourceRepository(session)
+    resource_service = ResourceService(repository)
+
+    from resource.router import create_resource_bp
+    app.register_blueprint(create_resource_bp(resource_service))
+
+    return app
+```
+
+## Conventions
+- Service receives dependencies via constructor (no decorators)
+- Manual composition in `create_app()` factory (composition root)
+- Repository interface via `ABC` for decoupling
+- Custom domain errors (don't use HTTP errors)
+- Service doesn't know Flask (no request/response)
+- One service per domain, single-responsibility methods
+- Type hints on all public methods
+{{/if}}

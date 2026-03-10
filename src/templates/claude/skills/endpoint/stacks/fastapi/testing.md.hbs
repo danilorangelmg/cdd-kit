@@ -1,0 +1,171 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes FastAPI para Endpoints
+
+## Teste de Integracao com httpx
+
+```python
+import pytest
+from httpx import AsyncClient, ASGITransport
+from fastapi import FastAPI
+
+from recurso.router import router
+from recurso.service import RecursoService
+
+
+@pytest.fixture
+def mock_servico(mocker):
+    return mocker.AsyncMock(spec=RecursoService)
+
+
+@pytest.fixture
+def app(mock_servico):
+    app = FastAPI()
+    app.include_router(router)
+    app.dependency_overrides[get_recurso_service] = lambda: mock_servico
+    return app
+
+
+@pytest.fixture
+async def client(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as cliente:
+        yield cliente
+
+
+@pytest.mark.asyncio
+async def test_criar_recurso(client, mock_servico):
+    mock_servico.create.return_value = {"id": "1", "nome": "Teste"}
+
+    resposta = await client.post("/recursos", json={"nome": "Teste"})
+
+    assert resposta.status_code == 201
+    assert resposta.json() == {"id": "1", "nome": "Teste"}
+    mock_servico.create.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_criar_recurso_body_invalido(client):
+    resposta = await client.post("/recursos", json={})
+
+    assert resposta.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_obter_recurso_nao_encontrado(client, mock_servico):
+    mock_servico.find_one.return_value = None
+
+    resposta = await client.get("/recursos/999")
+
+    assert resposta.status_code == 404
+```
+
+## Teste com TestClient (sincrono)
+
+```python
+from fastapi.testclient import TestClient
+
+
+def test_listar_recursos(app, mock_servico):
+    mock_servico.find_all.return_value = [{"id": "1", "nome": "Teste"}]
+    client = TestClient(app)
+
+    resposta = client.get("/recursos")
+
+    assert resposta.status_code == 200
+    assert len(resposta.json()) == 1
+```
+
+## Convencoes
+- Usar `dependency_overrides` para injetar mock do service
+- `httpx.AsyncClient` com `ASGITransport` para testes async
+- `TestClient` para testes sincronos simples
+- Testar codigos de status HTTP para happy path e erros
+- Testar validacao Pydantic (422 para body invalido)
+- Criar app FastAPI fresco em cada fixture
+- Sempre limpar `dependency_overrides` apos os testes
+{{else}}
+# FastAPI Endpoint Testing
+
+## Integration Test with httpx
+
+```python
+import pytest
+from httpx import AsyncClient, ASGITransport
+from fastapi import FastAPI
+
+from resource.router import router
+from resource.service import ResourceService
+
+
+@pytest.fixture
+def mock_service(mocker):
+    return mocker.AsyncMock(spec=ResourceService)
+
+
+@pytest.fixture
+def app(mock_service):
+    app = FastAPI()
+    app.include_router(router)
+    app.dependency_overrides[get_resource_service] = lambda: mock_service
+    return app
+
+
+@pytest.fixture
+async def client(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+
+
+@pytest.mark.asyncio
+async def test_create_resource(client, mock_service):
+    mock_service.create.return_value = {"id": "1", "name": "Test"}
+
+    response = await client.post("/resources", json={"name": "Test"})
+
+    assert response.status_code == 201
+    assert response.json() == {"id": "1", "name": "Test"}
+    mock_service.create.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_create_resource_invalid_body(client):
+    response = await client.post("/resources", json={})
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_get_resource_not_found(client, mock_service):
+    mock_service.find_one.return_value = None
+
+    response = await client.get("/resources/999")
+
+    assert response.status_code == 404
+```
+
+## Test with TestClient (synchronous)
+
+```python
+from fastapi.testclient import TestClient
+
+
+def test_list_resources(app, mock_service):
+    mock_service.find_all.return_value = [{"id": "1", "name": "Test"}]
+    client = TestClient(app)
+
+    response = client.get("/resources")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+```
+
+## Conventions
+- Use `dependency_overrides` to inject mock service
+- `httpx.AsyncClient` with `ASGITransport` for async tests
+- `TestClient` for simple synchronous tests
+- Test HTTP status codes for happy path and errors
+- Test Pydantic validation (422 for invalid body)
+- Create fresh FastAPI app in each fixture
+- Always clean up `dependency_overrides` after tests
+{{/if}}

@@ -1,0 +1,201 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes Flask para Endpoints
+
+## Teste de Integracao com Test Client
+
+```python
+import pytest
+from flask import Flask
+from flask.testing import FlaskClient
+from unittest.mock import MagicMock
+
+from app import create_app
+from recurso.router import recurso_bp
+
+
+@pytest.fixture()
+def mock_service() -> MagicMock:
+    return MagicMock(
+        find_all=MagicMock(return_value=[]),
+        find_one=MagicMock(),
+        create=MagicMock(),
+        update=MagicMock(),
+        remove=MagicMock(),
+    )
+
+
+@pytest.fixture()
+def client(mock_service: MagicMock) -> FlaskClient:
+    app = create_app()
+    app.config["TESTING"] = True
+    # injetar mock do service
+    recurso_bp.recurso_service = mock_service
+    return app.test_client()
+```
+
+## Testes CRUD
+
+```python
+class TestRecursoRouter:
+    def test_post_recurso_deve_criar(
+        self, client: FlaskClient, mock_service: MagicMock
+    ) -> None:
+        mock_service.create.return_value = {"id": "1", "nome": "Teste"}
+
+        response = client.post(
+            "/api/recursos",
+            json={"nome": "Teste"},
+        )
+
+        assert response.status_code == 201
+        assert response.get_json() == {"id": "1", "nome": "Teste"}
+        mock_service.create.assert_called_once_with({"nome": "Teste"})
+
+    def test_get_recursos_deve_listar(
+        self, client: FlaskClient, mock_service: MagicMock
+    ) -> None:
+        mock_service.find_all.return_value = [{"id": "1", "nome": "Teste"}]
+
+        response = client.get("/api/recursos")
+
+        assert response.status_code == 200
+        assert len(response.get_json()) == 1
+
+    def test_delete_recurso_deve_retornar_204(
+        self, client: FlaskClient, mock_service: MagicMock
+    ) -> None:
+        response = client.delete("/api/recursos/1")
+
+        assert response.status_code == 204
+        mock_service.remove.assert_called_once_with("1")
+```
+
+## Testes de Validacao
+
+```python
+    def test_post_recurso_body_invalido_deve_retornar_400(
+        self, client: FlaskClient
+    ) -> None:
+        response = client.post("/api/recursos", json={})
+
+        assert response.status_code == 400
+
+    def test_get_recurso_inexistente_deve_retornar_404(
+        self, client: FlaskClient, mock_service: MagicMock
+    ) -> None:
+        mock_service.find_one.side_effect = NotFoundError("Nao encontrado")
+
+        response = client.get("/api/recursos/999")
+
+        assert response.status_code == 404
+```
+
+## Convencoes
+- Criar app Flask fresco via fixture com `TESTING = True`
+- Usar `app.test_client()` para simular requisicoes HTTP
+- Mockar service via `MagicMock` injetado no blueprint
+- Testar codigos de status HTTP para happy path e erros
+- Testar validacao com body invalido (400)
+- Testar recurso inexistente (404)
+- Fixtures do pytest para setup reutilizavel
+{{else}}
+# Flask Endpoint Testing
+
+## Integration Test with Test Client
+
+```python
+import pytest
+from flask import Flask
+from flask.testing import FlaskClient
+from unittest.mock import MagicMock
+
+from app import create_app
+from resource.router import resource_bp
+
+
+@pytest.fixture()
+def mock_service() -> MagicMock:
+    return MagicMock(
+        find_all=MagicMock(return_value=[]),
+        find_one=MagicMock(),
+        create=MagicMock(),
+        update=MagicMock(),
+        remove=MagicMock(),
+    )
+
+
+@pytest.fixture()
+def client(mock_service: MagicMock) -> FlaskClient:
+    app = create_app()
+    app.config["TESTING"] = True
+    # inject mock service
+    resource_bp.resource_service = mock_service
+    return app.test_client()
+```
+
+## CRUD Tests
+
+```python
+class TestResourceRouter:
+    def test_post_resource_should_create(
+        self, client: FlaskClient, mock_service: MagicMock
+    ) -> None:
+        mock_service.create.return_value = {"id": "1", "name": "Test"}
+
+        response = client.post(
+            "/api/resources",
+            json={"name": "Test"},
+        )
+
+        assert response.status_code == 201
+        assert response.get_json() == {"id": "1", "name": "Test"}
+        mock_service.create.assert_called_once_with({"name": "Test"})
+
+    def test_get_resources_should_list(
+        self, client: FlaskClient, mock_service: MagicMock
+    ) -> None:
+        mock_service.find_all.return_value = [{"id": "1", "name": "Test"}]
+
+        response = client.get("/api/resources")
+
+        assert response.status_code == 200
+        assert len(response.get_json()) == 1
+
+    def test_delete_resource_should_return_204(
+        self, client: FlaskClient, mock_service: MagicMock
+    ) -> None:
+        response = client.delete("/api/resources/1")
+
+        assert response.status_code == 204
+        mock_service.remove.assert_called_once_with("1")
+```
+
+## Validation Tests
+
+```python
+    def test_post_resource_invalid_body_should_return_400(
+        self, client: FlaskClient
+    ) -> None:
+        response = client.post("/api/resources", json={})
+
+        assert response.status_code == 400
+
+    def test_get_nonexistent_resource_should_return_404(
+        self, client: FlaskClient, mock_service: MagicMock
+    ) -> None:
+        mock_service.find_one.side_effect = NotFoundError("Not found")
+
+        response = client.get("/api/resources/999")
+
+        assert response.status_code == 404
+```
+
+## Conventions
+- Create fresh Flask app via fixture with `TESTING = True`
+- Use `app.test_client()` to simulate HTTP requests
+- Mock service via `MagicMock` injected into blueprint
+- Test HTTP status codes for happy path and errors
+- Test validation with invalid body (400)
+- Test nonexistent resource (404)
+- pytest fixtures for reusable setup
+{{/if}}

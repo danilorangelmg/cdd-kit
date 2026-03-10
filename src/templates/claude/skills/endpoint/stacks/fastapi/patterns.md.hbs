@@ -1,0 +1,235 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes FastAPI para Endpoints
+
+## Estrutura de Router
+
+```python
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from typing import Optional
+
+router = APIRouter(prefix="/recursos", tags=["recursos"])
+
+
+class RecursoCriarInput(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+
+
+class RecursoAtualizarInput(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+
+
+class RecursoResponse(BaseModel):
+    id: str
+    nome: str
+    descricao: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+@router.get("/", response_model=list[RecursoResponse])
+async def listar_recursos(
+    servico: RecursoService = Depends(get_recurso_service),
+):
+    resultado = await servico.find_all()
+    return resultado
+
+
+@router.get("/{recurso_id}", response_model=RecursoResponse)
+async def obter_recurso(
+    recurso_id: str,
+    servico: RecursoService = Depends(get_recurso_service),
+):
+    recurso = await servico.find_one(recurso_id)
+    if not recurso:
+        raise HTTPException(status_code=404, detail="Recurso nao encontrado")
+    return recurso
+
+
+@router.post("/", response_model=RecursoResponse, status_code=status.HTTP_201_CREATED)
+async def criar_recurso(
+    dados: RecursoCriarInput,
+    servico: RecursoService = Depends(get_recurso_service),
+):
+    recurso = await servico.create(dados)
+    return recurso
+
+
+@router.put("/{recurso_id}", response_model=RecursoResponse)
+async def atualizar_recurso(
+    recurso_id: str,
+    dados: RecursoAtualizarInput,
+    servico: RecursoService = Depends(get_recurso_service),
+):
+    recurso = await servico.update(recurso_id, dados)
+    return recurso
+
+
+@router.delete("/{recurso_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remover_recurso(
+    recurso_id: str,
+    servico: RecursoService = Depends(get_recurso_service),
+):
+    await servico.remove(recurso_id)
+```
+
+## Tratamento de Erros
+
+```python
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+
+async def not_found_handler(request: Request, exc: NotFoundError):
+    return JSONResponse(status_code=404, content={"detail": exc.message})
+
+
+async def validation_error_handler(request: Request, exc: DomainValidationError):
+    return JSONResponse(status_code=400, content={"detail": exc.message})
+
+
+# main.py
+app.add_exception_handler(NotFoundError, not_found_handler)
+app.add_exception_handler(DomainValidationError, validation_error_handler)
+```
+
+## Agrupamento de Rotas
+
+```python
+# main.py
+from fastapi import FastAPI
+
+app = FastAPI()
+
+app.include_router(recurso_router)
+app.include_router(usuario_router, prefix="/api")
+```
+
+## Convencoes
+- Usar `APIRouter` com `prefix` e `tags` para cada recurso
+- Modelos Pydantic v2 para request body e response (`model_config`)
+- `Depends()` para injecao de dependencias (services, repositorios)
+- `HTTPException` para erros HTTP diretos, exception handlers para erros de dominio
+- Status codes explicitos: `201` para criacao, `204` para delecao
+- Rotas agrupadas via `app.include_router()`
+- Funcoes async em todos os endpoints
+{{else}}
+# FastAPI Endpoint Patterns
+
+## Router Structure
+
+```python
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from typing import Optional
+
+router = APIRouter(prefix="/resources", tags=["resources"])
+
+
+class ResourceCreateInput(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class ResourceUpdateInput(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class ResourceResponse(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+@router.get("/", response_model=list[ResourceResponse])
+async def list_resources(
+    service: ResourceService = Depends(get_resource_service),
+):
+    result = await service.find_all()
+    return result
+
+
+@router.get("/{resource_id}", response_model=ResourceResponse)
+async def get_resource(
+    resource_id: str,
+    service: ResourceService = Depends(get_resource_service),
+):
+    resource = await service.find_one(resource_id)
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    return resource
+
+
+@router.post("/", response_model=ResourceResponse, status_code=status.HTTP_201_CREATED)
+async def create_resource(
+    data: ResourceCreateInput,
+    service: ResourceService = Depends(get_resource_service),
+):
+    resource = await service.create(data)
+    return resource
+
+
+@router.put("/{resource_id}", response_model=ResourceResponse)
+async def update_resource(
+    resource_id: str,
+    data: ResourceUpdateInput,
+    service: ResourceService = Depends(get_resource_service),
+):
+    resource = await service.update(resource_id, data)
+    return resource
+
+
+@router.delete("/{resource_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_resource(
+    resource_id: str,
+    service: ResourceService = Depends(get_resource_service),
+):
+    await service.remove(resource_id)
+```
+
+## Error Handling
+
+```python
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+
+async def not_found_handler(request: Request, exc: NotFoundError):
+    return JSONResponse(status_code=404, content={"detail": exc.message})
+
+
+async def validation_error_handler(request: Request, exc: DomainValidationError):
+    return JSONResponse(status_code=400, content={"detail": exc.message})
+
+
+# main.py
+app.add_exception_handler(NotFoundError, not_found_handler)
+app.add_exception_handler(DomainValidationError, validation_error_handler)
+```
+
+## Route Grouping
+
+```python
+# main.py
+from fastapi import FastAPI
+
+app = FastAPI()
+
+app.include_router(resource_router)
+app.include_router(user_router, prefix="/api")
+```
+
+## Conventions
+- Use `APIRouter` with `prefix` and `tags` per resource
+- Pydantic v2 models for request body and response (`model_config`)
+- `Depends()` for dependency injection (services, repositories)
+- `HTTPException` for direct HTTP errors, exception handlers for domain errors
+- Explicit status codes: `201` for creation, `204` for deletion
+- Routes grouped via `app.include_router()`
+- Async functions on all endpoints
+{{/if}}

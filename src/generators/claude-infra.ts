@@ -133,6 +133,7 @@ export async function generateClaudeInfra(
       ...context,
       module: mod,
       role: getRoleById(mod.role),
+      stack: mod.stack ? getStackById(mod.stack) : undefined,
     };
     const content = renderTemplate("claude/agents/delegate.md.hbs", delegateContext);
     await writeFile(
@@ -271,10 +272,12 @@ async function generatePerModuleClaudeInfra(
     const prefix = `${mod.directory}/.claude`;
     const role = getRoleById(mod.role);
 
+    const stackDef = mod.stack ? getStackById(mod.stack) : undefined;
     const modContext = {
       ...context,
       module: mod,
       role,
+      ...(stackDef ? { stack: stackDef } : {}),
     };
 
     // settings.json (with hooks pointing to module's own .claude/hooks/)

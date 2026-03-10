@@ -1,0 +1,211 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes FastAPI para Services
+
+## Service Baseado em Classe
+
+```python
+from typing import Optional
+
+
+class RecursoService:
+    def __init__(self, repository: RecursoRepository) -> None:
+        self._repository = repository
+
+    async def find_all(self, filtros: Optional[ListRecursoFiltros] = None) -> list[Recurso]:
+        return await self._repository.find_many(filtros)
+
+    async def find_one(self, id: str) -> Recurso:
+        recurso = await self._repository.find_by_id(id)
+        if not recurso:
+            raise NotFoundError(f"Recurso {id} nao encontrado")
+        return recurso
+
+    async def create(self, dados: RecursoCriarInput) -> Recurso:
+        return await self._repository.create(dados)
+
+    async def update(self, id: str, dados: RecursoAtualizarInput) -> Recurso:
+        await self.find_one(id)
+        return await self._repository.update(id, dados)
+
+    async def remove(self, id: str) -> None:
+        await self.find_one(id)
+        await self._repository.delete(id)
+```
+
+## Injecao de Dependencias via Depends
+
+```python
+from fastapi import Depends
+
+
+def get_repository() -> RecursoRepository:
+    db = get_database()
+    return SQLAlchemyRecursoRepository(db)
+
+
+def get_recurso_service(
+    repository: RecursoRepository = Depends(get_repository),
+) -> RecursoService:
+    return RecursoService(repository)
+
+
+# No router
+@router.get("/")
+async def listar(servico: RecursoService = Depends(get_recurso_service)):
+    return await servico.find_all()
+```
+
+## Padrao Protocol para Repositorio
+
+```python
+from typing import Protocol, Optional
+
+
+class RecursoRepository(Protocol):
+    async def find_many(self, filtros: Optional[ListRecursoFiltros] = None) -> list[Recurso]: ...
+    async def find_by_id(self, id: str) -> Optional[Recurso]: ...
+    async def create(self, dados: RecursoCriarInput) -> Recurso: ...
+    async def update(self, id: str, dados: RecursoAtualizarInput) -> Recurso: ...
+    async def delete(self, id: str) -> None: ...
+
+
+# Implementacao
+class SQLAlchemyRecursoRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def find_by_id(self, id: str) -> Optional[Recurso]:
+        resultado = await self._session.get(RecursoModel, id)
+        return resultado
+    # ...demais metodos
+```
+
+## Erros de Dominio
+
+```python
+class NotFoundError(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class DomainValidationError(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+```
+
+## Convencoes
+- Service recebe dependencias via construtor (sem decorators)
+- `Depends()` do FastAPI para composicao na camada de rota
+- `Protocol` para interface de repositorio (tipagem estrutural)
+- Erros de dominio customizados (sem usar erros HTTP)
+- Service nao conhece FastAPI (sem Request/Response)
+- Um service por dominio, metodos com responsabilidade unica
+- Todos os metodos async com tipagem de retorno explicita
+{{else}}
+# FastAPI Service Patterns
+
+## Class-Based Service
+
+```python
+from typing import Optional
+
+
+class ResourceService:
+    def __init__(self, repository: ResourceRepository) -> None:
+        self._repository = repository
+
+    async def find_all(self, filters: Optional[ListResourceFilters] = None) -> list[Resource]:
+        return await self._repository.find_many(filters)
+
+    async def find_one(self, id: str) -> Resource:
+        resource = await self._repository.find_by_id(id)
+        if not resource:
+            raise NotFoundError(f"Resource {id} not found")
+        return resource
+
+    async def create(self, data: ResourceCreateInput) -> Resource:
+        return await self._repository.create(data)
+
+    async def update(self, id: str, data: ResourceUpdateInput) -> Resource:
+        await self.find_one(id)
+        return await self._repository.update(id, data)
+
+    async def remove(self, id: str) -> None:
+        await self.find_one(id)
+        await self._repository.delete(id)
+```
+
+## Dependency Injection via Depends
+
+```python
+from fastapi import Depends
+
+
+def get_repository() -> ResourceRepository:
+    db = get_database()
+    return SQLAlchemyResourceRepository(db)
+
+
+def get_resource_service(
+    repository: ResourceRepository = Depends(get_repository),
+) -> ResourceService:
+    return ResourceService(repository)
+
+
+# In the router
+@router.get("/")
+async def list_resources(service: ResourceService = Depends(get_resource_service)):
+    return await service.find_all()
+```
+
+## Protocol Pattern for Repository
+
+```python
+from typing import Protocol, Optional
+
+
+class ResourceRepository(Protocol):
+    async def find_many(self, filters: Optional[ListResourceFilters] = None) -> list[Resource]: ...
+    async def find_by_id(self, id: str) -> Optional[Resource]: ...
+    async def create(self, data: ResourceCreateInput) -> Resource: ...
+    async def update(self, id: str, data: ResourceUpdateInput) -> Resource: ...
+    async def delete(self, id: str) -> None: ...
+
+
+# Implementation
+class SQLAlchemyResourceRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def find_by_id(self, id: str) -> Optional[Resource]:
+        result = await self._session.get(ResourceModel, id)
+        return result
+    # ...other methods
+```
+
+## Domain Errors
+
+```python
+class NotFoundError(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class DomainValidationError(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+```
+
+## Conventions
+- Service receives dependencies via constructor (no decorators)
+- FastAPI `Depends()` for composition at the route layer
+- `Protocol` for repository interface (structural typing)
+- Custom domain errors (don't use HTTP errors)
+- Service doesn't know FastAPI (no Request/Response)
+- One service per domain, single-responsibility methods
+- All methods async with explicit return types
+{{/if}}

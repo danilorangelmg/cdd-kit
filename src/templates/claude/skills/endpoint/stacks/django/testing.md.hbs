@@ -1,0 +1,207 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes Django para Endpoints
+
+## Teste de Integracao com APIClient
+
+```python
+import pytest
+from rest_framework.test import APIClient
+from rest_framework import status
+from unittest.mock import patch, MagicMock
+
+from .models import Recurso
+
+
+@pytest.mark.django_db
+class TestRecursoViewSet:
+    def setup_method(self) -> None:
+        self.client = APIClient()
+
+    def test_post_recursos_deve_criar_recurso(self) -> None:
+        dados = {"nome": "Teste", "descricao": "Descricao teste"}
+
+        response = self.client.post("/api/recursos/", dados, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["nome"] == "Teste"
+        assert "id" in response.data
+
+    def test_post_recursos_deve_retornar_400_para_body_invalido(self) -> None:
+        response = self.client.post("/api/recursos/", {}, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_get_recursos_deve_listar_todos(self) -> None:
+        Recurso.objects.create(nome="Recurso 1")
+        Recurso.objects.create(nome="Recurso 2")
+
+        response = self.client.get("/api/recursos/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+
+    def test_get_recurso_por_id_deve_retornar_recurso(self) -> None:
+        recurso = Recurso.objects.create(nome="Teste")
+
+        response = self.client.get(f"/api/recursos/{recurso.id}/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["nome"] == "Teste"
+
+    def test_get_recurso_por_id_deve_retornar_404(self) -> None:
+        response = self.client.get("/api/recursos/99999/")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_put_recursos_deve_atualizar_recurso(self) -> None:
+        recurso = Recurso.objects.create(nome="Antigo")
+        dados = {"nome": "Novo", "descricao": "Atualizado"}
+
+        response = self.client.put(
+            f"/api/recursos/{recurso.id}/", dados, format="json"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["nome"] == "Novo"
+
+    def test_delete_recursos_deve_remover_recurso(self) -> None:
+        recurso = Recurso.objects.create(nome="Remover")
+
+        response = self.client.delete(f"/api/recursos/{recurso.id}/")
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Recurso.objects.filter(id=recurso.id).exists()
+```
+
+## Teste de Serializer Isolado
+
+```python
+from .serializers import RecursoSerializer
+
+
+class TestRecursoSerializer:
+    def test_deve_validar_dados_corretos(self) -> None:
+        dados = {"nome": "Valido", "descricao": "Descricao"}
+        serializer = RecursoSerializer(data=dados)
+
+        assert serializer.is_valid()
+
+    def test_deve_rejeitar_nome_vazio(self) -> None:
+        dados = {"nome": "", "descricao": "Descricao"}
+        serializer = RecursoSerializer(data=dados)
+
+        assert not serializer.is_valid()
+        assert "nome" in serializer.errors
+```
+
+## Convencoes
+- Usar `APIClient` do DRF para testes de integracao
+- Marcar testes com `@pytest.mark.django_db` quando acessam banco
+- Testar codigos de status HTTP para happy path e erros
+- Testar serializer isoladamente para validacao de entrada
+- Testar endpoints de criacao, leitura, atualizacao e remocao
+- Usar `format="json"` no client para envio de dados
+{{else}}
+# Django Endpoint Testing
+
+## Integration Test with APIClient
+
+```python
+import pytest
+from rest_framework.test import APIClient
+from rest_framework import status
+from unittest.mock import patch, MagicMock
+
+from .models import Resource
+
+
+@pytest.mark.django_db
+class TestResourceViewSet:
+    def setup_method(self) -> None:
+        self.client = APIClient()
+
+    def test_post_resources_should_create_resource(self) -> None:
+        data = {"name": "Test", "description": "Test description"}
+
+        response = self.client.post("/api/resources/", data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["name"] == "Test"
+        assert "id" in response.data
+
+    def test_post_resources_should_return_400_for_invalid_body(self) -> None:
+        response = self.client.post("/api/resources/", {}, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_get_resources_should_list_all(self) -> None:
+        Resource.objects.create(name="Resource 1")
+        Resource.objects.create(name="Resource 2")
+
+        response = self.client.get("/api/resources/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+
+    def test_get_resource_by_id_should_return_resource(self) -> None:
+        resource = Resource.objects.create(name="Test")
+
+        response = self.client.get(f"/api/resources/{resource.id}/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["name"] == "Test"
+
+    def test_get_resource_by_id_should_return_404(self) -> None:
+        response = self.client.get("/api/resources/99999/")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_put_resources_should_update_resource(self) -> None:
+        resource = Resource.objects.create(name="Old")
+        data = {"name": "New", "description": "Updated"}
+
+        response = self.client.put(
+            f"/api/resources/{resource.id}/", data, format="json"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["name"] == "New"
+
+    def test_delete_resources_should_remove_resource(self) -> None:
+        resource = Resource.objects.create(name="Remove")
+
+        response = self.client.delete(f"/api/resources/{resource.id}/")
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Resource.objects.filter(id=resource.id).exists()
+```
+
+## Isolated Serializer Test
+
+```python
+from .serializers import ResourceSerializer
+
+
+class TestResourceSerializer:
+    def test_should_validate_correct_data(self) -> None:
+        data = {"name": "Valid", "description": "Description"}
+        serializer = ResourceSerializer(data=data)
+
+        assert serializer.is_valid()
+
+    def test_should_reject_empty_name(self) -> None:
+        data = {"name": "", "description": "Description"}
+        serializer = ResourceSerializer(data=data)
+
+        assert not serializer.is_valid()
+        assert "name" in serializer.errors
+```
+
+## Conventions
+- Use DRF `APIClient` for integration tests
+- Mark tests with `@pytest.mark.django_db` when accessing the database
+- Test HTTP status codes for happy path and errors
+- Test serializer in isolation for input validation
+- Test create, read, update, and delete endpoints
+- Use `format="json"` in client for data submission
+{{/if}}

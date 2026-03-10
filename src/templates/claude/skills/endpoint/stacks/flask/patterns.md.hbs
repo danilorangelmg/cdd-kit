@@ -1,0 +1,189 @@
+{{#if (eq project.language "pt-BR")}}
+# Padroes Flask para Endpoints
+
+## Estrutura de Blueprint
+
+```python
+from flask import Blueprint, request, jsonify
+from http import HTTPStatus
+from marshmallow import Schema, fields, validate, ValidationError
+
+recurso_bp = Blueprint("recurso", __name__, url_prefix="/api/recursos")
+
+
+class RecursoSchema(Schema):
+    nome = fields.String(required=True, validate=validate.Length(min=1))
+    descricao = fields.String(load_default=None)
+
+
+recurso_schema = RecursoSchema()
+```
+
+## Endpoints CRUD
+
+```python
+@recurso_bp.get("/")
+def listar_recursos():
+    filtros: dict = request.args.to_dict()
+    resultado = recurso_service.find_all(filtros)
+    return jsonify(resultado), HTTPStatus.OK
+
+
+@recurso_bp.post("/")
+def criar_recurso():
+    dados = recurso_schema.load(request.get_json(force=True))
+    recurso = recurso_service.create(dados)
+    return jsonify(recurso), HTTPStatus.CREATED
+
+
+@recurso_bp.put("/<string:recurso_id>")
+def atualizar_recurso(recurso_id: str):
+    dados = recurso_schema.load(request.get_json(force=True))
+    recurso = recurso_service.update(recurso_id, dados)
+    return jsonify(recurso), HTTPStatus.OK
+
+
+@recurso_bp.delete("/<string:recurso_id>")
+def remover_recurso(recurso_id: str):
+    recurso_service.remove(recurso_id)
+    return "", HTTPStatus.NO_CONTENT
+```
+
+## Tratamento de Erros
+
+```python
+from flask import Flask
+
+
+def registrar_error_handlers(app: Flask) -> None:
+    @app.errorhandler(NotFoundError)
+    def handle_not_found(erro: NotFoundError):
+        return jsonify({"message": str(erro)}), HTTPStatus.NOT_FOUND
+
+    @app.errorhandler(ValidationError)
+    def handle_validation(erro: ValidationError):
+        return jsonify({"message": erro.messages}), HTTPStatus.BAD_REQUEST
+
+    @app.errorhandler(Exception)
+    def handle_generic(erro: Exception):
+        return jsonify({"message": "Erro interno"}), HTTPStatus.INTERNAL_SERVER_ERROR
+```
+
+## Registro de Blueprints
+
+```python
+# app.py
+from flask import Flask
+
+
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.register_blueprint(recurso_bp)
+    app.register_blueprint(usuario_bp)
+    registrar_error_handlers(app)
+    return app
+```
+
+## Convencoes
+- Usar `Blueprint` para agrupar rotas por recurso
+- Validacao via `marshmallow` (ou Pydantic com `flask-pydantic`)
+- Error handlers registrados no app via `@app.errorhandler`
+- Factory function `create_app()` para criar a aplicacao
+- Service injetado via closure ou modulo — sem acoplamento ao Flask
+- Retornar tupla `(response, status_code)` para respostas HTTP
+- Usar `HTTPStatus` do modulo `http` para codigos semanticos
+{{else}}
+# Flask Endpoint Patterns
+
+## Blueprint Structure
+
+```python
+from flask import Blueprint, request, jsonify
+from http import HTTPStatus
+from marshmallow import Schema, fields, validate, ValidationError
+
+resource_bp = Blueprint("resource", __name__, url_prefix="/api/resources")
+
+
+class ResourceSchema(Schema):
+    name = fields.String(required=True, validate=validate.Length(min=1))
+    description = fields.String(load_default=None)
+
+
+resource_schema = ResourceSchema()
+```
+
+## CRUD Endpoints
+
+```python
+@resource_bp.get("/")
+def list_resources():
+    filters: dict = request.args.to_dict()
+    result = resource_service.find_all(filters)
+    return jsonify(result), HTTPStatus.OK
+
+
+@resource_bp.post("/")
+def create_resource():
+    data = resource_schema.load(request.get_json(force=True))
+    resource = resource_service.create(data)
+    return jsonify(resource), HTTPStatus.CREATED
+
+
+@resource_bp.put("/<string:resource_id>")
+def update_resource(resource_id: str):
+    data = resource_schema.load(request.get_json(force=True))
+    resource = resource_service.update(resource_id, data)
+    return jsonify(resource), HTTPStatus.OK
+
+
+@resource_bp.delete("/<string:resource_id>")
+def delete_resource(resource_id: str):
+    resource_service.remove(resource_id)
+    return "", HTTPStatus.NO_CONTENT
+```
+
+## Error Handling
+
+```python
+from flask import Flask
+
+
+def register_error_handlers(app: Flask) -> None:
+    @app.errorhandler(NotFoundError)
+    def handle_not_found(error: NotFoundError):
+        return jsonify({"message": str(error)}), HTTPStatus.NOT_FOUND
+
+    @app.errorhandler(ValidationError)
+    def handle_validation(error: ValidationError):
+        return jsonify({"message": error.messages}), HTTPStatus.BAD_REQUEST
+
+    @app.errorhandler(Exception)
+    def handle_generic(error: Exception):
+        return jsonify({"message": "Internal error"}), HTTPStatus.INTERNAL_SERVER_ERROR
+```
+
+## Blueprint Registration
+
+```python
+# app.py
+from flask import Flask
+
+
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.register_blueprint(resource_bp)
+    app.register_blueprint(user_bp)
+    register_error_handlers(app)
+    return app
+```
+
+## Conventions
+- Use `Blueprint` to group routes by resource
+- Validation via `marshmallow` (or Pydantic with `flask-pydantic`)
+- Error handlers registered on app via `@app.errorhandler`
+- Factory function `create_app()` to create the application
+- Service injected via closure or module — no Flask coupling
+- Return tuple `(response, status_code)` for HTTP responses
+- Use `HTTPStatus` from `http` module for semantic status codes
+{{/if}}

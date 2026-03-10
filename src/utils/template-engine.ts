@@ -29,6 +29,7 @@ Handlebars.registerHelper("includes", (arr: string[], value: string) =>
 Handlebars.registerHelper("join", (arr: string[], separator: string) =>
   arr?.join(typeof separator === "string" ? separator : ", ")
 );
+Handlebars.registerHelper("not", (value: unknown) => !value);
 Handlebars.registerHelper("uppercase", (str: string) => str?.toUpperCase());
 Handlebars.registerHelper("lowercase", (str: string) => str?.toLowerCase());
 

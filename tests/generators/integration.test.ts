@@ -72,8 +72,8 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(claude).toContain("docs/rules/");
     expect(claude).not.toContain("documentos/");
 
-    // Phase 5: 3-layer orchestration
-    expect(claude).toContain("3-Layer Orchestration");
+    // Phase 5: 3-layer orchestration (inline in "You are the Orchestrator" section)
+    expect(claude).toContain("You are the Orchestrator");
     expect(claude).toContain("Orchestrator");
     expect(claude).toContain("Delegates");
     expect(claude).toContain("Validator");
@@ -599,8 +599,8 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     expect(claude).not.toContain("tdd-guard.sh");
     expect(claude).not.toContain("Outside-In");
 
-    // Should still have 3-layer orchestration and skills
-    expect(claude).toContain("3 Camadas");
+    // Should still have orchestration table and skills
+    expect(claude).toContain("Voce e o Orquestrador");
     expect(claude).toContain("Skills Disponiveis");
     expect(claude).toContain("/git-commit");
     expect(claude).toContain("Contrato de Resposta dos Delegates");
@@ -1168,11 +1168,14 @@ describe("Stack Registry", () => {
     ]);
 
     const backendStacks = getStacksForRole("backend");
-    expect(backendStacks).toHaveLength(3);
+    expect(backendStacks).toHaveLength(6);
     expect(backendStacks.map((s) => s.id)).toEqual([
       "nestjs",
       "express",
       "fastify",
+      "fastapi",
+      "django",
+      "flask",
     ]);
 
     const e2eStacks = getStacksForRole("e2e");

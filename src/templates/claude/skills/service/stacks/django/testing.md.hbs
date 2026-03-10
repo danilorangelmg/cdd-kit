@@ -1,0 +1,255 @@
+{{#if (eq project.language "pt-BR")}}
+# Testes Django para Services
+
+## Instanciacao Direta com Mocks
+
+```python
+import pytest
+from unittest.mock import patch, MagicMock
+
+from .services import RecursoService
+from .exceptions import NaoEncontradoError
+
+
+class TestRecursoService:
+    def setup_method(self) -> None:
+        self.service = RecursoService()
+```
+
+## Testes de Metodos
+
+```python
+    @pytest.mark.django_db
+    def test_buscar_por_id_deve_retornar_recurso(self) -> None:
+        from .factories import criar_recurso
+
+        recurso = criar_recurso(nome="Teste")
+
+        resultado = self.service.buscar_por_id(recurso.id)
+
+        assert resultado.nome == "Teste"
+        assert resultado.id == recurso.id
+
+    def test_buscar_por_id_deve_lancar_nao_encontrado(self) -> None:
+        with pytest.raises(NaoEncontradoError):
+            self.service.buscar_por_id(99999)
+
+    @pytest.mark.django_db
+    def test_criar_deve_criar_e_retornar_recurso(self) -> None:
+        dados = {"nome": "Novo", "descricao": "Descricao"}
+
+        resultado = self.service.criar(dados)
+
+        assert resultado.nome == "Novo"
+        assert resultado.id is not None
+
+    @pytest.mark.django_db
+    def test_atualizar_deve_verificar_existencia_antes(self) -> None:
+        with pytest.raises(NaoEncontradoError):
+            self.service.atualizar(99999, {"nome": "X"})
+
+    @pytest.mark.django_db
+    def test_atualizar_deve_atualizar_campos(self) -> None:
+        from .factories import criar_recurso
+
+        recurso = criar_recurso(nome="Antigo")
+
+        resultado = self.service.atualizar(recurso.id, {"nome": "Novo"})
+
+        assert resultado.nome == "Novo"
+
+    @pytest.mark.django_db
+    def test_remover_deve_excluir_recurso(self) -> None:
+        from .factories import criar_recurso
+        from .models import Recurso
+
+        recurso = criar_recurso(nome="Remover")
+
+        self.service.remover(recurso.id)
+
+        assert not Recurso.objects.filter(id=recurso.id).exists()
+```
+
+## Teste com Mock do Manager
+
+```python
+    @patch("app.models.Recurso.objects")
+    def test_listar_todos_com_filtros(self, mock_objects: MagicMock) -> None:
+        mock_qs = MagicMock()
+        mock_objects.all.return_value = mock_qs
+        mock_qs.filter.return_value = mock_qs
+        mock_qs.__iter__ = lambda self: iter([])
+
+        resultado = self.service.listar_todos({"ativo": True})
+
+        mock_qs.filter.assert_called_once_with(ativo=True)
+```
+
+## Factory de Dados de Teste
+
+```python
+# factories.py
+from .models import Recurso
+
+
+def criar_recurso(**override) -> Recurso:
+    """Factory function para criar Recurso de teste."""
+    defaults: dict = {
+        "nome": "Recurso Padrao",
+        "descricao": "Descricao padrao",
+        "ativo": True,
+    }
+    defaults.update(override)
+    return Recurso.objects.create(**defaults)
+
+
+# Alternativa com factory_boy
+import factory
+from .models import Recurso
+
+
+class RecursoFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Recurso
+
+    nome = factory.Sequence(lambda n: f"Recurso {n}")
+    descricao = factory.Faker("sentence", locale="pt_BR")
+    ativo = True
+```
+
+## Convencoes
+- Instanciar service diretamente com `RecursoService()` — sem framework de DI
+- Usar `@pytest.mark.django_db` para testes que acessam banco
+- Testar cada metodo publico isoladamente
+- Testar lancamento de erros de dominio customizados
+- Mock do Manager/QuerySet com `@patch` para testes unitarios puros
+- Factory functions ou `factory_boy` para dados de teste reutilizaveis
+- Sem mocks de DRF (service nao conhece HTTP)
+{{else}}
+# Django Service Testing
+
+## Direct Instantiation with Mocks
+
+```python
+import pytest
+from unittest.mock import patch, MagicMock
+
+from .services import ResourceService
+from .exceptions import NotFoundError
+
+
+class TestResourceService:
+    def setup_method(self) -> None:
+        self.service = ResourceService()
+```
+
+## Method Tests
+
+```python
+    @pytest.mark.django_db
+    def test_find_by_id_should_return_resource(self) -> None:
+        from .factories import create_resource
+
+        resource = create_resource(name="Test")
+
+        result = self.service.find_by_id(resource.id)
+
+        assert result.name == "Test"
+        assert result.id == resource.id
+
+    def test_find_by_id_should_raise_not_found(self) -> None:
+        with pytest.raises(NotFoundError):
+            self.service.find_by_id(99999)
+
+    @pytest.mark.django_db
+    def test_create_should_create_and_return_resource(self) -> None:
+        data = {"name": "New", "description": "Description"}
+
+        result = self.service.create(data)
+
+        assert result.name == "New"
+        assert result.id is not None
+
+    @pytest.mark.django_db
+    def test_update_should_verify_existence_first(self) -> None:
+        with pytest.raises(NotFoundError):
+            self.service.update(99999, {"name": "X"})
+
+    @pytest.mark.django_db
+    def test_update_should_update_fields(self) -> None:
+        from .factories import create_resource
+
+        resource = create_resource(name="Old")
+
+        result = self.service.update(resource.id, {"name": "New"})
+
+        assert result.name == "New"
+
+    @pytest.mark.django_db
+    def test_remove_should_delete_resource(self) -> None:
+        from .factories import create_resource
+        from .models import Resource
+
+        resource = create_resource(name="Remove")
+
+        self.service.remove(resource.id)
+
+        assert not Resource.objects.filter(id=resource.id).exists()
+```
+
+## Test with Mocked Manager
+
+```python
+    @patch("app.models.Resource.objects")
+    def test_find_all_with_filters(self, mock_objects: MagicMock) -> None:
+        mock_qs = MagicMock()
+        mock_objects.all.return_value = mock_qs
+        mock_qs.filter.return_value = mock_qs
+        mock_qs.__iter__ = lambda self: iter([])
+
+        result = self.service.find_all({"is_active": True})
+
+        mock_qs.filter.assert_called_once_with(is_active=True)
+```
+
+## Test Data Factory
+
+```python
+# factories.py
+from .models import Resource
+
+
+def create_resource(**override) -> Resource:
+    """Factory function to create test Resource."""
+    defaults: dict = {
+        "name": "Default Resource",
+        "description": "Default description",
+        "is_active": True,
+    }
+    defaults.update(override)
+    return Resource.objects.create(**defaults)
+
+
+# Alternative with factory_boy
+import factory
+from .models import Resource
+
+
+class ResourceFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Resource
+
+    name = factory.Sequence(lambda n: f"Resource {n}")
+    description = factory.Faker("sentence")
+    is_active = True
+```
+
+## Conventions
+- Instantiate service directly with `ResourceService()` — no DI framework
+- Use `@pytest.mark.django_db` for tests that access the database
+- Test each public method in isolation
+- Test custom domain error raising
+- Mock Manager/QuerySet with `@patch` for pure unit tests
+- Factory functions or `factory_boy` for reusable test data
+- No DRF mocks (service doesn't know HTTP)
+{{/if}}

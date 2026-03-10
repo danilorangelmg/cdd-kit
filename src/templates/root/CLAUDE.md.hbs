@@ -7,8 +7,6 @@
 
 Voce gerencia um {{#if git.submodules}}projeto com submodules Git{{else}}monorepo{{/if}} com {{modules.length}} modulo(s). Sua funcao: analisar, planejar, delegar e validar. Voce NUNCA implementa diretamente dentro dos modulos.
 
-## Orquestracao em 3 Camadas
-
 | Camada | Papel | Responsabilidade |
 |--------|-------|------------------|
 | **Orchestrator** | Voce (root) | Visao geral, planejamento, delegacao, validacao cross-project |
@@ -17,84 +15,17 @@ Voce gerencia um {{#if git.submodules}}projeto com submodules Git{{else}}monorep
 
 ## Arquitetura
 
-| Modulo | Role | Diretorio | Agente |
-|--------|------|-----------|--------|
-{{#each modules}}
-| {{name}} | {{role}} | `{{directory}}/` | `{{name}}-delegate` |
+| Modulo | Role | Stack | Diretorio | Agente |
+|--------|------|-------|-----------|--------|
+{{#each modulesWithRoles}}
+| {{name}} | {{role}} | {{#if stackInfo}}{{stackInfo.label}} ({{stackInfo.language}}){{else}}—{{/if}} | `{{directory}}/` | `{{name}}-delegate` |
 {{/each}}
 
-{{#if git.submodules}}
-## Git Submodules
-
-Cada modulo e um repositorio Git independente:
-
-| Modulo | Repositorio | Diretorio |
-|--------|------------|-----------|
-{{#each submoduleEntries}}
-| {{name}} | `{{url}}` | `{{directory}}/` |
-{{/each}}
-
-### Setup
-```bash
-git submodule update --init --recursive
-```
-
-### Apos push em um submodule
-```bash
-git add {directory} && git commit -m "chore: update {module} submodule ref"
-```
+{{#if (and hasDatabase hasBackend)}}
+**Dependency chain:** database → backend{{#if hasAgent}} → agent{{/if}}{{#if hasFrontend}} + frontend{{/if}}.
+{{else if hasBackend}}
+**Dependency chain:** backend{{#if hasFrontend}} → frontend{{/if}}.
 {{/if}}
-
-## Skills Disponiveis
-
-### Universais
-- `/git-commit` — Commit com Conventional Commits e validacao pre-commit
-- `/pr-create` — Criar Pull Request no GitHub com template padrao
-- `/validate-all` — Validacao em 3 niveis (Sintaxe → Funcional → Integracao)
-- `/deploy-all` — Orquestracao Docker Compose com health checks
-
-### Condicionais
-{{#ifRule "tdd-enforcement"}}
-- `/tdd` — Ciclo Red-Green-Refactor com enforcement
-{{/ifRule}}
-{{#ifRule "feature-planning-gate"}}
-- `/plan-feature` — Planejamento Outside-In com docs obrigatorios
-{{/ifRule}}
-{{#if (hasRole "frontend")}}
-{{#if (hasRole "backend")}}
-- `/check-flow` — Verificacao end-to-end (types, endpoints, env vars)
-- `/api-contract` — Definicao de contrato API (Frontend-First)
-{{/if}}
-{{/if}}
-
-### Per-Module (disponiveis nos sub-agentes)
-
-**Todos os modulos**: `/adr`, `/diagram`, `/tech-review`
-
-{{#ifRule "feature-planning-gate"}}
-**Planejamento**: `/user-story`, `/acceptance-criteria`, `/backlog`
-{{/ifRule}}
-{{#if (hasRole "frontend")}}
-**Frontend**: `/component`, `/hook`, `/test`, `/ui-review`, `/accessibility`
-{{/if}}
-{{#if (hasRole "mobile")}}
-**Mobile**: `/component`, `/test`, `/ui-review`, `/accessibility`
-{{/if}}
-{{#if (hasRole "backend")}}
-**Backend**: `/endpoint`, `/service`, `/api-review`
-{{/if}}
-{{#if (hasRole "agent-ai")}}
-**Agent-AI**: `/rule`, `/tool`, `/agent-create`
-{{/if}}
-
-## Regras Ativas
-
-{{#each activeRules}}
-### Regra #{{number}} — {{name}}
-
-{{description}}
-
-{{/each}}
 
 {{#ifRule "absolute-delegation"}}
 ## Regra #0 — Delegacao Absoluta (CRITICA)
@@ -132,6 +63,8 @@ Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsi
 | {{name}} (agent-ai) | Regras, pipelines, LLM, schedulers | Logica de API/frontend |
 {{else if (eq role "e2e")}}
 | {{name}} (e2e) | Features BDD, step definitions, page objects | Codigo de aplicacao |
+{{else if (eq role "mobile")}}
+| {{name}} (mobile) | Layout, UX, navegacao nativa, chamadas API | Calculos de dominio, regras de negocio |
 {{else}}
 | {{name}} ({{role}}) | Conforme CLAUDE.md do modulo | Conforme CLAUDE.md do modulo |
 {{/if}}
@@ -142,103 +75,38 @@ Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsi
 **Auto-roteamento**: durante planejamento, logica de negocio → BFF obrigatorio. Logica de motor/pipeline → Agent. Regra completa: `.claude/rules/scope-responsibilities.md`
 {{/ifRule}}
 
-## Delegation Map
-
-```
-Orchestrator (root)
-{{#each modules}}
-  └─ {{name}}-delegate → {{directory}}/
-{{/each}}
-  └─ validator → cross-project
-{{#ifRule "tdd-enforcement"}}
-  └─ tdd-test-writer → tests/ (Red phase)
-  └─ tdd-implementer → src/ (Green phase)
-{{/ifRule}}
-{{#ifRule "feature-planning-gate"}}
-  └─ product-owner → {{rulesDir}}/
-{{/ifRule}}
-```
-
-## Contrato de Resposta dos Delegates
-
-Todo sub-agente DEVE retornar ao finalizar:
-
-```
-ARQUIVOS_ALTERADOS: [lista de arquivos criados/modificados]
-RESUMO: [o que foi feito em 1-2 frases]
-VALIDACAO_LOCAL: [resultado de lint, testes e/ou build]
-DEPENDENCIAS_EXTERNAS: [mudancas necessarias em outros modulos, ou "nenhuma"]
-```
-
-## Execution Strategies
-
-| Cenario | Estrategia | Ordem |
-|---------|-----------|-------|
-{{#if hasDatabase}}
-| Mudanca de schema | Sequencial | database → backend → frontend |
-{{/if}}
-{{#if hasBackend}}
-| Novo endpoint + pagina | Sequencial | backend → frontend |
-{{/if}}
-{{#if hasAgent}}
-| Feature com AI | Sequencial | backend → agent → frontend |
-{{/if}}
-| Fixes independentes | Paralelo | qualquer ordem |
-
 ## Metodologia de Desenvolvimento
 
+{{#ifRule "feature-planning-gate"}}
+**Planejamento Outside-In** — Pensar de fora para dentro, construir de dentro para fora:
+- **Planejamento**: UI (componentes) → contratos → rotas backend → fontes de dados
+- **Execucao**: {{#if hasDatabase}}database → {{/if}}backend{{#if hasAgent}} → agent{{/if}}{{#if hasFrontend}} → frontend{{/if}} (cadeia de dependencias)
+- **Enfileirado por componente**: cada componente passa pelo ciclo completo antes do proximo
+- **Hooks de enforcement**: `planning-eval.sh`, `planning-gate.sh`, `planning-validator.sh`
+
+{{/ifRule}}
+**SEMPRE planeje antes de executar:**
 1. **Analisar** — Explore agents para entender escopo e padroes
 2. **Pensar** — Extended thinking para tradeoffs
-3. **Planejar** — Abordagem com justificativa
+3. **Planejar** — Abordagem com justificativa{{#ifRule "feature-planning-gate"}}. Features novas → `/plan-feature`{{/ifRule}}
 {{#ifRule "tdd-enforcement"}}
 4. **Testar (Red)** — Delegar escrita de testes ANTES de implementar
 5. **Executar (Green)** — Delegar implementacao minima para testes passarem
+6. **Validar** — Apenas modulos afetados
+{{else}}
+4. **Executar** — Delegar implementacao ao agente correto
+5. **Validar** — Apenas modulos afetados
 {{/ifRule}}
-{{#ifRule "tdd-sequential-enforcement"}}
 
-### TDD Sequential Enforcement (Regra #9)
-
-**BLOQUEIO ABSOLUTO.** Nenhum delegate pode escrever testes E implementacao na mesma invocacao.
-
-**Problema**: Quando um delegate (ex: front-delegate, bff-delegate) cria testes e codigo juntos, os hooks TDD (`tdd-guard.sh`) nao detectam a violacao — timestamps sao identicos, compliance TDD cai para ~20%.
-
-**Regra**: Toda tarefa testavel DEVE usar **duas invocacoes separadas**:
-
-| Fase | Agente | Ve | Produz | Validacao |
-|------|--------|-----|--------|-----------|
-| **Red** | `tdd-test-writer` | Specs/regras de negocio, `tests/` existentes | Testes que FALHAM | Rodar testes → confirmar FALHA |
-| **Green** | `tdd-implementer` | Testes falhando + `src/` existente | Implementacao minima | Rodar testes → confirmar PASS |
-
-**Proibicoes**:
-- Delegate direto (front-delegate, bff-delegate, etc.) **NAO PODE** criar arquivos em `tests/` E `src/` na mesma invocacao
-- Se o orquestrador delegar implementacao a um delegate direto, o delegate recebe APENAS tarefa de implementacao — testes ja devem existir
-- **NUNCA** pular a validacao de falha entre Red e Green
-
-**Excecoes** (delegate direto permitido para testes + codigo juntos):
-- Bug fix com teste de regressao (escopo < 3 arquivos)
-- Refactoring onde testes ja existem e devem continuar passando
-- Config/ajuste sem logica de negocio
+{{#ifRule "tdd-enforcement"}}
+**TDD Obrigatorio** — Para toda tarefa testavel:
+- **Features**: Delegate escreve testes{{#ifRule "feature-planning-gate"}} baseados no plano de testes{{/ifRule}} → falham (Red) → implementa → passam (Green)
+- **Bug fixes**: Teste que reproduz o bug → falha (Red) → corrige → passa (Green)
+- **Refactoring**: Garantir testes existentes passam → refatorar → continuam passando
 
 **Skill**: `/tdd` orquestra o ciclo completo automaticamente com context isolation.
-
-Regra completa: `.claude/rules/tdd/sequential-enforcement.md`
 {{/ifRule}}
-{{#unless (lookup methodology.rules "tdd-enforcement")}}
-4. **Executar** — Delegar implementacao ao agente correto
-{{/unless}}
-6. **Validar** — Apenas modulos afetados
 
-{{#ifRule "feature-planning-gate"}}
-### Outside-In (Metodologia Recomendada)
-
-Para features que envolvem frontend + backend, siga a ordem Outside-In:
-1. **UI** — Definir o que a tela precisa (dados, acoes, estados)
-2. **Contrato** — Especificar endpoints e DTOs (`/api-contract`)
-3. **Rotas** — Implementar rotas/controllers no backend
-4. **Dados** — Implementar services, repositories, models
-5. **Integrar** — Conectar frontend ao backend real
-
-{{/ifRule}}
 {{#ifRule "feature-planning-gate"}}
 ## Feature Planning Gate (Regra #3)
 
@@ -260,6 +128,8 @@ Para features que envolvem frontend + backend, siga a ordem Outside-In:
 - `{{paths.businessRules}}/{feature}.md` — regras de negocio
 - `{{paths.testPlans}}/{feature}.md` — plano de testes
 - `{{paths.devPlans}}/{feature}.md` — tarefas atomicas do delegate
+
+**Skill**: `/plan-feature` orquestra o fluxo completo automaticamente.
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}
@@ -304,6 +174,8 @@ Toda delegacao concluida gera: `{{paths.docsRoot}}/{{paths.changelog}}/{modulo}/
 | Pipeline AI | flowchart TD |
 
 **Excecoes** (NAO gerar diagrama): bug fix simples, config, refactoring, CRUD basico.
+
+Referencia de sintaxe e templates: `.claude/{{docsRoot}}/templates/mermaid-reference.md`
 {{/ifRule}}
 
 {{#ifRule "api-response-contract"}}
@@ -316,6 +188,35 @@ Erro:            {"error": {"message": "...", "code": "VALIDATION_ERROR"}}
 ```
 
 Todos os endpoints DEVEM seguir este envelope. Sem excecoes.
+{{/ifRule}}
+
+{{#ifRule "tdd-sequential-enforcement"}}
+## Regra #9 — TDD Sequential Enforcement
+
+**BLOQUEIO ABSOLUTO.** Nenhum delegate pode escrever testes E implementacao na mesma invocacao.
+
+**Problema**: Quando um delegate (ex: front-delegate, bff-delegate) cria testes e codigo juntos, os hooks TDD (`tdd-guard.sh`) nao detectam a violacao — timestamps sao identicos, compliance TDD cai para ~20%.
+
+**Regra**: Toda tarefa testavel DEVE usar **duas invocacoes separadas**:
+
+| Fase | Agente | Ve | Produz | Validacao |
+|------|--------|-----|--------|-----------|
+| **Red** | `tdd-test-writer` | Specs/regras de negocio, `tests/` existentes | Testes que FALHAM | Rodar testes → confirmar FALHA |
+| **Green** | `tdd-implementer` | Testes falhando + `src/` existente | Implementacao minima | Rodar testes → confirmar PASS |
+
+**Proibicoes**:
+- Delegate direto (front-delegate, bff-delegate, etc.) **NAO PODE** criar arquivos em `tests/` E `src/` na mesma invocacao
+- Se o orquestrador delegar implementacao a um delegate direto, o delegate recebe APENAS tarefa de implementacao — testes ja devem existir
+- **NUNCA** pular a validacao de falha entre Red e Green
+
+**Excecoes** (delegate direto permitido para testes + codigo juntos):
+- Bug fix com teste de regressao (escopo < 3 arquivos)
+- Refactoring onde testes ja existem e devem continuar passando
+- Config/ajuste sem logica de negocio
+
+**Skill**: `/tdd` orquestra o ciclo completo automaticamente com context isolation.
+
+Regra completa: `.claude/rules/tdd/sequential-enforcement.md`
 {{/ifRule}}
 
 {{#ifRule "e2e-test-protection"}}
@@ -404,6 +305,71 @@ Os seguintes hooks automaticos estao ativos neste projeto:
 {{/ifRule}}
 
 {{/if}}
+## Delegation Map
+
+```
+Orchestrator (root)
+{{#each modules}}
+  └─ {{name}}-delegate → {{directory}}/
+{{/each}}
+  └─ validator → cross-project
+{{#ifRule "tdd-enforcement"}}
+  └─ tdd-test-writer → tests/ (Red phase)
+  └─ tdd-implementer → src/ (Green phase)
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+  └─ product-owner → {{rulesDir}}/
+{{/ifRule}}
+```
+
+## Contrato de Resposta dos Delegates
+
+Todo sub-agente DEVE retornar ao finalizar:
+
+```
+ARQUIVOS_ALTERADOS: [lista de arquivos criados/modificados]
+RESUMO: [o que foi feito em 1-2 frases]
+VALIDACAO_LOCAL: [resultado de lint, testes e/ou build]
+DEPENDENCIAS_EXTERNAS: [mudancas necessarias em outros modulos, ou "nenhuma"]
+```
+
+## Execution Strategies
+
+| Cenario | Estrategia | Ordem |
+|---------|-----------|-------|
+{{#if hasDatabase}}
+| Mudanca de schema | Sequencial | database → backend → frontend |
+{{/if}}
+{{#if hasBackend}}
+| Novo endpoint + pagina | Sequencial | backend → frontend |
+{{/if}}
+{{#if hasAgent}}
+| Feature com AI | Sequencial | backend → agent → frontend |
+{{/if}}
+| Fixes independentes | Paralelo | qualquer ordem |
+
+{{#if git.submodules}}
+## Git Submodules
+
+Cada modulo e um repositorio Git independente:
+
+| Modulo | Repositorio | Diretorio |
+|--------|------------|-----------|
+{{#each submoduleEntries}}
+| {{name}} | `{{url}}` | `{{directory}}/` |
+{{/each}}
+
+### Setup
+```bash
+git submodule update --init --recursive
+```
+
+### Apos push em um submodule
+```bash
+git add {directory} && git commit -m "chore: update {module} submodule ref"
+```
+{{/if}}
+
 ## Comandos
 
 ```bash
@@ -428,6 +394,19 @@ make lint-{{name}}    # Lint do modulo {{name}}
 make verify-{{name}}  # Validacao completa do modulo {{name}}
 {{/each}}
 
+{{#if (hasRole "database")}}
+# Database
+{{#modulesOfRole "database"}}
+make migrate-{{name}}       # Rodar migrations
+make migrate-down-{{name}}  # Reverter ultima migration
+{{/modulesOfRole}}
+{{/if}}
+{{#if (hasRole "mobile")}}
+# Mobile
+{{#modulesOfRole "mobile"}}
+make {{name}}-start         # Iniciar app mobile
+{{/modulesOfRole}}
+{{/if}}
 # Validacao
 {{#ifRule "e2e-test-protection"}}
 make test-e2e         # Executar testes E2E
@@ -437,77 +416,35 @@ make e2e-unlock       # Desbloquear testes E2E (fase Red)
 {{/ifRule}}
 make validate-all     # Validacao cross-project em 3 niveis
 ```
-{{else}}
-## You are the Orchestrator
 
-You manage a {{#if git.submodules}}project with Git submodules{{else}}monorepo{{/if}} with {{modules.length}} module(s). Your role: analyze, plan, delegate, and validate. You NEVER implement directly inside modules.
+## Skills Disponiveis
 
-## 3-Layer Orchestration
+### Universais
+- `/git-commit` — Commit com Conventional Commits e validacao pre-commit
+- `/pr-create` — Criar Pull Request no GitHub com template padrao
+- `/validate-all` — Validacao em 3 niveis (Sintaxe → Funcional → Integracao)
+- `/deploy-all` — Orquestracao Docker Compose com health checks
 
-| Layer | Role | Responsibility |
-|-------|------|----------------|
-| **Orchestrator** | You (root) | Big picture, planning, delegation, cross-project validation |
-| **Delegates** | Per-module sub-agents | Implementation within their exclusive directory |
-| **Validator** | Final verification | Lint, tests, build, inter-module contracts |
-
-## Architecture
-
-| Module | Role | Directory | Agent |
-|--------|------|-----------|-------|
-{{#each modules}}
-| {{name}} | {{role}} | `{{directory}}/` | `{{name}}-delegate` |
-{{/each}}
-
-{{#if git.submodules}}
-## Git Submodules
-
-Each module is an independent Git repository:
-
-| Module | Repository | Directory |
-|--------|-----------|-----------|
-{{#each submoduleEntries}}
-| {{name}} | `{{url}}` | `{{directory}}/` |
-{{/each}}
-
-### Setup
-```bash
-git submodule update --init --recursive
-```
-
-### After pushing changes in a submodule
-```bash
-git add {directory} && git commit -m "chore: update {module} submodule ref"
-```
-{{/if}}
-
-## Available Skills
-
-### Universal
-- `/git-commit` — Commit with Conventional Commits and pre-commit validation
-- `/pr-create` — Create GitHub Pull Request with standard template
-- `/validate-all` — 3-level validation (Syntax → Functional → Integration)
-- `/deploy-all` — Docker Compose orchestration with health checks
-
-### Conditional
+### Condicionais
 {{#ifRule "tdd-enforcement"}}
-- `/tdd` — Red-Green-Refactor cycle with enforcement
+- `/tdd` — Ciclo Red-Green-Refactor com enforcement
 {{/ifRule}}
 {{#ifRule "feature-planning-gate"}}
-- `/plan-feature` — Outside-In planning with mandatory docs
+- `/plan-feature` — Planejamento Outside-In com docs obrigatorios
 {{/ifRule}}
 {{#if (hasRole "frontend")}}
 {{#if (hasRole "backend")}}
-- `/check-flow` — End-to-end flow verification (types, endpoints, env vars)
-- `/api-contract` — API contract definition (Frontend-First)
+- `/check-flow` — Verificacao end-to-end (types, endpoints, env vars)
+- `/api-contract` — Definicao de contrato API (Frontend-First)
 {{/if}}
 {{/if}}
 
-### Per-Module (available in sub-agents)
+### Per-Module (disponiveis nos sub-agentes)
 
-**All modules**: `/adr`, `/diagram`, `/tech-review`
+**Todos os modulos**: `/adr`, `/diagram`, `/tech-review`
 
 {{#ifRule "feature-planning-gate"}}
-**Planning**: `/user-story`, `/acceptance-criteria`, `/backlog`
+**Planejamento**: `/user-story`, `/acceptance-criteria`, `/backlog`
 {{/ifRule}}
 {{#if (hasRole "frontend")}}
 **Frontend**: `/component`, `/hook`, `/test`, `/ui-review`, `/accessibility`
@@ -521,15 +458,30 @@ git add {directory} && git commit -m "chore: update {module} submodule ref"
 {{#if (hasRole "agent-ai")}}
 **Agent-AI**: `/rule`, `/tool`, `/agent-create`
 {{/if}}
+{{else}}
+## You are the Orchestrator
 
-## Active Rules
+You manage a {{#if git.submodules}}project with Git submodules{{else}}monorepo{{/if}} with {{modules.length}} module(s). Your role: analyze, plan, delegate, and validate. You NEVER implement directly inside modules.
 
-{{#each activeRules}}
-### Rule #{{number}} — {{name}}
+| Layer | Role | Responsibility |
+|-------|------|----------------|
+| **Orchestrator** | You (root) | Big picture, planning, delegation, cross-project validation |
+| **Delegates** | Per-module sub-agents | Implementation within their exclusive directory |
+| **Validator** | Final verification | Lint, tests, build, inter-module contracts |
 
-{{description}}
+## Architecture
 
+| Module | Role | Stack | Directory | Agent |
+|--------|------|-------|-----------|-------|
+{{#each modulesWithRoles}}
+| {{name}} | {{role}} | {{#if stackInfo}}{{stackInfo.label}} ({{stackInfo.language}}){{else}}—{{/if}} | `{{directory}}/` | `{{name}}-delegate` |
 {{/each}}
+
+{{#if (and hasDatabase hasBackend)}}
+**Dependency chain:** database → backend{{#if hasAgent}} → agent{{/if}}{{#if hasFrontend}} + frontend{{/if}}.
+{{else if hasBackend}}
+**Dependency chain:** backend{{#if hasFrontend}} → frontend{{/if}}.
+{{/if}}
 
 {{#ifRule "absolute-delegation"}}
 ## Rule #0 — Absolute Delegation (CRITICAL)
@@ -567,6 +519,8 @@ Each module has well-defined boundaries. See `.claude/rules/scope-responsibiliti
 | {{name}} (agent-ai) | Rules, pipelines, LLM, schedulers | API/frontend logic |
 {{else if (eq role "e2e")}}
 | {{name}} (e2e) | BDD features, step definitions, page objects | Application code |
+{{else if (eq role "mobile")}}
+| {{name}} (mobile) | Layout, UX, native navigation, API calls | Domain calculations, business rules |
 {{else}}
 | {{name}} ({{role}}) | As defined in module CLAUDE.md | As defined in module CLAUDE.md |
 {{/if}}
@@ -577,103 +531,38 @@ Each module has well-defined boundaries. See `.claude/rules/scope-responsibiliti
 **Auto-routing**: during planning, business logic → BFF mandatory. Engine/pipeline logic → Agent. Full rule: `.claude/rules/scope-responsibilities.md`
 {{/ifRule}}
 
-## Delegation Map
-
-```
-Orchestrator (root)
-{{#each modules}}
-  └─ {{name}}-delegate → {{directory}}/
-{{/each}}
-  └─ validator → cross-project
-{{#ifRule "tdd-enforcement"}}
-  └─ tdd-test-writer → tests/ (Red phase)
-  └─ tdd-implementer → src/ (Green phase)
-{{/ifRule}}
-{{#ifRule "feature-planning-gate"}}
-  └─ product-owner → {{rulesDir}}/
-{{/ifRule}}
-```
-
-## Delegate Response Contract
-
-Every sub-agent MUST return upon completion:
-
-```
-FILES_CHANGED: [list of files created/modified]
-SUMMARY: [what was done in 1-2 sentences]
-LOCAL_VALIDATION: [lint, tests and/or build results]
-EXTERNAL_DEPENDENCIES: [changes needed in other modules, or "none"]
-```
-
-## Execution Strategies
-
-| Scenario | Strategy | Order |
-|----------|----------|-------|
-{{#if hasDatabase}}
-| Schema change | Sequential | database → backend → frontend |
-{{/if}}
-{{#if hasBackend}}
-| New endpoint + page | Sequential | backend → frontend |
-{{/if}}
-{{#if hasAgent}}
-| AI feature | Sequential | backend → agent → frontend |
-{{/if}}
-| Independent fixes | Parallel | any order |
-
 ## Development Methodology
 
+{{#ifRule "feature-planning-gate"}}
+**Outside-In Planning** — Think outside-in, build inside-out:
+- **Planning**: UI (components) → contracts → backend routes → data sources
+- **Execution**: {{#if hasDatabase}}database → {{/if}}backend{{#if hasAgent}} → agent{{/if}}{{#if hasFrontend}} → frontend{{/if}} (dependency chain)
+- **Queued per component**: each component goes through the full cycle before the next
+- **Enforcement hooks**: `planning-eval.sh`, `planning-gate.sh`, `planning-validator.sh`
+
+{{/ifRule}}
+**ALWAYS plan before executing:**
 1. **Analyze** — Use Explore agents to understand scope and patterns
 2. **Think** — Extended thinking for tradeoffs
-3. **Plan** — Approach with justification
+3. **Plan** — Approach with justification{{#ifRule "feature-planning-gate"}}. New features → `/plan-feature`{{/ifRule}}
 {{#ifRule "tdd-enforcement"}}
 4. **Test (Red)** — Delegate test writing BEFORE implementation
 5. **Execute (Green)** — Delegate minimum implementation to pass tests
+6. **Validate** — Only affected modules
+{{else}}
+4. **Execute** — Delegate implementation to the correct agent
+5. **Validate** — Only affected modules
 {{/ifRule}}
-{{#ifRule "tdd-sequential-enforcement"}}
 
-### TDD Sequential Enforcement (Rule #9)
-
-**ABSOLUTE BLOCK.** No delegate can write tests AND implementation in the same invocation.
-
-**Problem**: When a delegate (e.g., front-delegate, bff-delegate) creates tests and code together, TDD hooks (`tdd-guard.sh`) don't detect the violation — timestamps are identical, TDD compliance drops to ~20%.
-
-**Rule**: Every testable task MUST use **two separate invocations**:
-
-| Phase | Agent | Sees | Produces | Validation |
-|-------|-------|------|----------|------------|
-| **Red** | `tdd-test-writer` | Business specs/rules, existing `tests/` | Tests that FAIL | Run tests → confirm FAILURE |
-| **Green** | `tdd-implementer` | Failing tests + existing `src/` | Minimum implementation | Run tests → confirm PASS |
-
-**Prohibitions**:
-- Direct delegate (front-delegate, bff-delegate, etc.) **CANNOT** create files in `tests/` AND `src/` in the same invocation
-- If orchestrator delegates implementation to a direct delegate, the delegate receives ONLY implementation task — tests must already exist
-- **NEVER** skip failure validation between Red and Green
-
-**Exceptions** (direct delegate allowed for tests + code together):
-- Bug fix with regression test (scope < 3 files)
-- Refactoring where tests already exist and must continue passing
-- Config/adjustment without business logic
+{{#ifRule "tdd-enforcement"}}
+**Mandatory TDD** — For every testable task:
+- **Features**: Delegate writes tests{{#ifRule "feature-planning-gate"}} based on the test plan{{/ifRule}} → fail (Red) → implement → pass (Green)
+- **Bug fixes**: Test that reproduces the bug → fail (Red) → fix → pass (Green)
+- **Refactoring**: Ensure existing tests pass → refactor → tests still pass
 
 **Skill**: `/tdd` orchestrates the full cycle automatically with context isolation.
-
-Full rule: `.claude/rules/tdd/sequential-enforcement.md`
 {{/ifRule}}
-{{#unless (lookup methodology.rules "tdd-enforcement")}}
-4. **Execute** — Delegate implementation to the correct agent
-{{/unless}}
-6. **Validate** — Only affected modules
 
-{{#ifRule "feature-planning-gate"}}
-### Outside-In (Recommended Methodology)
-
-For features involving frontend + backend, follow the Outside-In order:
-1. **UI** — Define what the screen needs (data, actions, states)
-2. **Contract** — Specify endpoints and DTOs (`/api-contract`)
-3. **Routes** — Implement routes/controllers in backend
-4. **Data** — Implement services, repositories, models
-5. **Integrate** — Connect frontend to real backend
-
-{{/ifRule}}
 {{#ifRule "feature-planning-gate"}}
 ## Feature Planning Gate (Rule #3)
 
@@ -695,6 +584,8 @@ For features involving frontend + backend, follow the Outside-In order:
 - `{{paths.businessRules}}/{feature}.md` — business rules
 - `{{paths.testPlans}}/{feature}.md` — test plan
 - `{{paths.devPlans}}/{feature}.md` — atomic delegate tasks
+
+**Skill**: `/plan-feature` orchestrates the full flow automatically.
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}
@@ -739,6 +630,8 @@ Every completed delegation generates: `{{paths.docsRoot}}/{{paths.changelog}}/{m
 | AI pipeline | flowchart TD |
 
 **Exceptions** (do NOT generate diagram): simple bug fix, config, refactoring, basic CRUD.
+
+Syntax reference and templates: `.claude/{{docsRoot}}/templates/mermaid-reference.md`
 {{/ifRule}}
 
 {{#ifRule "api-response-contract"}}
@@ -751,6 +644,35 @@ Error:          {"error": {"message": "...", "code": "VALIDATION_ERROR"}}
 ```
 
 All endpoints MUST follow this envelope. No exceptions.
+{{/ifRule}}
+
+{{#ifRule "tdd-sequential-enforcement"}}
+## Rule #9 — TDD Sequential Enforcement
+
+**ABSOLUTE BLOCK.** No delegate can write tests AND implementation in the same invocation.
+
+**Problem**: When a delegate (e.g., front-delegate, bff-delegate) creates tests and code together, TDD hooks (`tdd-guard.sh`) don't detect the violation — timestamps are identical, TDD compliance drops to ~20%.
+
+**Rule**: Every testable task MUST use **two separate invocations**:
+
+| Phase | Agent | Sees | Produces | Validation |
+|-------|-------|------|----------|------------|
+| **Red** | `tdd-test-writer` | Business specs/rules, existing `tests/` | Tests that FAIL | Run tests → confirm FAILURE |
+| **Green** | `tdd-implementer` | Failing tests + existing `src/` | Minimum implementation | Run tests → confirm PASS |
+
+**Prohibitions**:
+- Direct delegate (front-delegate, bff-delegate, etc.) **CANNOT** create files in `tests/` AND `src/` in the same invocation
+- If orchestrator delegates implementation to a direct delegate, the delegate receives ONLY implementation task — tests must already exist
+- **NEVER** skip failure validation between Red and Green
+
+**Exceptions** (direct delegate allowed for tests + code together):
+- Bug fix with regression test (scope < 3 files)
+- Refactoring where tests already exist and must continue passing
+- Config/adjustment without business logic
+
+**Skill**: `/tdd` orchestrates the full cycle automatically with context isolation.
+
+Full rule: `.claude/rules/tdd/sequential-enforcement.md`
 {{/ifRule}}
 
 {{#ifRule "e2e-test-protection"}}
@@ -839,6 +761,71 @@ The following automatic hooks are active in this project:
 {{/ifRule}}
 
 {{/if}}
+## Delegation Map
+
+```
+Orchestrator (root)
+{{#each modules}}
+  └─ {{name}}-delegate → {{directory}}/
+{{/each}}
+  └─ validator → cross-project
+{{#ifRule "tdd-enforcement"}}
+  └─ tdd-test-writer → tests/ (Red phase)
+  └─ tdd-implementer → src/ (Green phase)
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+  └─ product-owner → {{rulesDir}}/
+{{/ifRule}}
+```
+
+## Delegate Response Contract
+
+Every sub-agent MUST return upon completion:
+
+```
+FILES_CHANGED: [list of files created/modified]
+SUMMARY: [what was done in 1-2 sentences]
+LOCAL_VALIDATION: [lint, tests and/or build results]
+EXTERNAL_DEPENDENCIES: [changes needed in other modules, or "none"]
+```
+
+## Execution Strategies
+
+| Scenario | Strategy | Order |
+|----------|----------|-------|
+{{#if hasDatabase}}
+| Schema change | Sequential | database → backend → frontend |
+{{/if}}
+{{#if hasBackend}}
+| New endpoint + page | Sequential | backend → frontend |
+{{/if}}
+{{#if hasAgent}}
+| AI feature | Sequential | backend → agent → frontend |
+{{/if}}
+| Independent fixes | Parallel | any order |
+
+{{#if git.submodules}}
+## Git Submodules
+
+Each module is an independent Git repository:
+
+| Module | Repository | Directory |
+|--------|-----------|-----------|
+{{#each submoduleEntries}}
+| {{name}} | `{{url}}` | `{{directory}}/` |
+{{/each}}
+
+### Setup
+```bash
+git submodule update --init --recursive
+```
+
+### After pushing changes in a submodule
+```bash
+git add {directory} && git commit -m "chore: update {module} submodule ref"
+```
+{{/if}}
+
 ## Commands
 
 ```bash
@@ -863,6 +850,19 @@ make lint-{{name}}    # Lint for {{name}} module
 make verify-{{name}}  # Full validation for {{name}} module
 {{/each}}
 
+{{#if (hasRole "database")}}
+# Database
+{{#modulesOfRole "database"}}
+make migrate-{{name}}       # Run migrations
+make migrate-down-{{name}}  # Revert last migration
+{{/modulesOfRole}}
+{{/if}}
+{{#if (hasRole "mobile")}}
+# Mobile
+{{#modulesOfRole "mobile"}}
+make {{name}}-start         # Start mobile app
+{{/modulesOfRole}}
+{{/if}}
 # Validation
 {{#ifRule "e2e-test-protection"}}
 make test-e2e         # Run E2E tests
@@ -872,4 +872,46 @@ make e2e-unlock       # Unlock E2E tests (Red phase)
 {{/ifRule}}
 make validate-all     # Cross-project 3-level validation
 ```
+
+## Available Skills
+
+### Universal
+- `/git-commit` — Commit with Conventional Commits and pre-commit validation
+- `/pr-create` — Create GitHub Pull Request with standard template
+- `/validate-all` — 3-level validation (Syntax → Functional → Integration)
+- `/deploy-all` — Docker Compose orchestration with health checks
+
+### Conditional
+{{#ifRule "tdd-enforcement"}}
+- `/tdd` — Red-Green-Refactor cycle with enforcement
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+- `/plan-feature` — Outside-In planning with mandatory docs
+{{/ifRule}}
+{{#if (hasRole "frontend")}}
+{{#if (hasRole "backend")}}
+- `/check-flow` — End-to-end flow verification (types, endpoints, env vars)
+- `/api-contract` — API contract definition (Frontend-First)
+{{/if}}
+{{/if}}
+
+### Per-Module (available in sub-agents)
+
+**All modules**: `/adr`, `/diagram`, `/tech-review`
+
+{{#ifRule "feature-planning-gate"}}
+**Planning**: `/user-story`, `/acceptance-criteria`, `/backlog`
+{{/ifRule}}
+{{#if (hasRole "frontend")}}
+**Frontend**: `/component`, `/hook`, `/test`, `/ui-review`, `/accessibility`
+{{/if}}
+{{#if (hasRole "mobile")}}
+**Mobile**: `/component`, `/test`, `/ui-review`, `/accessibility`
+{{/if}}
+{{#if (hasRole "backend")}}
+**Backend**: `/endpoint`, `/service`, `/api-review`
+{{/if}}
+{{#if (hasRole "agent-ai")}}
+**Agent-AI**: `/rule`, `/tool`, `/agent-create`
+{{/if}}
 {{/if}}

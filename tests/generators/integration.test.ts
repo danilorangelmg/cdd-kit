@@ -36,6 +36,8 @@ const standardConfig: ProjectConfig = {
       "post-dev-e2e-validation": false,
       "tdd-enforcement": true,
       "tdd-sequential-enforcement": true,
+      "execution-trace": false,
+      "parallel-delegation": true,
     },
   },
 };
@@ -94,9 +96,8 @@ describe("Project Generation (Standard preset, English)", () => {
 
     // Phase 5: Enforcement Hooks section (TDD + planning enabled)
     expect(claude).toContain("Enforcement Hooks");
-    expect(claude).toContain("tdd-guard.sh");
+    expect(claude).toContain("pre-edit.sh");
     expect(claude).toContain("auto-test.sh");
-    expect(claude).toContain("planning-gate.sh");
 
     // Phase 5: Expanded Rule #5 with responsibility table
     expect(claude).toContain("CANNOT contain");
@@ -265,10 +266,10 @@ describe("Project Generation (Standard preset, English)", () => {
       path.join(TEST_DIR, ".claude", "settings.json"),
       "utf-8"
     );
-    expect(settings).toContain("tdd-guard");
+    expect(settings).toContain("pre-edit");
 
-    // Hooks (TDD enforcement enabled)
-    expect(files).toContain(".claude/hooks/tdd-guard.sh");
+    // Hooks (consolidated pre-edit + TDD enforcement enabled)
+    expect(files).toContain(".claude/hooks/pre-edit.sh");
     expect(files).toContain(".claude/hooks/auto-test.sh");
     expect(files).toContain(".claude/hooks/tdd-eval.sh");
 
@@ -295,7 +296,7 @@ describe("Project Generation (Standard preset, English)", () => {
 
     // Hooks should be executable
     const hookStat = await fs.stat(
-      path.join(TEST_DIR, ".claude", "hooks", "tdd-guard.sh")
+      path.join(TEST_DIR, ".claude", "hooks", "pre-edit.sh")
     );
     expect(hookStat.mode & 0o111).toBeGreaterThan(0);
 
@@ -340,31 +341,29 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(seqEnforcement).toContain("tdd-test-writer");
     expect(seqEnforcement).toContain("tdd-implementer");
 
-    // Planning hooks (feature-planning-gate enabled in standard)
-    expect(files).toContain(".claude/hooks/planning-gate.sh");
+    // Planning hooks (feature-planning-gate enabled in standard — consolidated in pre-edit)
     expect(files).toContain(".claude/hooks/planning-validator.sh");
     expect(files).toContain(".claude/hooks/planning-eval.sh");
 
-    // Planning hooks should be executable
-    const planningHookStat = await fs.stat(
-      path.join(TEST_DIR, ".claude", "hooks", "planning-gate.sh")
+    // Pre-edit (consolidated) should be executable
+    const preEditStat = await fs.stat(
+      path.join(TEST_DIR, ".claude", "hooks", "pre-edit.sh")
     );
-    expect(planningHookStat.mode & 0o111).toBeGreaterThan(0);
+    expect(preEditStat.mode & 0o111).toBeGreaterThan(0);
 
-    // Settings should reference planning hooks
-    expect(settings).toContain("planning-gate");
+    // Settings should reference consolidated pre-edit and planning hooks
+    expect(settings).toContain("pre-edit");
     expect(settings).toContain("planning-validator");
     expect(settings).toContain("planning-eval");
 
-    // Planning gate should use English paths
-    const planningGate = await fs.readFile(
-      path.join(TEST_DIR, ".claude", "hooks", "planning-gate.sh"),
+    // Pre-edit hook should use English paths
+    const preEdit = await fs.readFile(
+      path.join(TEST_DIR, ".claude", "hooks", "pre-edit.sh"),
       "utf-8"
     );
-    expect(planningGate).toContain("docs/rules/");
-    expect(planningGate).toContain("dev-plans");
-    expect(planningGate).toContain("test-plans");
-    expect(planningGate).not.toContain("documentos/");
+    expect(preEdit).toContain("docs/business-rules/");
+    expect(preEdit).toContain("dev-plans");
+    expect(preEdit).toContain("test-plans");
 
     // Shared test-finding library (TDD enabled)
     expect(files).toContain(".claude/hooks/lib/find-test.sh");
@@ -376,12 +375,8 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(findTestLib).toContain("find_ts_test");
     expect(findTestLib).toContain("find_go_test");
 
-    // TDD guard should source the shared library
-    const tddGuard = await fs.readFile(
-      path.join(TEST_DIR, ".claude", "hooks", "tdd-guard.sh"),
-      "utf-8"
-    );
-    expect(tddGuard).toContain('source "$SCRIPT_DIR/lib/find-test.sh"');
+    // Pre-edit (consolidated guard) should source the shared library
+    expect(preEdit).toContain('source "$SCRIPT_DIR/lib/find-test.sh"');
 
     // Auto-test should source the shared library and run specific tests
     const autoTest = await fs.readFile(
@@ -532,7 +527,7 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
   it("does NOT generate TDD hooks when disabled", async () => {
     const files = await generateClaudeInfra(TEST_DIR, minimalConfig);
 
-    expect(files).not.toContain(".claude/hooks/tdd-guard.sh");
+    expect(files).not.toContain(".claude/hooks/pre-edit.sh");
     expect(files).not.toContain(".claude/hooks/auto-test.sh");
     expect(files).not.toContain(".claude/hooks/lib/find-test.sh");
     expect(files).not.toContain(".claude/skills/tdd/SKILL.md");
@@ -561,7 +556,6 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
     expect(files).not.toContain(".claude/rules/feature-gate.md");
     expect(files).not.toContain(".claude/skills/plan-feature/SKILL.md");
     expect(files).not.toContain(".claude/agents/product-owner.md");
-    expect(files).not.toContain(".claude/hooks/planning-gate.sh");
     expect(files).not.toContain(".claude/hooks/planning-validator.sh");
     expect(files).not.toContain(".claude/hooks/planning-eval.sh");
   });
@@ -596,7 +590,7 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
 
     // Should NOT have enforcement hooks (TDD/planning disabled)
     expect(claude).not.toContain("Enforcement Hooks");
-    expect(claude).not.toContain("tdd-guard.sh");
+    expect(claude).not.toContain("pre-edit.sh");
     expect(claude).not.toContain("Outside-In");
 
     // Should still have orchestration table and skills
@@ -967,20 +961,19 @@ describe("Project Generation (with git submodules)", () => {
         )
       ).toBe(true);
 
-      // TDD hooks (TDD is enabled in submoduleConfig)
+      // Consolidated pre-edit hook (TDD + Planning in one process)
+      expect(files).toContain(`${dir}/.claude/hooks/pre-edit.sh`);
       expect(files).toContain(`${dir}/.claude/hooks/lib/find-test.sh`);
-      expect(files).toContain(`${dir}/.claude/hooks/tdd-guard.sh`);
       expect(files).toContain(`${dir}/.claude/hooks/auto-test.sh`);
       expect(files).toContain(`${dir}/.claude/hooks/tdd-eval.sh`);
 
       // Planning hooks (feature-planning-gate enabled in submoduleConfig)
-      expect(files).toContain(`${dir}/.claude/hooks/planning-gate.sh`);
       expect(files).toContain(`${dir}/.claude/hooks/planning-validator.sh`);
       expect(files).toContain(`${dir}/.claude/hooks/planning-eval.sh`);
 
       // Hooks should be executable
       const hookStat = await fs.stat(
-        path.join(TEST_DIR, dir, ".claude", "hooks", "tdd-guard.sh")
+        path.join(TEST_DIR, dir, ".claude", "hooks", "pre-edit.sh")
       );
       expect(hookStat.mode & 0o111).toBeGreaterThan(0);
 

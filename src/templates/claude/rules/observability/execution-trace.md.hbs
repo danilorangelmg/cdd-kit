@@ -1,0 +1,262 @@
+---
+description: "{{#if (eq project.language "pt-BR")}}Regra #10 — Observabilidade de Execucao: todo fluxo multi-step DEVE gerar trace persistente.{{else}}Rule #10 — Execution Observability: every multi-step flow MUST generate a persistent trace.{{/if}}"
+globs: ["**/*"]
+---
+
+{{#if (eq project.language "pt-BR")}}
+# Regra #10 — Observabilidade de Execucao
+
+## Problema
+
+Sem observabilidade, o fluxo de execucao e uma caixa-preta:
+- Nao se sabe quais etapas foram executadas e quais foram puladas
+- Falhas intermediarias sao engolidas silenciosamente
+- Reexecucao parcial e impossivel — precisa comecar do zero
+- Post-mortem de bugs e adivinhacao, nao analise
+- Delegates reportam "sucesso" sem evidencia verificavel
+
+## Tres Mecanismos Obrigatorios
+
+### 1. Plan Checkpoint (Pre-Execucao)
+
+**ANTES** de iniciar qualquer implementacao multi-step, o orquestrador DEVE:
+
+1. Listar todas as etapas planejadas com modulos envolvidos
+2. Registrar o plano no trace file (ver formato abaixo)
+3. Confirmar que as pre-condicoes estao satisfeitas
+
+```
+## Plan Checkpoint
+- [ ] Etapa 1: {descricao} → modulo: {modulo}
+- [ ] Etapa 2: {descricao} → modulo: {modulo}
+- [ ] Etapa 3: {descricao} → modulo: {modulo}
+Pre-condicoes: {lista}
+```
+
+Isso garante rastreabilidade ANTES de qualquer delegate ser acionado.
+
+### 2. Spec-Validate (Pos-Implementacao)
+
+**APOS** cada etapa de implementacao, executar `/spec-validate`:
+
+1. Validar que o output do delegate corresponde ao esperado
+2. Registrar resultado no trace file (PASS/FAIL + detalhes)
+3. Se FAIL → decidir: retry, rollback ou escalar
+
+**REGRA**: Nenhuma etapa e considerada concluida sem spec-validate registrado no trace.
+
+### 3. Trace File Persistente (Durante Execucao)
+
+Todo fluxo multi-step DEVE manter um arquivo de trace em disco:
+
+```
+{{paths.docsRoot}}/trace/{feature}-{YYYY-MM-DD}.md
+```
+
+O trace file e atualizado em tempo real, a cada etapa concluida.
+
+## Formato do Trace File
+
+```markdown
+# Trace: {feature}
+Data: {YYYY-MM-DD HH:mm}
+Status: IN_PROGRESS | COMPLETED | FAILED | PARTIAL
+
+## Plan
+- [x] Etapa 1: {descricao} → {modulo}
+- [x] Etapa 2: {descricao} → {modulo}
+- [ ] Etapa 3: {descricao} → {modulo}
+
+## Execution Log
+
+### Etapa 1 — {descricao}
+- **Inicio**: {timestamp}
+- **Delegate**: {agente}
+- **Modulo**: {modulo}
+- **Arquivos alterados**: {lista}
+- **Spec-Validate**: PASS | FAIL
+- **Duracao**: {tempo}
+- **Notas**: {observacoes}
+
+### Etapa 2 — {descricao}
+...
+
+## Summary
+- Etapas planejadas: {N}
+- Etapas concluidas: {N}
+- Etapas falhadas: {N}
+- Arquivos totais alterados: {N}
+```
+
+## Ciclo de Vida do Trace
+
+| Momento | Acao | Campo atualizado |
+|---------|------|-----------------|
+| Inicio do fluxo | Criar trace file | Plan, Status → IN_PROGRESS |
+| Antes de cada etapa | Registrar inicio | Execution Log → Inicio |
+| Apos cada etapa | Registrar resultado | Spec-Validate, Arquivos, Notas |
+| Falha em etapa | Registrar erro + decisao | Status → FAILED ou PARTIAL |
+| Fim do fluxo | Consolidar resumo | Summary, Status → COMPLETED |
+
+## Diretorio de Traces
+
+```
+{{paths.docsRoot}}/trace/
+  {feature-a}-2025-01-15.md
+  {feature-b}-2025-01-16.md
+  {feature-a}-2025-01-20.md   ← reexecucao da mesma feature
+```
+
+- Um trace por feature por execucao (data no nome evita colisao)
+- Traces anteriores NUNCA sao sobrescritos
+- Uteis para post-mortem, auditoria e melhoria continua
+
+## Relacao com Outras Regras
+
+{{#ifRule "changelog-gate"}}
+- **Regra #1 (Changelog)**: Trace fornece evidencia para entradas do changelog
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+- **Regra #3 (Planning)**: O plano da feature alimenta o Plan Checkpoint do trace
+{{/ifRule}}
+{{#ifRule "tdd-sequential-enforcement"}}
+- **Regra #9 (TDD Sequential)**: Fases Red/Green sao etapas separadas no trace, cada uma com seu spec-validate
+{{/ifRule}}
+
+## Violacao
+
+| Situacao | Severidade | Consequencia |
+|----------|-----------|--------------|
+| Fluxo multi-step sem trace file | **BLOQUEIO** | Parar e criar trace antes de continuar |
+| Etapa sem spec-validate | **BLOQUEIO** | Etapa nao e considerada concluida |
+| Trace desatualizado (etapas faltando) | **WARNING** | Atualizar trace antes da proxima etapa |
+| Trace file sobrescrito | **BLOQUEIO** | Restaurar e criar novo com data atual |
+{{else}}
+# Rule #10 — Execution Observability
+
+## Problem
+
+Without observability, the execution flow is a black box:
+- No way to know which steps were executed and which were skipped
+- Intermediate failures are silently swallowed
+- Partial re-execution is impossible — must start from scratch
+- Bug post-mortems are guesswork, not analysis
+- Delegates report "success" without verifiable evidence
+
+## Three Mandatory Mechanisms
+
+### 1. Plan Checkpoint (Pre-Execution)
+
+**BEFORE** starting any multi-step implementation, the orchestrator MUST:
+
+1. List all planned steps with involved modules
+2. Record the plan in the trace file (see format below)
+3. Confirm that pre-conditions are satisfied
+
+```
+## Plan Checkpoint
+- [ ] Step 1: {description} → module: {module}
+- [ ] Step 2: {description} → module: {module}
+- [ ] Step 3: {description} → module: {module}
+Pre-conditions: {list}
+```
+
+This ensures traceability BEFORE any delegate is invoked.
+
+### 2. Spec-Validate (Post-Implementation)
+
+**AFTER** each implementation step, run `/spec-validate`:
+
+1. Validate that the delegate output matches expectations
+2. Record result in the trace file (PASS/FAIL + details)
+3. If FAIL → decide: retry, rollback, or escalate
+
+**RULE**: No step is considered complete without spec-validate recorded in the trace.
+
+### 3. Persistent Trace File (During Execution)
+
+Every multi-step flow MUST maintain a trace file on disk:
+
+```
+{{paths.docsRoot}}/trace/{feature}-{YYYY-MM-DD}.md
+```
+
+The trace file is updated in real-time, after each completed step.
+
+## Trace File Format
+
+```markdown
+# Trace: {feature}
+Date: {YYYY-MM-DD HH:mm}
+Status: IN_PROGRESS | COMPLETED | FAILED | PARTIAL
+
+## Plan
+- [x] Step 1: {description} → {module}
+- [x] Step 2: {description} → {module}
+- [ ] Step 3: {description} → {module}
+
+## Execution Log
+
+### Step 1 — {description}
+- **Start**: {timestamp}
+- **Delegate**: {agent}
+- **Module**: {module}
+- **Files changed**: {list}
+- **Spec-Validate**: PASS | FAIL
+- **Duration**: {time}
+- **Notes**: {observations}
+
+### Step 2 — {description}
+...
+
+## Summary
+- Steps planned: {N}
+- Steps completed: {N}
+- Steps failed: {N}
+- Total files changed: {N}
+```
+
+## Trace Lifecycle
+
+| Moment | Action | Field updated |
+|--------|--------|--------------|
+| Flow start | Create trace file | Plan, Status → IN_PROGRESS |
+| Before each step | Record start | Execution Log → Start |
+| After each step | Record result | Spec-Validate, Files, Notes |
+| Step failure | Record error + decision | Status → FAILED or PARTIAL |
+| Flow end | Consolidate summary | Summary, Status → COMPLETED |
+
+## Trace Directory
+
+```
+{{paths.docsRoot}}/trace/
+  {feature-a}-2025-01-15.md
+  {feature-b}-2025-01-16.md
+  {feature-a}-2025-01-20.md   ← re-execution of same feature
+```
+
+- One trace per feature per execution (date in name avoids collision)
+- Previous traces are NEVER overwritten
+- Useful for post-mortem, auditing, and continuous improvement
+
+## Relation to Other Rules
+
+{{#ifRule "changelog-gate"}}
+- **Rule #1 (Changelog)**: Trace provides evidence for changelog entries
+{{/ifRule}}
+{{#ifRule "feature-planning-gate"}}
+- **Rule #3 (Planning)**: The feature plan feeds the trace's Plan Checkpoint
+{{/ifRule}}
+{{#ifRule "tdd-sequential-enforcement"}}
+- **Rule #9 (TDD Sequential)**: Red/Green phases are separate steps in the trace, each with its own spec-validate
+{{/ifRule}}
+
+## Violation
+
+| Situation | Severity | Consequence |
+|-----------|----------|-------------|
+| Multi-step flow without trace file | **BLOCK** | Stop and create trace before continuing |
+| Step without spec-validate | **BLOCK** | Step is not considered complete |
+| Outdated trace (missing steps) | **WARNING** | Update trace before next step |
+| Trace file overwritten | **BLOCK** | Restore and create new one with current date |
+{{/if}}

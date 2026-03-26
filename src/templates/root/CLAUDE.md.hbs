@@ -275,20 +275,49 @@ Testes E2E sao protegidos por DUAS camadas: deny rules (Claude Code) + chmod 555
 > Reforca Regra #6: NUNCA modificar testes E2E para fazer codigo passar.
 {{/ifRule}}
 
+{{#ifRule "execution-trace"}}
+## Regra #10 — Observabilidade de Execucao
+
+Tres mecanismos garantem rastreabilidade:
+
+1. **Checkpoint de Plano** (pre-execucao) — Apresentar decomposicao ao usuario e aguardar aprovacao antes de delegar
+2. **Spec-Validate** (pos-implementacao) — Invocar `/spec-validate` apos cada fase Green para verificar conformidade 100%
+3. **Trace File** (durante execucao) — Append-only em `{{paths.docsRoot}}/trace/{feature}-{YYYY-MM-DD}.md` registrando cada delegacao
+
+**Enforcement**: Sem aprovacao do checkpoint → delegacao bloqueada. Se conformidade < 100% → re-delegar (max 2 iteracoes) → escalar ao usuario.
+
+**Isencoes**: Bug fix (< 3 arquivos), refactoring, config — trace criado mas aprovacao opcional.
+{{/ifRule}}
+
+{{#ifRule "parallel-delegation"}}
+## Regra #11 — Delegacao Paralela
+
+Delegates independentes **DEVEM** rodar em paralelo via multiplas chamadas `Agent` tool **na mesma mensagem**.
+
+**Grafo de dependencias**: `database` → `backend`/`agent-ai` → `frontend`/`mobile`
+
+**Algoritmo**: Agrupar em waves — cada wave contem submodules sem dependencia mutua. Lancar cada wave em paralelo, aguardar completar antes da proxima.
+
+{{#ifRule "tdd-sequential-enforcement"}}
+**TDD em paralelo**: Red paralelo e Green paralelo entre submodules diferentes. Red→Green do MESMO submodule continua sequencial (Regra #9).
+{{/ifRule}}
+
+**Falha parcial**: Se um delegate falha, outros da mesma wave continuam. Wave dependente do falhado fica bloqueada.
+{{/ifRule}}
+
 {{#if (or (lookup methodology.rules "tdd-enforcement") (lookup methodology.rules "feature-planning-gate"))}}
 ## Hooks de Enforcement
 
 Os seguintes hooks automaticos estao ativos neste projeto:
 
-{{#ifRule "tdd-enforcement"}}
 | Hook | Evento | Funcao |
 |------|--------|--------|
-| `tdd-guard.sh` | PreToolUse (Edit/Write) | Bloqueia escrita de codigo sem teste existente |
+| `pre-edit.sh` | PreToolUse (Edit/Write) | Guard consolidado: TDD + Planning Gate |
+{{#ifRule "tdd-enforcement"}}
 | `auto-test.sh` | PostToolUse (Edit/Write) | Executa teste relacionado automaticamente |
 | `tdd-eval.sh` | UserPromptSubmit | Avalia ciclo TDD no prompt do usuario |
 {{/ifRule}}
 {{#ifRule "feature-planning-gate"}}
-| `planning-gate.sh` | PreToolUse (Edit/Write) | Bloqueia implementacao sem docs de planejamento |
 | `planning-validator.sh` | PostToolUse (Edit/Write) | Valida consistencia com plano aprovado |
 | `planning-eval.sh` | UserPromptSubmit | Avalia necessidade de planejamento no prompt |
 {{/ifRule}}
@@ -731,20 +760,49 @@ E2E tests are protected by TWO layers: deny rules (Claude Code) + chmod 555/444 
 > Reinforces Rule #6: NEVER modify E2E tests to make code pass.
 {{/ifRule}}
 
+{{#ifRule "execution-trace"}}
+## Rule #10 — Execution Observability
+
+Three mechanisms ensure traceability:
+
+1. **Plan Checkpoint** (pre-execution) — Present decomposition to user and await approval before delegating
+2. **Spec-Validate** (post-implementation) — Invoke `/spec-validate` after each Green phase to verify 100% conformance
+3. **Trace File** (during execution) — Append-only at `{{paths.docsRoot}}/trace/{feature}-{YYYY-MM-DD}.md` recording every delegation
+
+**Enforcement**: No checkpoint approval → delegation blocked. If conformance < 100% → re-delegate (max 2 iterations) → escalate to user.
+
+**Exemptions**: Bug fix (< 3 files), refactoring, config — trace created but approval optional.
+{{/ifRule}}
+
+{{#ifRule "parallel-delegation"}}
+## Rule #11 — Parallel Delegation
+
+Independent delegates **MUST** run in parallel via multiple `Agent` tool calls **in the same message**.
+
+**Dependency graph**: `database` → `backend`/`agent-ai` → `frontend`/`mobile`
+
+**Algorithm**: Group into waves — each wave contains modules with no mutual dependencies. Launch each wave in parallel, await completion before the next.
+
+{{#ifRule "tdd-sequential-enforcement"}}
+**TDD in parallel**: Parallel Red and Green across different modules. Red→Green of the SAME module remains sequential (Rule #9).
+{{/ifRule}}
+
+**Partial failure**: If one delegate fails, others in the same wave continue. Dependent waves are blocked.
+{{/ifRule}}
+
 {{#if (or (lookup methodology.rules "tdd-enforcement") (lookup methodology.rules "feature-planning-gate"))}}
 ## Enforcement Hooks
 
 The following automatic hooks are active in this project:
 
-{{#ifRule "tdd-enforcement"}}
 | Hook | Event | Function |
 |------|-------|----------|
-| `tdd-guard.sh` | PreToolUse (Edit/Write) | Blocks code writing without existing test |
+| `pre-edit.sh` | PreToolUse (Edit/Write) | Consolidated guard: TDD + Planning Gate |
+{{#ifRule "tdd-enforcement"}}
 | `auto-test.sh` | PostToolUse (Edit/Write) | Runs related test automatically |
 | `tdd-eval.sh` | UserPromptSubmit | Evaluates TDD cycle in user prompt |
 {{/ifRule}}
 {{#ifRule "feature-planning-gate"}}
-| `planning-gate.sh` | PreToolUse (Edit/Write) | Blocks implementation without planning docs |
 | `planning-validator.sh` | PostToolUse (Edit/Write) | Validates consistency with approved plan |
 | `planning-eval.sh` | UserPromptSubmit | Evaluates planning needs in prompt |
 {{/ifRule}}

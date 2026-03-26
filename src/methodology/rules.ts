@@ -141,6 +141,32 @@ export const RULES: Rule[] = [
     requires: ["tdd-enforcement"],
     category: "testing",
   },
+  {
+    id: "execution-trace",
+    number: 10,
+    name: "Execution Trace",
+    namePtBr: "Observabilidade de Execucao",
+    description:
+      "Three observability mechanisms: (1) Plan Checkpoint before delegation (user approval required for features), (2) Mandatory Spec-Validate after Green phase, (3) Persistent Trace File recording every delegation with results. Trace dir: docs/trace/{feature}-{date}.md",
+    descriptionPtBr:
+      "Tres mecanismos de observabilidade: (1) Checkpoint de Plano antes de delegar (aprovacao do usuario para features), (2) Spec-Validate obrigatorio apos fase Green, (3) Trace File persistente registrando cada delegacao com resultados. Dir: documentos/trace/{feature}-{data}.md",
+    alwaysActive: false,
+    requires: ["feature-planning-gate"],
+    category: "quality",
+  },
+  {
+    id: "parallel-delegation",
+    number: 11,
+    name: "Parallel Delegation",
+    namePtBr: "Delegacao Paralela",
+    description:
+      "Independent delegates MUST run in parallel via multiple Agent tool calls in the same message. Uses dependency graph (db → backend/agent → frontend/mobile) to group into waves. Sequential execution of independent modules is an anti-pattern.",
+    descriptionPtBr:
+      "Delegates independentes DEVEM rodar em paralelo via multiplas chamadas Agent tool na mesma mensagem. Usa grafo de dependencias (db → backend/agent → frontend/mobile) para agrupar em waves. Execucao sequencial de modulos independentes e anti-pattern.",
+    alwaysActive: false,
+    requires: [],
+    category: "core",
+  },
 ];
 
 export function getRuleById(id: string): Rule | undefined {

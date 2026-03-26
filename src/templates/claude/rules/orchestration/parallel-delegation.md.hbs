@@ -1,0 +1,358 @@
+---
+description: "{{#if (eq project.language "pt-BR")}}Regra #11 — Delegacao Paralela: tarefas independentes DEVEM ser executadas em ondas paralelas.{{else}}Rule #11 — Parallel Delegation: independent tasks MUST be executed in parallel waves.{{/if}}"
+globs: ["**/*"]
+---
+
+{{#if (eq project.language "pt-BR")}}
+# Regra #11 — Delegacao Paralela
+
+## Problema
+
+Delegacao sequencial desperica 2-4x tempo. Se `database`, `backend` e `frontend` sao delegados um apos o outro — e `backend` nao depende de `frontend` — o tempo total e a soma de todos. Com ondas paralelas, o tempo total e o da onda mais lenta.
+
+## Grafo de Dependencias
+
+```
+database
+  ├──→ backend
+  │      ├──→ frontend
+  │      └──→ mobile
+  └──→ agent-ai
+           └──→ backend (feedback loop)
+
+e2e ← depende de TODOS (executa por ultimo)
+```
+
+**Regra geral**: Camadas inferiores primeiro. Camadas independentes em paralelo.
+
+### Dependencias por Role
+
+| Role | Depende de | Dependido por |
+|------|-----------|---------------|
+{{#each modules}}
+{{#if (eq role "database")}}
+| {{name}} (database) | — | backend, agent-ai |
+{{else if (eq role "backend")}}
+| {{name}} (backend) | database | frontend, mobile |
+{{else if (eq role "agent-ai")}}
+| {{name}} (agent-ai) | database | backend (feedback) |
+{{else if (eq role "frontend")}}
+| {{name}} (frontend) | backend | e2e |
+{{else if (eq role "mobile")}}
+| {{name}} (mobile) | backend | e2e |
+{{else if (eq role "e2e")}}
+| {{name}} (e2e) | todos | — |
+{{else}}
+| {{name}} ({{role}}) | conforme definido | conforme definido |
+{{/if}}
+{{/each}}
+
+## Algoritmo: Ondas Paralelas
+
+```
+1. LISTAR todas as tarefas pendentes
+2. CONSULTAR grafo de dependencias
+3. AGRUPAR em ondas:
+   - Onda N: tarefas cujas dependencias JA foram concluidas
+4. Para cada onda:
+   a. LANCAR delegates em paralelo (multiplas chamadas Agent)
+   b. AGUARDAR todos os delegates da onda
+   c. VALIDAR resultados (spec-validate por delegate)
+   d. Se algum FALHOU → tratar falha parcial (ver abaixo)
+5. AVANCAR para proxima onda
+6. CONSOLIDAR resultado final
+```
+
+## Exemplo: Feature com 4 Modulos
+
+**Tarefas**: migration (database), endpoint (backend), tela (frontend), cenario (e2e)
+
+```
+Onda 1: [ database ]              ← sem dependencias
+Onda 2: [ backend, agent-ai ]     ← dependem de database
+Onda 3: [ frontend, mobile ]      ← dependem de backend
+Onda 4: [ e2e ]                   ← depende de todos
+```
+
+**Tempo sequencial**: ~20 min (5+5+5+5)
+**Tempo paralelo**: ~12 min (5+5+2+5, ondas 2 e 3 em paralelo internamente)
+
+## Exemplo: Feature com 2 Modulos Independentes
+
+**Tarefas**: componente (frontend), endpoint (backend) — sem dependencia mutua
+
+```
+Onda 1: [ frontend, backend ]     ← paralelo total
+Onda 2: [ e2e ]                   ← apos ambos
+```
+
+{{#ifRule "tdd-sequential-enforcement"}}
+## TDD em Paralelo (Regra #9)
+
+O ciclo Red-Green DEVE respeitar a Regra #9, mas ondas paralelas sao permitidas **entre modulos diferentes**:
+
+```
+Onda 1 (Red):   [ database-tests, backend-tests ]    ← paralelo entre modulos
+Onda 2 (Green): [ database-impl, backend-impl ]      ← paralelo entre modulos
+Onda 3 (Red):   [ frontend-tests, mobile-tests ]     ← paralelo entre modulos
+Onda 4 (Green): [ frontend-impl, mobile-impl ]       ← paralelo entre modulos
+```
+
+**REGRA ABSOLUTA**: Dentro do MESMO modulo, Red e Green sao SEMPRE sequenciais.
+
+| Cenario | Permitido? |
+|---------|-----------|
+| Red(backend) ∥ Red(frontend) | SIM — modulos diferentes |
+| Green(backend) ∥ Green(frontend) | SIM — modulos diferentes |
+| Red(backend) ∥ Green(backend) | NAO — mesmo modulo, Regra #9 |
+| Red(backend) → Green(backend) | SIM — sequencial no mesmo modulo |
+{{/ifRule}}
+
+## Tratamento de Falha Parcial
+
+Quando um delegate falha em uma onda, os demais da mesma onda **continuam**:
+
+| Cenario | Acao |
+|---------|------|
+| 1 delegate falha, outros OK | Registrar falha, continuar com proxima onda (pular dependentes do falhado) |
+| Todos falham na onda | Parar execucao, reportar ao usuario |
+| Falha em modulo sem dependentes | Registrar, continuar normalmente |
+| Falha em modulo com dependentes | Registrar, pular dependentes, continuar independentes |
+| Falha intermitente (timeout) | Retry 1x. Se falhar novamente → registrar e pular |
+
+**NUNCA** parar toda a execucao por falha de um unico delegate (exceto se todos falharam).
+
+{{#ifRule "execution-trace"}}
+## Integracao com Trace (Regra #10)
+
+Cada onda DEVE ser registrada no trace file:
+
+```markdown
+### Onda 2 — Paralela
+- **Delegates**: backend, agent-ai
+- **Inicio**: {timestamp}
+
+#### backend
+- Status: PASS
+- Arquivos: [lista]
+- Spec-Validate: PASS
+
+#### agent-ai
+- Status: FAIL → retry → PASS
+- Arquivos: [lista]
+- Spec-Validate: PASS (apos retry)
+
+- **Fim**: {timestamp}
+- **Duracao**: {tempo}
+```
+{{/ifRule}}
+
+## Tabela de Estrategias
+
+| # | Cenario | Estrategia | Ondas |
+|---|---------|-----------|-------|
+| 1 | Feature full-stack (DB+API+UI) | Sequencial por camada | DB → API → UI → E2E |
+| 2 | Feature backend + frontend sem dep | Paralelo total | [API, UI] → E2E |
+| 3 | Feature somente backend | Sequencial simples | DB → API |
+| 4 | Feature somente frontend | Delegate unico | UI |
+| 5 | Bug fix multi-modulo | Paralelo se independentes | [mod-A, mod-B] |
+| 6 | Refactoring transversal | Sequencial (risco alto) | mod-1 → mod-2 → mod-3 |
+| 7 | Feature com agent-ai | DB primeiro, depois paralelo | DB → [API, AI] → UI |
+
+## Relacao com Outras Regras
+
+{{#ifRule "delegation-protocol"}}
+- **Regra #0 (Delegacao)**: Ondas paralelas seguem o mesmo protocolo de prompt e contrato de resposta
+{{/ifRule}}
+{{#ifRule "tdd-sequential-enforcement"}}
+- **Regra #9 (TDD Sequential)**: Red/Green sequencial dentro do modulo, paralelo entre modulos
+{{/ifRule}}
+{{#ifRule "execution-trace"}}
+- **Regra #10 (Trace)**: Cada onda e registrada como bloco no trace file
+{{/ifRule}}
+
+## Violacao
+
+| Situacao | Severidade | Consequencia |
+|----------|-----------|--------------|
+| Tarefas independentes executadas sequencialmente | **WARNING** | Anti-pattern, nao bloqueante — refazer com ondas |
+| Dependente lancado antes da dependencia | **BLOQUEIO** | Parar e reordenar |
+| Red+Green paralelos no mesmo modulo | **BLOQUEIO** | Viola Regra #9 |
+| Falha parcial para toda a execucao | **WARNING** | Continuar independentes, nao parar tudo |
+{{else}}
+# Rule #11 — Parallel Delegation
+
+## Problem
+
+Sequential delegation wastes 2-4x time. If `database`, `backend`, and `frontend` are delegated one after another — and `backend` doesn't depend on `frontend` — total time is the sum of all. With parallel waves, total time is that of the slowest wave.
+
+## Dependency Graph
+
+```
+database
+  ├──→ backend
+  │      ├──→ frontend
+  │      └──→ mobile
+  └──→ agent-ai
+           └──→ backend (feedback loop)
+
+e2e ← depends on ALL (executes last)
+```
+
+**General rule**: Lower layers first. Independent layers in parallel.
+
+### Dependencies by Role
+
+| Role | Depends on | Depended by |
+|------|-----------|-------------|
+{{#each modules}}
+{{#if (eq role "database")}}
+| {{name}} (database) | — | backend, agent-ai |
+{{else if (eq role "backend")}}
+| {{name}} (backend) | database | frontend, mobile |
+{{else if (eq role "agent-ai")}}
+| {{name}} (agent-ai) | database | backend (feedback) |
+{{else if (eq role "frontend")}}
+| {{name}} (frontend) | backend | e2e |
+{{else if (eq role "mobile")}}
+| {{name}} (mobile) | backend | e2e |
+{{else if (eq role "e2e")}}
+| {{name}} (e2e) | all | — |
+{{else}}
+| {{name}} ({{role}}) | as defined | as defined |
+{{/if}}
+{{/each}}
+
+## Algorithm: Parallel Waves
+
+```
+1. LIST all pending tasks
+2. CONSULT dependency graph
+3. GROUP into waves:
+   - Wave N: tasks whose dependencies have ALREADY been completed
+4. For each wave:
+   a. LAUNCH delegates in parallel (multiple Agent calls)
+   b. AWAIT all delegates in the wave
+   c. VALIDATE results (spec-validate per delegate)
+   d. If any FAILED → handle partial failure (see below)
+5. ADVANCE to next wave
+6. CONSOLIDATE final result
+```
+
+## Example: Feature with 4 Modules
+
+**Tasks**: migration (database), endpoint (backend), screen (frontend), scenario (e2e)
+
+```
+Wave 1: [ database ]              ← no dependencies
+Wave 2: [ backend, agent-ai ]     ← depend on database
+Wave 3: [ frontend, mobile ]      ← depend on backend
+Wave 4: [ e2e ]                   ← depends on all
+```
+
+**Sequential time**: ~20 min (5+5+5+5)
+**Parallel time**: ~12 min (5+5+2+5, waves 2 and 3 parallel internally)
+
+## Example: Feature with 2 Independent Modules
+
+**Tasks**: component (frontend), endpoint (backend) — no mutual dependency
+
+```
+Wave 1: [ frontend, backend ]     ← fully parallel
+Wave 2: [ e2e ]                   ← after both
+```
+
+{{#ifRule "tdd-sequential-enforcement"}}
+## TDD in Parallel (Rule #9)
+
+The Red-Green cycle MUST respect Rule #9, but parallel waves are allowed **between different modules**:
+
+```
+Wave 1 (Red):   [ database-tests, backend-tests ]    ← parallel across modules
+Wave 2 (Green): [ database-impl, backend-impl ]      ← parallel across modules
+Wave 3 (Red):   [ frontend-tests, mobile-tests ]     ← parallel across modules
+Wave 4 (Green): [ frontend-impl, mobile-impl ]       ← parallel across modules
+```
+
+**ABSOLUTE RULE**: Within the SAME module, Red and Green are ALWAYS sequential.
+
+| Scenario | Allowed? |
+|----------|----------|
+| Red(backend) ∥ Red(frontend) | YES — different modules |
+| Green(backend) ∥ Green(frontend) | YES — different modules |
+| Red(backend) ∥ Green(backend) | NO — same module, Rule #9 |
+| Red(backend) → Green(backend) | YES — sequential in same module |
+{{/ifRule}}
+
+## Partial Failure Handling
+
+When a delegate fails in a wave, the others in the same wave **continue**:
+
+| Scenario | Action |
+|----------|--------|
+| 1 delegate fails, others OK | Record failure, continue with next wave (skip dependents of failed) |
+| All fail in wave | Stop execution, report to user |
+| Failure in module with no dependents | Record, continue normally |
+| Failure in module with dependents | Record, skip dependents, continue independents |
+| Intermittent failure (timeout) | Retry 1x. If fails again → record and skip |
+
+**NEVER** stop the entire execution due to a single delegate failure (unless all failed).
+
+{{#ifRule "execution-trace"}}
+## Trace Integration (Rule #10)
+
+Each wave MUST be recorded in the trace file:
+
+```markdown
+### Wave 2 — Parallel
+- **Delegates**: backend, agent-ai
+- **Start**: {timestamp}
+
+#### backend
+- Status: PASS
+- Files: [list]
+- Spec-Validate: PASS
+
+#### agent-ai
+- Status: FAIL → retry → PASS
+- Files: [list]
+- Spec-Validate: PASS (after retry)
+
+- **End**: {timestamp}
+- **Duration**: {time}
+```
+{{/ifRule}}
+
+## Strategy Table
+
+| # | Scenario | Strategy | Waves |
+|---|----------|----------|-------|
+| 1 | Full-stack feature (DB+API+UI) | Sequential by layer | DB → API → UI → E2E |
+| 2 | Backend + frontend no dep | Fully parallel | [API, UI] → E2E |
+| 3 | Backend-only feature | Simple sequential | DB → API |
+| 4 | Frontend-only feature | Single delegate | UI |
+| 5 | Multi-module bug fix | Parallel if independent | [mod-A, mod-B] |
+| 6 | Cross-cutting refactoring | Sequential (high risk) | mod-1 → mod-2 → mod-3 |
+| 7 | Feature with agent-ai | DB first, then parallel | DB → [API, AI] → UI |
+
+## Relation to Other Rules
+
+{{#ifRule "delegation-protocol"}}
+- **Rule #0 (Delegation)**: Parallel waves follow the same prompt protocol and response contract
+{{/ifRule}}
+{{#ifRule "tdd-sequential-enforcement"}}
+- **Rule #9 (TDD Sequential)**: Red/Green sequential within module, parallel across modules
+{{/ifRule}}
+{{#ifRule "execution-trace"}}
+- **Rule #10 (Trace)**: Each wave is recorded as a block in the trace file
+{{/ifRule}}
+
+## Violation
+
+| Situation | Severity | Consequence |
+|-----------|----------|-------------|
+| Independent tasks executed sequentially | **WARNING** | Anti-pattern, not blocking — redo with waves |
+| Dependent launched before dependency | **BLOCK** | Stop and reorder |
+| Red+Green parallel in same module | **BLOCK** | Violates Rule #9 |
+| Partial failure stops all execution | **WARNING** | Continue independents, don't stop everything |
+{{/if}}

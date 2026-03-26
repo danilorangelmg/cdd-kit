@@ -67,8 +67,23 @@ export async function generateClaudeInfra(
   await writeFile(path.join(claudeDir, "settings.json"), settings);
   generatedFiles.push(".claude/settings.json");
 
-  // Hooks (TDD enforcement)
-  if (config.methodology.rules["tdd-enforcement"]) {
+  // Hooks (TDD and/or Planning enforcement)
+  const hasTdd = config.methodology.rules["tdd-enforcement"];
+  const hasPlanning = config.methodology.rules["feature-planning-gate"];
+
+  if (hasTdd || hasPlanning) {
+    // Consolidated pre-edit hook (TDD Guard + Planning Gate in one process)
+    const preEditContent = renderTemplate(
+      "claude/hooks/pre-edit.sh.hbs",
+      context
+    );
+    const preEditPath = path.join(claudeDir, "hooks", "pre-edit.sh");
+    await writeFile(preEditPath, preEditContent);
+    await makeExecutable(preEditPath);
+    generatedFiles.push(".claude/hooks/pre-edit.sh");
+  }
+
+  if (hasTdd) {
     // Shared test-finding library
     const findTestLib = renderTemplate(
       "claude/hooks/lib/find-test.sh.hbs",
@@ -79,7 +94,7 @@ export async function generateClaudeInfra(
     await makeExecutable(findTestPath);
     generatedFiles.push(".claude/hooks/lib/find-test.sh");
 
-    const hooks = ["tdd-guard.sh", "auto-test.sh", "tdd-eval.sh"];
+    const hooks = ["auto-test.sh", "tdd-eval.sh"];
     for (const hook of hooks) {
       const content = renderTemplate(`claude/hooks/${hook}.hbs`, context);
       const hookPath = path.join(claudeDir, "hooks", hook);
@@ -89,13 +104,8 @@ export async function generateClaudeInfra(
     }
   }
 
-  // Hooks (Planning enforcement — Rule #3)
-  if (config.methodology.rules["feature-planning-gate"]) {
-    const hooks = [
-      "planning-gate.sh",
-      "planning-validator.sh",
-      "planning-eval.sh",
-    ];
+  if (hasPlanning) {
+    const hooks = ["planning-validator.sh", "planning-eval.sh"];
     for (const hook of hooks) {
       const content = renderTemplate(`claude/hooks/${hook}.hbs`, context);
       const hookPath = path.join(claudeDir, "hooks", hook);
@@ -118,6 +128,14 @@ export async function generateClaudeInfra(
 
   if (config.methodology.rules["tdd-sequential-enforcement"]) {
     ruleFiles.push("tdd/sequential-enforcement.md");
+  }
+
+  if (config.methodology.rules["execution-trace"]) {
+    ruleFiles.push("observability/execution-trace.md");
+  }
+
+  if (config.methodology.rules["parallel-delegation"]) {
+    ruleFiles.push("orchestration/parallel-delegation.md");
   }
 
   for (const ruleFile of ruleFiles) {
@@ -285,8 +303,22 @@ async function generatePerModuleClaudeInfra(
     await writeFile(path.join(modClaudeDir, "settings.json"), settings);
     generatedFiles.push(`${prefix}/settings.json`);
 
-    // Hooks (if TDD enabled)
-    if (config.methodology.rules["tdd-enforcement"]) {
+    // Hooks (TDD and/or Planning enforcement — consolidated pre-edit)
+    const modHasTdd = config.methodology.rules["tdd-enforcement"];
+    const modHasPlanning = config.methodology.rules["feature-planning-gate"];
+
+    if (modHasTdd || modHasPlanning) {
+      const preEditContent = renderTemplate(
+        "claude/hooks/pre-edit.sh.hbs",
+        modContext
+      );
+      const preEditPath = path.join(modClaudeDir, "hooks", "pre-edit.sh");
+      await writeFile(preEditPath, preEditContent);
+      await makeExecutable(preEditPath);
+      generatedFiles.push(`${prefix}/hooks/pre-edit.sh`);
+    }
+
+    if (modHasTdd) {
       // Shared test-finding library
       const findTestLib = renderTemplate(
         "claude/hooks/lib/find-test.sh.hbs",
@@ -297,7 +329,7 @@ async function generatePerModuleClaudeInfra(
       await makeExecutable(findTestPath);
       generatedFiles.push(`${prefix}/hooks/lib/find-test.sh`);
 
-      const hooks = ["tdd-guard.sh", "auto-test.sh", "tdd-eval.sh"];
+      const hooks = ["auto-test.sh", "tdd-eval.sh"];
       for (const hook of hooks) {
         const content = renderTemplate(`claude/hooks/${hook}.hbs`, modContext);
         const hookPath = path.join(modClaudeDir, "hooks", hook);
@@ -307,13 +339,8 @@ async function generatePerModuleClaudeInfra(
       }
     }
 
-    // Hooks (Planning enforcement — Rule #3)
-    if (config.methodology.rules["feature-planning-gate"]) {
-      const hooks = [
-        "planning-gate.sh",
-        "planning-validator.sh",
-        "planning-eval.sh",
-      ];
+    if (modHasPlanning) {
+      const hooks = ["planning-validator.sh", "planning-eval.sh"];
       for (const hook of hooks) {
         const content = renderTemplate(`claude/hooks/${hook}.hbs`, modContext);
         const hookPath = path.join(modClaudeDir, "hooks", hook);

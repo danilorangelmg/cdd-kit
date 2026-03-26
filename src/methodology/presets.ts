@@ -21,12 +21,14 @@ export const PRESETS: Preset[] = [
       "post-dev-e2e-validation": false,
       "tdd-enforcement": false,
       "tdd-sequential-enforcement": false,
+      "execution-trace": false,
+      "parallel-delegation": false,
     },
   },
   {
     id: "standard",
     label: "Standard (Recomendado)",
-    description: "Regras core + TDD + Feature Gate + Changelog",
+    description: "Regras core + TDD + Feature Gate + Changelog + Parallel",
     rules: {
       "absolute-delegation": true,
       "changelog-by-date": true,
@@ -38,12 +40,14 @@ export const PRESETS: Preset[] = [
       "post-dev-e2e-validation": false,
       "tdd-enforcement": true,
       "tdd-sequential-enforcement": true,
+      "execution-trace": false,
+      "parallel-delegation": true,
     },
   },
   {
     id: "full",
     label: "Full",
-    description: "Tudo: TDD enforced com hooks, E2E protection, Mermaid obrigatorio",
+    description: "Tudo: TDD enforced, E2E protection, Mermaid, Observabilidade, Paralelismo",
     rules: {
       "absolute-delegation": true,
       "changelog-by-date": true,
@@ -55,6 +59,8 @@ export const PRESETS: Preset[] = [
       "post-dev-e2e-validation": true,
       "tdd-enforcement": true,
       "tdd-sequential-enforcement": true,
+      "execution-trace": true,
+      "parallel-delegation": true,
     },
   },
 ];

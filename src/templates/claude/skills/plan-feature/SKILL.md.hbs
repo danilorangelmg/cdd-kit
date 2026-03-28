@@ -302,7 +302,7 @@ Apos concluir todos os docs:
 | Hook | Tipo | Funcao |
 |------|------|--------|
 | `planning-eval.sh` | UserPromptSubmit | Injeta fase/componente atual antes de cada resposta |
-| `planning-gate.sh` | PreToolUse | Bloqueia escrita em {{paths.devPlans}}/{{paths.testPlans}} se componentes pendentes |
+| `pre-edit.sh` | PreToolUse | Bloqueia escrita em {{paths.devPlans}}/{{paths.testPlans}} se componentes pendentes |
 | `planning-validator.sh` | PostToolUse | Valida qualidade dos docs (secoes obrigatorias) |
 
 State file: `.claude/project-memory/planning-state/{feature}.json`
@@ -607,7 +607,7 @@ After completing all docs:
 | Hook | Type | Function |
 |------|------|----------|
 | `planning-eval.sh` | UserPromptSubmit | Injects current phase/component before each response |
-| `planning-gate.sh` | PreToolUse | Blocks writing to {{paths.devPlans}}/{{paths.testPlans}} if components pending |
+| `pre-edit.sh` | PreToolUse | Blocks writing to {{paths.devPlans}}/{{paths.testPlans}} if components pending |
 | `planning-validator.sh` | PostToolUse | Validates doc quality (required sections) |
 
 State file: `.claude/project-memory/planning-state/{feature}.json`

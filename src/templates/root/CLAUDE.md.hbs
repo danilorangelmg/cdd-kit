@@ -82,7 +82,7 @@ Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsi
 - **Planejamento**: UI (componentes) → contratos → rotas backend → fontes de dados
 - **Execucao**: {{#if hasDatabase}}database → {{/if}}backend{{#if hasAgent}} → agent{{/if}}{{#if hasFrontend}} → frontend{{/if}} (cadeia de dependencias)
 - **Enfileirado por componente**: cada componente passa pelo ciclo completo antes do proximo
-- **Hooks de enforcement**: `planning-eval.sh`, `planning-gate.sh`, `planning-validator.sh`
+- **Hooks de enforcement**: `pre-edit.sh`, `planning-eval.sh`, `planning-validator.sh`
 
 {{/ifRule}}
 **SEMPRE planeje antes de executar:**
@@ -195,7 +195,7 @@ Todos os endpoints DEVEM seguir este envelope. Sem excecoes.
 
 **BLOQUEIO ABSOLUTO.** Nenhum delegate pode escrever testes E implementacao na mesma invocacao.
 
-**Problema**: Quando um delegate (ex: front-delegate, bff-delegate) cria testes e codigo juntos, os hooks TDD (`tdd-guard.sh`) nao detectam a violacao — timestamps sao identicos, compliance TDD cai para ~20%.
+**Problema**: Quando um delegate (ex: front-delegate, bff-delegate) cria testes e codigo juntos, os hooks TDD (`pre-edit.sh`) nao detectam a violacao — timestamps sao identicos, compliance TDD cai para ~20%.
 
 **Regra**: Toda tarefa testavel DEVE usar **duas invocacoes separadas**:
 
@@ -567,7 +567,7 @@ Each module has well-defined boundaries. See `.claude/rules/scope-responsibiliti
 - **Planning**: UI (components) → contracts → backend routes → data sources
 - **Execution**: {{#if hasDatabase}}database → {{/if}}backend{{#if hasAgent}} → agent{{/if}}{{#if hasFrontend}} → frontend{{/if}} (dependency chain)
 - **Queued per component**: each component goes through the full cycle before the next
-- **Enforcement hooks**: `planning-eval.sh`, `planning-gate.sh`, `planning-validator.sh`
+- **Enforcement hooks**: `pre-edit.sh`, `planning-eval.sh`, `planning-validator.sh`
 
 {{/ifRule}}
 **ALWAYS plan before executing:**
@@ -680,7 +680,7 @@ All endpoints MUST follow this envelope. No exceptions.
 
 **ABSOLUTE BLOCK.** No delegate can write tests AND implementation in the same invocation.
 
-**Problem**: When a delegate (e.g., front-delegate, bff-delegate) creates tests and code together, TDD hooks (`tdd-guard.sh`) don't detect the violation — timestamps are identical, TDD compliance drops to ~20%.
+**Problem**: When a delegate (e.g., front-delegate, bff-delegate) creates tests and code together, TDD hooks (`pre-edit.sh`) don't detect the violation — timestamps are identical, TDD compliance drops to ~20%.
 
 **Rule**: Every testable task MUST use **two separate invocations**:
 

@@ -72,9 +72,35 @@ export async function doctorCommand(): Promise<void> {
     );
   }
 
-  // 6. Hooks (if TDD enabled)
-  if (config.methodology.rules["tdd-enforcement"]) {
-    const hooks = ["tdd-guard.sh", "auto-test.sh", "tdd-eval.sh"];
+  // 6. Hooks (consolidated pre-edit + TDD + Planning)
+  const hasTdd = config.methodology.rules["tdd-enforcement"];
+  const hasPlanning = config.methodology.rules["feature-planning-gate"];
+
+  if (hasTdd || hasPlanning) {
+    checks.push(
+      await checkFile(
+        projectDir,
+        path.join(".claude", "hooks", "pre-edit.sh"),
+        "Hook: pre-edit.sh"
+      )
+    );
+  }
+
+  if (hasTdd) {
+    const hooks = ["auto-test.sh", "tdd-eval.sh"];
+    for (const hook of hooks) {
+      checks.push(
+        await checkFile(
+          projectDir,
+          path.join(".claude", "hooks", hook),
+          `Hook: ${hook}`
+        )
+      );
+    }
+  }
+
+  if (hasPlanning) {
+    const hooks = ["planning-validator.sh", "planning-eval.sh"];
     for (const hook of hooks) {
       checks.push(
         await checkFile(

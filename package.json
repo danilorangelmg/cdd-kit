@@ -1,6 +1,6 @@
 {
   "name": "cdd-kit",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Copilot-Driven Development — Framework de metodologia para desenvolvimento AI-augmented com Claude Code",
   "type": "module",
   "exports": {

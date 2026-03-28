@@ -1,6 +1,6 @@
 ---
 name: plan-feature
-description: "{{#if (eq project.language "pt-BR")}}Planejamento outside-in por componente (Regra #3): UI -> contratos -> rotas -> motor de dados. Gera docs por modulo.{{else}}Outside-in per-component planning (Rule #3): UI -> contracts -> routes -> data engine. Generates docs per module.{{/if}}"
+description: "{{#if (eq project.language "pt-BR")}}Planejamento em 5 fases com gates (Regra #3): Entendimento -> Refinamento Negocio -> Refinamento Tecnico -> Tarefas -> Implementacao. Contract-First, Given-When-Then, verificacao de reuso.{{else}}5-phase planning with gates (Rule #3): Discovery -> Business Refinement -> Technical Design -> Tasks -> Implementation. Contract-First, Given-When-Then, reuse check.{{/if}}"
 user-invocable: true
 argument-hint: "[feature-name] [optional context]"
 allowed-tools: Read, Write, Glob, Grep, Task, WebSearch
@@ -8,9 +8,21 @@ model: opus
 ---
 
 {{#if (eq project.language "pt-BR")}}
-# Planejamento Outside-In por Componente (Regra #3)
+# Planejamento em 5 Fases com Gates (Regra #3)
 
-Planeje uma nova feature de FORA para DENTRO: comece pela UI (o que o usuario ve), derive contratos, rotas e fontes de dados. O ciclo completo roda POR COMPONENTE, nao por fase — evita colapso de contexto em telas grandes.
+Planeje uma nova feature em 5 fases com gates obrigatorios. Outside-In: comece pela UI (o que o usuario ve), derive contratos, rotas e fontes de dados. Contract-First: NUNCA implementar sem contrato aprovado.
+
+## 5 Fases
+
+| Fase | Nome | Gate |
+|------|------|------|
+| 1 | **Entendimento** — Perguntas de negocio + busca de padroes existentes | Usuario confirma todas respondidas |
+| 2 | **Refinamento de Negocio** — Regras em Given-When-Then por modulo | Usuario aprova regras |
+| 3 | **Refinamento Tecnico** — Contratos API + schema + verificacao reuso | Usuario aprova contratos |
+| 4 | **Tarefas** — Breakdown atomico com rastreio para regras | Usuario aprova tasks |
+| 5 | **Implementacao** — Handoff para orquestrador (TDD Red→Green) | — |
+
+**IMPORTANTE**: Cada gate requer aprovacao EXPLICITA do usuario antes de avancar. Use `[PRECISA CLARIFICACAO]` para marcar itens incertos.
 
 ## Entrada
 
@@ -54,11 +66,11 @@ A janela de contexto do Claude tem limite. O enfileiramento por componente RESOL
 4. **Delegar ao PO** os `{{paths.businessRules}}` (evita poluir contexto do orquestrador)
 5. **Usar Explore agents** para analise de codigo existente
 
-## Principio: Agente Inquisitivo
+## Principio: Agente Inquisitivo (GATE OBRIGATORIO)
 
-O agente de planejamento DEVE fazer perguntas proativas em cada fase para maximizar contexto. NAO avance com suposicoes — pergunte.
+O agente de planejamento DEVE fazer 10-20 perguntas proativas ANTES de documentar qualquer coisa. NAO avance com suposicoes — pergunte. Onde nao tem certeza, marque `[PRECISA CLARIFICACAO]`.
 
-**Categorias de perguntas obrigatorias:**
+**8 categorias de perguntas obrigatorias:**
 - **UX**: Como o usuario interage? Tem filtros? Paginacao? Tempo real? Responsivo?
 - **Estados visuais**: Loading, empty, error — tem tratamento especial? Skeleton? Toast?
 - **Dados**: Volume esperado? Frequencia de atualizacao? Precisa de cache? Polling?
@@ -66,21 +78,26 @@ O agente de planejamento DEVE fazer perguntas proativas em cada fase para maximi
 - **Edge cases**: O que acontece se nao tem dado? Se o servico cai? Se demora?
 - **Prioridade**: Quais componentes sao MVP e quais sao nice-to-have?
 - **Referencia visual**: Tem prototipo, wireframe, tela similar no sistema?
+- **Reuso**: Existem endpoints/componentes/services similares no codebase que podem ser reutilizados?
+
+**GATE**: Apos as perguntas, perguntar ao usuario: "Todas as perguntas foram respondidas? Posso avancar para refinamento de negocio?" — aguardar SIM explicito.
 
 ## Fluxo de Planejamento
 
-### Fase 0 — Decomposicao Inicial (unica vez)
+### Fase 1 — Entendimento / Discovery (unica vez)
 
-**Objetivo**: Mapear a tela inteira, quebrar em componentes, definir ordem e dependencias.
+**Objetivo**: Entender completamente a feature antes de documentar qualquer coisa.
 
 1. **Classificar**: Simples (max 2 modulos, CRUD) ou Complexa (3+ modulos, logica nova)
-2. **Explorar**: Use Glob/Grep para analisar padroes existentes no codebase
+2. **Explorar**: Use Glob/Grep para analisar padroes existentes no codebase e endpoints similares
 3. **Validar escopo (Regra #5)** — rotear automaticamente:
    - Logica de negocio → backend obrigatorio
    - Logica de motor/pipeline → agent-ai obrigatorio
    - Frontends → APENAS regras visuais
-4. **PERGUNTAR ao usuario** (categorias obrigatorias acima)
-5. **Decompor em componentes**: Para cada componente identificar:
+4. **VERIFICAR REUSO** (OBRIGATORIO): Antes de qualquer coisa, buscar endpoints/componentes/services similares com Grep
+5. **PERGUNTAR ao usuario** (8 categorias obrigatorias acima) — marcar `[PRECISA CLARIFICACAO]` onde incerto
+6. **GATE**: "Todas as perguntas foram respondidas? Posso avancar?" — aguardar SIM
+7. **Decompor em componentes**: Para cada componente identificar:
    - Nome e descricao curta
    - Dependencias entre componentes (qual depende de qual)
    - Prioridade (MVP / nice-to-have)
@@ -113,7 +130,7 @@ O agente de planejamento DEVE fazer perguntas proativas em cada fase para maximi
 
 Salvar em: `.claude/project-memory/planning-state/{feature}.json`
 
-### Ciclo por Componente (repete para cada componente)
+### Fases 2-3 — Refinamento de Negocio + Tecnico (ciclo por componente)
 
 **IMPORTANTE**: Completar o ciclo inteiro de um componente ANTES de iniciar o proximo. Atualizar o state file a cada etapa concluida.
 
@@ -133,9 +150,14 @@ Mapear o componente visual:
 
 Atualizar state: `current_steps.ui = "OK"`
 
-#### Etapa 2 — Contrato do Componente
+#### Etapa 2 — Contrato do Componente (Contract-First)
 
 Se o componente consome API (`has_api: true`):
+
+**VERIFICACAO DE REUSO** (OBRIGATORIA antes de definir contrato):
+1. `Grep` por endpoint similar no codebase: `grep -r "GET\|POST\|PUT.*{recurso}" src/`
+2. Se encontrou → propor reuso/extensao ao inves de novo endpoint
+3. Documentar decisao: "Reusa endpoint X" ou "Novo — justificativa: Y"
 
 - **Endpoint(s)**: metodo, path, query params
 - **DTO TypeScript**: interface com campos tipados
@@ -146,6 +168,7 @@ Se o componente consome API (`has_api: true`):
 {{/ifRule}}
 - **Mapeamento**: campo → uso no componente (tabela)
 - **Cenarios de erro**: HTTP status, codigo, acao no frontend
+- **Reuso**: Reutiliza endpoint existente? Qual? Se nao, por que?
 
 Se NAO consome API: pular para proximo componente.
 
@@ -185,9 +208,9 @@ Apos as 4 etapas:
 2. Resetar `current_steps` para o proximo componente
 3. Atualizar `current_component` para o proximo na fila
 
-Se TODOS os componentes concluidos → avancar para Fase Final.
+Se TODOS os componentes concluidos → **GATE**: "Contratos e regras aprovados? Posso gerar tarefas?" → avancar para Fase 4.
 
-### Fase Final — Composicao e Geracao de Docs
+### Fase 4 — Tarefas + Geracao de Docs
 
 Apos todos os componentes planejados:
 
@@ -295,6 +318,19 @@ Apos concluir todos os docs:
 - `{{paths.testPlans}}`: 3-8 criterios essenciais
 - `{{paths.devPlans}}`: tarefas + validacao
 
+## Pitfalls Comuns
+
+| Pitfall | Causa | Correcao |
+|---------|-------|----------|
+| Implementar sem documentar | Pula regras-negocio | SEMPRE criar regras-negocio primeiro |
+| Doc mistura camadas | Regras do BFF no doc do front | Cada doc APENAS seu modulo |
+| Testes genericos | "Funciona corretamente" | Usar Given-When-Then com valores concretos |
+| Context overflow | Manter tudo inline | Salvar por modulo, usar checkpoint |
+| Ignorar padroes existentes | Nao explorar antes | Usar Explore agents + Grep |
+| Doc nao auto-contido | Referencia outros sem contexto | Cada doc legivel sozinho |
+| Logica de negocio no frontend | Nao validar escopo | Frontends = visual. Logica → backend |
+| Criar API sem verificar existente | Nao buscar reuso | Grep ANTES de criar endpoint/componente |
+
 ## Hooks de Enforcement
 
 3 hooks protegem o fluxo de planejamento (configurados em `.claude/settings.json`):
@@ -313,9 +349,21 @@ State file: `.claude/project-memory/planning-state/{feature}.json`
 - `{{name}}` ({{role}}) → `{{directory}}/`
 {{/each}}
 {{else}}
-# Outside-In Per-Component Planning (Rule #3)
+# 5-Phase Planning with Gates (Rule #3)
 
-Plan a new feature from OUTSIDE to INSIDE: start with the UI (what the user sees), derive contracts, routes, and data sources. The full cycle runs PER COMPONENT, not per phase — avoids context collapse on large screens.
+Plan a new feature in 5 phases with mandatory gates. Outside-In: start with the UI (what the user sees), derive contracts, routes, and data sources. Contract-First: NEVER implement without an approved contract.
+
+## 5 Phases
+
+| Phase | Name | Gate |
+|-------|------|------|
+| 1 | **Discovery** — Business questions + search existing patterns | User confirms all answered |
+| 2 | **Business Refinement** — Given-When-Then rules per module | User approves rules |
+| 3 | **Technical Design** — API contracts + schema + reuse check | User approves contracts |
+| 4 | **Tasks** — Atomic breakdown with rule traceability | User approves tasks |
+| 5 | **Implementation** — Handoff to orchestrator (TDD Red→Green) | — |
+
+**IMPORTANT**: Each gate requires EXPLICIT user approval before advancing. Use `[NEEDS CLARIFICATION]` to mark uncertain items.
 
 ## Input
 
@@ -359,11 +407,11 @@ Claude's context window has limits. Per-component queuing SOLVES this:
 4. **Delegate to PO** the `{{paths.businessRules}}` (avoids polluting orchestrator context)
 5. **Use Explore agents** for existing code analysis
 
-## Principle: Inquisitive Agent
+## Principle: Inquisitive Agent (MANDATORY GATE)
 
-The planning agent MUST ask proactive questions at each phase to maximize context. Do NOT advance with assumptions — ask.
+The planning agent MUST ask 10-20 proactive questions BEFORE documenting anything. Do NOT advance with assumptions — ask. Where uncertain, mark `[NEEDS CLARIFICATION]`.
 
-**Mandatory question categories:**
+**8 mandatory question categories:**
 - **UX**: How does the user interact? Filters? Pagination? Real-time? Responsive?
 - **Visual states**: Loading, empty, error — special treatment? Skeleton? Toast?
 - **Data**: Expected volume? Update frequency? Needs caching? Polling?
@@ -371,12 +419,15 @@ The planning agent MUST ask proactive questions at each phase to maximize contex
 - **Edge cases**: What happens with no data? Service down? Timeout?
 - **Priority**: Which components are MVP and which are nice-to-have?
 - **Visual reference**: Any prototype, wireframe, similar screen in the system?
+- **Reuse**: Are there similar endpoints/components/services in the codebase that can be reused?
+
+**GATE**: After questions, ask user: "All questions answered? Can I proceed to business refinement?" — wait for explicit YES.
 
 ## Planning Flow
 
-### Phase 0 — Initial Decomposition (once)
+### Phase 1 — Discovery (once)
 
-**Goal**: Map the entire screen, break into components, define order and dependencies.
+**Goal**: Fully understand the feature before documenting anything.
 
 1. **Classify**: Simple (max 2 modules, CRUD) or Complex (3+ modules, new logic)
 2. **Explore**: Use Glob/Grep to analyze existing codebase patterns
@@ -384,8 +435,10 @@ The planning agent MUST ask proactive questions at each phase to maximize contex
    - Business logic → backend mandatory
    - Engine/pipeline logic → agent-ai mandatory
    - Frontends → ONLY visual rules
-4. **ASK the user** (mandatory categories above)
-5. **Decompose into components**: For each component identify:
+4. **CHECK REUSE** (MANDATORY): Before anything, search for similar endpoints/components/services with Grep
+5. **ASK the user** (8 mandatory categories above) — mark `[NEEDS CLARIFICATION]` where uncertain
+6. **GATE**: "All questions answered? Can I proceed?" — wait for YES
+7. **Decompose into components**: For each component identify:
    - Name and short description
    - Dependencies between components
    - Priority (MVP / nice-to-have)
@@ -418,7 +471,7 @@ The planning agent MUST ask proactive questions at each phase to maximize contex
 
 Save to: `.claude/project-memory/planning-state/{feature}.json`
 
-### Per-Component Cycle (repeats for each component)
+### Phases 2-3 — Business + Technical Refinement (per-component cycle)
 
 **IMPORTANT**: Complete the full cycle for one component BEFORE starting the next. Update the state file after each step.
 
@@ -438,9 +491,14 @@ Map the visual component:
 
 Update state: `current_steps.ui = "OK"`
 
-#### Step 2 — Component Contract
+#### Step 2 — Component Contract (Contract-First)
 
 If the component consumes API (`has_api: true`):
+
+**REUSE CHECK** (MANDATORY before defining contract):
+1. `Grep` for similar endpoint in codebase: `grep -r "GET\|POST\|PUT.*{resource}" src/`
+2. If found → propose reuse/extension instead of new endpoint
+3. Document decision: "Reuses endpoint X" or "New — justification: Y"
 
 - **Endpoint(s)**: method, path, query params
 - **TypeScript DTO**: interface with typed fields
@@ -451,6 +509,7 @@ If the component consumes API (`has_api: true`):
 {{/ifRule}}
 - **Mapping**: field → component usage (table)
 - **Error scenarios**: HTTP status, code, frontend action
+- **Reuse**: Reuses existing endpoint? Which? If not, why?
 
 If NOT consuming API: skip to next component.
 
@@ -490,9 +549,9 @@ After all 4 steps:
 2. Reset `current_steps` for the next component
 3. Update `current_component` to the next in queue
 
-If ALL components completed → advance to Final Phase.
+If ALL components completed → **GATE**: "Contracts and rules approved? Can I generate tasks?" → advance to Phase 4.
 
-### Final Phase — Composition and Doc Generation
+### Phase 4 — Tasks + Doc Generation
 
 After all components are planned:
 
@@ -599,6 +658,19 @@ After completing all docs:
 - `{{paths.businessRules}}`: 3 sections (~30-50L per module)
 - `{{paths.testPlans}}`: 3-8 essential criteria
 - `{{paths.devPlans}}`: tasks + validation
+
+## Common Pitfalls
+
+| Pitfall | Cause | Fix |
+|---------|-------|-----|
+| Implement without documenting | Skip business-rules | ALWAYS create business-rules first |
+| Doc mixes layers | BFF rules in frontend doc | Each doc ONLY its module |
+| Generic test cases | "Works correctly" | Use Given-When-Then with concrete values |
+| Context overflow | Keep all inline | Save per module, use checkpoint |
+| Ignore existing patterns | Don't explore before planning | Use Explore agents + Grep |
+| Non-self-contained doc | References others without context | Each doc readable alone |
+| Business logic in frontend | Don't validate scope | Frontends = visual. Logic → backend |
+| Create API without checking existing | Don't search for reuse | Grep BEFORE creating endpoint/component |
 
 ## Enforcement Hooks
 

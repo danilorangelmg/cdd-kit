@@ -1,69 +1,355 @@
 {{#if (eq project.language "pt-BR")}}
-# Template: Planejamento de Feature
+# Planejamento de Features — Referencia
+
+## Metodologia: 5 Fases com Gates
+
+| Fase | Nome | O que faz | Gate |
+|------|------|-----------|------|
+| 1 | **Entendimento** | Agente faz 10-20 perguntas de negocio, busca padroes existentes no codebase | Usuario confirma todas respondidas |
+| 2 | **Refinamento de Negocio** | Documenta regras em Given-When-Then por modulo. Marca `[PRECISA CLARIFICACAO]` onde incerto | Usuario aprova regras de negocio |
+| 3 | **Refinamento Tecnico** | Contract-First: API + schema ANTES de codigo. Verificacao de reuso obrigatoria | Usuario aprova contratos e schema |
+| 4 | **Tarefas** | Ordem: schema → contratos API → frontend → backend → integracao. Cada task rastreia para regra | Usuario aprova task list |
+| 5 | **Implementacao** | TDD por tarefa (Red → Green). Reconciliacao contratos vs real ao final | Spec-validate |
+
+**Principio**: Pensar de fora para dentro (UI → contratos → rotas → dados), construir de dentro para fora (dados → rotas → contratos → UI).
 
 ## Classificacao
 
-- **SIMPLES**: Max 2 modulos, CRUD, padroes claros, sem conceitos novos
-- **COMPLEXA**: 3+ modulos, logica nova, integracoes, conceitos novos
+**SIMPLES** — TODOS devem ser verdadeiros:
+1. Afeta no maximo 2 modulos
+2. CRUD padrao ou extensao de tela/endpoint existente
+3. NAO introduz conceito de dominio novo
+4. Tem padrao claro no codebase para copiar
+5. NAO requer integracao com sistema externo novo
+6. NAO tem regras de negocio complexas
+
+**COMPLEXA** — Qualquer criterio falha.
+
+## Auto-Deteccao
+
+```
+Pedido do usuario
+    ↓
+E feature nova? (implementar, criar, adicionar, novo modulo)
+    ├── NAO → Implementar direto (bug fix, refactoring, config)
+    └── SIM → Docs existem em {{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{feature}.md?
+              ├── SIM → Usar {{paths.devPlans}}/{feature}.md como guia
+              └── NAO → BLOQUEAR: invocar /plan-feature → docs → implementar
+```
+
+## Escopo por Role (Regra #5)
+
+| Role | Escopo | NAO pode conter |
+|------|--------|-----------------|
+| frontend/mobile | Layout, UX, estados visuais, validacao de mascara | Calculos de dominio, regras de negocio |
+| backend | Validacoes, calculos, transformacoes, regras de dominio | Logica de UI, DDL |
+| database | Schema DDL, migrations, indexes, constraints | Logica de negocio, ORM com metodos |
+| agent-ai | Motor de regras, pipelines, LLM, schedulers | Logica de API/frontend |
+| e2e | Features BDD, step definitions, page objects | Codigo de aplicacao |
+
+## Formato Given-When-Then (Obrigatorio)
+
+Toda regra de negocio DEVE usar este formato:
+
+```
+Dado {contexto/pre-condicao}
+Quando {acao do usuario ou do sistema}
+Entao {resultado esperado}
+```
+
+**Exemplo**:
+```
+Dado um tecnico com 3 ordens de servico pendentes
+Quando o monitor clica em "Certificar"
+Entao o sistema exibe modal de confirmacao com as 3 OS listadas
+E o botao "Confirmar" fica habilitado apenas se todas as OS estao selecionadas
+```
+
+Toda regra DEVE ter pelo menos 1 cenario positivo E 1 cenario negativo.
+
+## Contract-First (Obrigatorio)
+
+1. **Schema primeiro**: Definir tabelas/campos/migrations ANTES de logica de negocio
+2. **Contratos API primeiro**: Definir endpoints, DTOs, response schemas ANTES de implementar
+3. **Frontend depois**: Componentes/telas se baseiam nos contratos aprovados
+
+## Verificacao de Reuso (Obrigatoria)
+
+Antes de criar QUALQUER endpoint ou componente novo:
+1. `Grep` por padroes similares no codebase existente
+2. Se encontrou → propor extensao/reuso ao inves de criar novo
+3. Documentar decisao de reuso na coluna "Reuso" do plano de desenvolvimento
 
 ## Documentos por Modulo
 
-Para cada modulo afetado:
+Para cada modulo afetado, 3 arquivos em `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/`:
 
 ### {{paths.businessRules}}/{feature}.md
-- Contexto (1-3 linhas)
-- Regras aplicaveis (tabela)
-- Casos de uso (cenarios)
-- Dados (tabelas/campos)
-- Diagramas (se aplicavel)
+
+```markdown
+# {Feature} — Regras de Negocio ({Modulo})
+
+## Contexto
+{1-3 linhas: o que essa feature significa para ESTE modulo}
+
+## Regras Aplicaveis
+| ID | Regra | Dado | Quando | Entao |
+
+## Casos de Uso
+### Caso 1 — Caminho Feliz: {titulo}
+| Momento | Estado | Acao do Sistema |
+{tabela temporal}
+
+### Caso 2 — Cenario Negativo: {titulo}
+| Momento | Estado | Acao do Sistema |
+
+## Dados
+| Tabela | Campo | Tipo | Uso (leitura/escrita) |
+
+## Diagramas
+{Mermaid se aplicavel}
+```
 
 ### {{paths.testPlans}}/{feature}.md
-- Cenarios BDD: Dado/Quando/Entao
-- Cenarios de erro
-- Edge cases
+
+```markdown
+# {Feature} — Plano de Testes ({Modulo})
+
+## Regras de Negocio
+- [ ] Dado {contexto} Quando {acao} Entao {resultado}
+- [ ] Dado {contexto negativo} Quando {acao} Entao {erro esperado}
+
+## API/Endpoints (se backend)
+- [ ] {metodo} {path} retorna {status} quando {condicao}
+- [ ] {metodo} {path} retorna {status erro} quando {condicao de erro}
+
+## UI/Componentes (se frontend)
+- [ ] {componente} exibe {dados} quando {condicao}
+- [ ] {componente} exibe {estado vazio/erro} quando {condicao}
+```
 
 ### {{paths.devPlans}}/{feature}.md
-- Componentes afetados
-- Tarefas atomicas (ordenadas)
-- Criterios de validacao
+
+```markdown
+# {Feature} — Plano de Desenvolvimento ({Modulo})
+
+## Componentes Afetados
+| Componente | Impacto | Arquivos | Reuso |
+
+## Tarefas Atomicas
+| # | Tarefa | Regra Rastreada | Ordem |
+
+## Validacao
+- [ ] {criterio de aceitacao}
+```
+
+## Checklists de Validacao
+
+**regras-negocio**: Focado APENAS neste modulo | IDs de regra preservados | Pelo menos 1 positivo + 1 negativo | Given-When-Then em todas as regras | Dados mapeados | Auto-contido (legivel sozinho)
+
+**plano-testes**: Cada regra tem cenario positivo E negativo | Formato Gherkin consistente | Focado no modulo | Cenarios de erro incluidos
+
+**plano-desenvolvimento**: Padroes existentes mapeados | Tarefas atomicas e claras | Coluna Reuso preenchida | Validacao local definida | Rastreio para regras
+
+## Pitfalls Comuns
+
+| Pitfall | Causa | Correcao |
+|---------|-------|----------|
+| Implementar sem documentar | Pula regras-negocio | SEMPRE criar regras-negocio primeiro |
+| Doc mistura camadas | Regras do BFF no doc do front | Cada doc APENAS seu modulo |
+| Testes genericos | "Funciona corretamente" | Usar Given-When-Then com valores concretos |
+| Context overflow | Manter tudo inline | Salvar por modulo, usar checkpoint |
+| Ignorar padroes existentes | Nao explorar antes | Usar Explore agents + Grep |
+| Doc nao auto-contido | Referencia outros sem contexto | Cada doc legivel sozinho |
+| Logica de negocio no frontend | Nao validar escopo | Frontends = visual. Logica → backend |
+| Criar API sem verificar existente | Nao buscar reuso | Grep ANTES de criar endpoint/componente |
+
+## Tag [PRECISA CLARIFICACAO]
+
+Quando o agente nao tem certeza de um requisito, DEVE marcar com `[PRECISA CLARIFICACAO]` e seguir em frente. O usuario revisa e esclarece no gate.
+
+**Exemplo**: `Dado um tecnico offline [PRECISA CLARIFICACAO: offline = sem conexao ou com conexao instavel?]`
 
 ## Modulos do Projeto
 
 {{#each modules}}
-- `{{name}}` ({{role}})
+- `{{name}}` ({{role}}) → `{{directory}}/`
 {{/each}}
 {{else}}
-# Template: Feature Planning
+# Feature Planning — Reference
+
+## Methodology: 5 Phases with Gates
+
+| Phase | Name | What it does | Gate |
+|-------|------|-------------|------|
+| 1 | **Discovery** | Agent asks 10-20 business questions, searches existing patterns in codebase | User confirms all answered |
+| 2 | **Business Refinement** | Documents rules in Given-When-Then per module. Marks `[NEEDS CLARIFICATION]` where uncertain | User approves business rules |
+| 3 | **Technical Design** | Contract-First: API + schema BEFORE code. Mandatory reuse check | User approves contracts and schema |
+| 4 | **Tasks** | Order: schema → API contracts → frontend → backend → integration. Each task traces to rule | User approves task list |
+| 5 | **Implementation** | TDD per task (Red → Green). Contract vs actual reconciliation at end | Spec-validate |
+
+**Principle**: Think outside-in (UI → contracts → routes → data), build inside-out (data → routes → contracts → UI).
 
 ## Classification
 
-- **SIMPLE**: Max 2 modules, CRUD, clear patterns, no new concepts
-- **COMPLEX**: 3+ modules, new logic, integrations, new concepts
+**SIMPLE** — ALL must be true:
+1. Affects max 2 modules
+2. Standard CRUD or extension of existing screen/endpoint
+3. Does NOT introduce new domain concept
+4. Has clear pattern in codebase to copy
+5. Does NOT require integration with new external system
+6. Does NOT have complex business rules
+
+**COMPLEX** — Any criterion fails.
+
+## Auto-Detection
+
+```
+User request
+    ↓
+Is it a new feature? (implement, create, add, new module)
+    ├── NO → Implement directly (bug fix, refactoring, config)
+    └── YES → Docs exist at {{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{feature}.md?
+              ├── YES → Use {{paths.devPlans}}/{feature}.md as guide
+              └── NO → BLOCK: invoke /plan-feature → docs → implement
+```
+
+## Scope per Role (Rule #5)
+
+| Role | Scope | Cannot contain |
+|------|-------|----------------|
+| frontend/mobile | Layout, UX, visual states, mask validation | Domain calculations, business rules |
+| backend | Validations, calculations, transformations, domain rules | UI logic, DDL |
+| database | Schema DDL, migrations, indexes, constraints | Business logic, ORM with methods |
+| agent-ai | Rules engine, pipelines, LLM, schedulers | API/frontend logic |
+| e2e | BDD features, step definitions, page objects | Application code |
+
+## Given-When-Then Format (Mandatory)
+
+Every business rule MUST use this format:
+
+```
+Given {context/precondition}
+When {user or system action}
+Then {expected result}
+```
+
+**Example**:
+```
+Given a technician with 3 pending work orders
+When the monitor clicks "Certify"
+Then the system shows a confirmation modal with all 3 orders listed
+And the "Confirm" button is enabled only if all orders are selected
+```
+
+Every rule MUST have at least 1 positive AND 1 negative scenario.
+
+## Contract-First (Mandatory)
+
+1. **Schema first**: Define tables/fields/migrations BEFORE business logic
+2. **API contracts first**: Define endpoints, DTOs, response schemas BEFORE implementation
+3. **Frontend after**: Components/screens are based on approved contracts
+
+## Reuse Check (Mandatory)
+
+Before creating ANY new endpoint or component:
+1. `Grep` for similar patterns in existing codebase
+2. If found → propose extension/reuse instead of creating new
+3. Document reuse decision in the "Reuse" column of the dev plan
 
 ## Documents per Module
 
-For each affected module:
+For each affected module, 3 files in `{{paths.docsRoot}}/{{paths.rules}}/{module}/`:
 
 ### {{paths.businessRules}}/{feature}.md
-- Context (1-3 lines)
-- Applicable rules (table)
-- Use cases (scenarios)
-- Data (tables/fields)
-- Diagrams (if applicable)
+
+```markdown
+# {Feature} — Business Rules ({Module})
+
+## Context
+{1-3 lines: what this feature means for THIS module}
+
+## Applicable Rules
+| ID | Rule | Given | When | Then |
+
+## Use Cases
+### Case 1 — Happy Path: {title}
+| Moment | State | System Action |
+{temporal table}
+
+### Case 2 — Negative Scenario: {title}
+| Moment | State | System Action |
+
+## Data
+| Table | Field | Type | Usage (read/write) |
+
+## Diagrams
+{Mermaid if applicable}
+```
 
 ### {{paths.testPlans}}/{feature}.md
-- BDD scenarios: Given/When/Then
-- Error scenarios
-- Edge cases
+
+```markdown
+# {Feature} — Test Plan ({Module})
+
+## Business Rules
+- [ ] Given {context} When {action} Then {result}
+- [ ] Given {negative context} When {action} Then {expected error}
+
+## API/Endpoints (if backend)
+- [ ] {method} {path} returns {status} when {condition}
+- [ ] {method} {path} returns {error status} when {error condition}
+
+## UI/Components (if frontend)
+- [ ] {component} displays {data} when {condition}
+- [ ] {component} displays {empty/error state} when {condition}
+```
 
 ### {{paths.devPlans}}/{feature}.md
-- Affected components
-- Atomic tasks (ordered)
-- Validation criteria
+
+```markdown
+# {Feature} — Development Plan ({Module})
+
+## Affected Components
+| Component | Impact | Files | Reuse |
+
+## Atomic Tasks
+| # | Task | Traced Rule | Order |
+
+## Validation
+- [ ] {acceptance criterion}
+```
+
+## Validation Checklists
+
+**business-rules**: Focused ONLY on this module | Rule IDs preserved | At least 1 positive + 1 negative | Given-When-Then on all rules | Data mapped | Self-contained (readable alone)
+
+**test-plans**: Each rule has positive AND negative scenario | Consistent Gherkin format | Module-focused | Error scenarios included
+
+**dev-plans**: Existing patterns mapped | Atomic and clear tasks | Reuse column filled | Local validation defined | Traced to rules
+
+## Common Pitfalls
+
+| Pitfall | Cause | Fix |
+|---------|-------|-----|
+| Implement without documenting | Skips business-rules | ALWAYS create business-rules first |
+| Doc mixes layers | BFF rules in frontend doc | Each doc ONLY its module |
+| Generic test cases | "Works correctly" | Use Given-When-Then with concrete values |
+| Context overflow | Keep all inline | Save per module, use checkpoint |
+| Ignore existing patterns | Don't explore before planning | Use Explore agents + Grep |
+| Non-self-contained doc | References others without context | Each doc readable alone |
+| Business logic in frontend | Don't validate scope | Frontends = visual. Logic → backend |
+| Create API without checking existing | Don't search for reuse | Grep BEFORE creating endpoint/component |
+
+## Tag [NEEDS CLARIFICATION]
+
+When the agent is uncertain about a requirement, it MUST mark with `[NEEDS CLARIFICATION]` and move on. The user reviews and clarifies at the gate.
+
+**Example**: `Given an offline technician [NEEDS CLARIFICATION: offline = no connection or unstable connection?]`
 
 ## Project Modules
 
 {{#each modules}}
-- `{{name}}` ({{role}})
+- `{{name}}` ({{role}}) → `{{directory}}/`
 {{/each}}
 {{/if}}

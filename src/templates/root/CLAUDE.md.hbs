@@ -78,17 +78,26 @@ Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsi
 ## Metodologia de Desenvolvimento
 
 {{#ifRule "feature-planning-gate"}}
-**Planejamento Outside-In** — Pensar de fora para dentro, construir de dentro para fora:
-- **Planejamento**: UI (componentes) → contratos → rotas backend → fontes de dados
-- **Execucao**: {{#if hasDatabase}}database → {{/if}}backend{{#if hasAgent}} → agent{{/if}}{{#if hasFrontend}} → frontend{{/if}} (cadeia de dependencias)
-- **Enfileirado por componente**: cada componente passa pelo ciclo completo antes do proximo
+**Planejamento em 5 Fases** — Outside-In com gates obrigatorios:
+
+| Fase | Nome | O que faz | Gate |
+|------|------|-----------|------|
+| 1 | **Entendimento** | Agente faz 10-20 perguntas de negocio, busca padroes existentes | Usuario confirma todas respondidas |
+| 2 | **Refinamento de Negocio** | Documenta regras em Given-When-Then por modulo. Marca `[PRECISA CLARIFICACAO]` | Usuario aprova regras |
+| 3 | **Refinamento Tecnico** | Contract-First: API + schema ANTES de codigo. Verifica reuso obrigatorio | Usuario aprova contratos |
+| 4 | **Tarefas** | Ordem: schema → contratos API → frontend → backend → integracao | Usuario aprova tasks |
+| 5 | **Implementacao** | TDD por tarefa (Red → Green), reconciliacao contratos vs real | — |
+
+- **Outside-In**: UI (componentes) → contratos → rotas backend → fontes de dados
+- **Execucao**: {{#if hasDatabase}}database → {{/if}}backend{{#if hasAgent}} → agent{{/if}}{{#if hasFrontend}} → frontend{{/if}}
+- **Contract-First**: NUNCA implementar endpoint sem contrato aprovado. NUNCA criar componente sem verificar reuso.
 - **Hooks de enforcement**: `pre-edit.sh`, `planning-eval.sh`, `planning-validator.sh`
 
 {{/ifRule}}
 **SEMPRE planeje antes de executar:**
-1. **Analisar** — Explore agents para entender escopo e padroes
+1. **Analisar** — Explore agents para entender escopo e padroes existentes
 2. **Pensar** — Extended thinking para tradeoffs
-3. **Planejar** — Abordagem com justificativa{{#ifRule "feature-planning-gate"}}. Features novas → `/plan-feature`{{/ifRule}}
+3. **Planejar** — Abordagem com justificativa{{#ifRule "feature-planning-gate"}}. Features novas → `/plan-feature` (5 fases com gates){{/ifRule}}
 {{#ifRule "tdd-enforcement"}}
 4. **Testar (Red)** — Delegar escrita de testes ANTES de implementar
 5. **Executar (Green)** — Delegar implementacao minima para testes passarem
@@ -100,7 +109,7 @@ Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsi
 
 {{#ifRule "tdd-enforcement"}}
 **TDD Obrigatorio** — Para toda tarefa testavel:
-- **Features**: Delegate escreve testes{{#ifRule "feature-planning-gate"}} baseados no plano de testes{{/ifRule}} → falham (Red) → implementa → passam (Green)
+- **Features**: Delegate escreve testes{{#ifRule "feature-planning-gate"}} baseados no plano de testes (Given-When-Then){{/ifRule}} → falham (Red) → implementa → passam (Green)
 - **Bug fixes**: Teste que reproduz o bug → falha (Red) → corrige → passa (Green)
 - **Refactoring**: Garantir testes existentes passam → refatorar → continuam passando
 
@@ -117,7 +126,7 @@ Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsi
 **Checklist pre-implementacao:**
 1. E feature nova? (palavras: implementar, criar, adicionar, novo modulo)
 2. Se SIM → `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/{{paths.businessRules}}/{feature}.md` existe nos modulos afetados?
-3. Se NAO → Classificar Simples/Complexa → `/plan-feature`
+3. Se NAO → Classificar Simples/Complexa → `/plan-feature` (5 fases com gates)
 4. Se SIM → Usar `{{paths.devPlans}}/{feature}.md` como guia
 
 **Classificacao**: SIMPLES quando TODOS: max 2 modulos, CRUD padrao, sem novo conceito, padrao claro, sem integracao nova, sem regras complexas. Qualquer falha → COMPLEXA.
@@ -125,11 +134,13 @@ Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsi
 **NAO e feature**: bug fix, refactoring, config/ajuste, correcao de layout.
 
 **Docs por modulo**: Para cada modulo afetado, 3 arquivos em `{{paths.docsRoot}}/{{paths.rules}}/{modulo}/`:
-- `{{paths.businessRules}}/{feature}.md` — regras de negocio
-- `{{paths.testPlans}}/{feature}.md` — plano de testes
-- `{{paths.devPlans}}/{feature}.md` — tarefas atomicas do delegate
+- `{{paths.businessRules}}/{feature}.md` — regras de negocio (Given-When-Then)
+- `{{paths.testPlans}}/{feature}.md` — plano de testes (Gherkin)
+- `{{paths.devPlans}}/{feature}.md` — tarefas atomicas com rastreio para regras
 
-**Skill**: `/plan-feature` orquestra o fluxo completo automaticamente.
+**Verificacao de Reuso**: Antes de criar QUALQUER endpoint ou componente novo, buscar existentes com Grep. Documentar decisao de reuso.
+
+**Skill**: `/plan-feature` orquestra as 5 fases com gates obrigatorios.
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}
@@ -560,17 +571,26 @@ Each module has well-defined boundaries. See `.claude/rules/scope-responsibiliti
 ## Development Methodology
 
 {{#ifRule "feature-planning-gate"}}
-**Outside-In Planning** — Think outside-in, build inside-out:
-- **Planning**: UI (components) → contracts → backend routes → data sources
-- **Execution**: {{#if hasDatabase}}database → {{/if}}backend{{#if hasAgent}} → agent{{/if}}{{#if hasFrontend}} → frontend{{/if}} (dependency chain)
-- **Queued per component**: each component goes through the full cycle before the next
+**5-Phase Planning** — Outside-In with mandatory gates:
+
+| Phase | Name | What it does | Gate |
+|-------|------|-------------|------|
+| 1 | **Discovery** | Agent asks 10-20 business questions, searches existing patterns | User confirms all answered |
+| 2 | **Business Refinement** | Documents rules in Given-When-Then per module. Marks `[NEEDS CLARIFICATION]` | User approves rules |
+| 3 | **Technical Design** | Contract-First: API + schema BEFORE code. Mandatory reuse check | User approves contracts |
+| 4 | **Tasks** | Order: schema → API contracts → frontend → backend → integration | User approves tasks |
+| 5 | **Implementation** | TDD per task (Red → Green), contract vs actual reconciliation | — |
+
+- **Outside-In**: UI (components) → contracts → backend routes → data sources
+- **Execution**: {{#if hasDatabase}}database → {{/if}}backend{{#if hasAgent}} → agent{{/if}}{{#if hasFrontend}} → frontend{{/if}}
+- **Contract-First**: NEVER implement an endpoint without an approved contract. NEVER create a component without checking for reuse.
 - **Enforcement hooks**: `pre-edit.sh`, `planning-eval.sh`, `planning-validator.sh`
 
 {{/ifRule}}
 **ALWAYS plan before executing:**
-1. **Analyze** — Use Explore agents to understand scope and patterns
+1. **Analyze** — Use Explore agents to understand scope and existing patterns
 2. **Think** — Extended thinking for tradeoffs
-3. **Plan** — Approach with justification{{#ifRule "feature-planning-gate"}}. New features → `/plan-feature`{{/ifRule}}
+3. **Plan** — Approach with justification{{#ifRule "feature-planning-gate"}}. New features → `/plan-feature` (5 phases with gates){{/ifRule}}
 {{#ifRule "tdd-enforcement"}}
 4. **Test (Red)** — Delegate test writing BEFORE implementation
 5. **Execute (Green)** — Delegate minimum implementation to pass tests
@@ -582,7 +602,7 @@ Each module has well-defined boundaries. See `.claude/rules/scope-responsibiliti
 
 {{#ifRule "tdd-enforcement"}}
 **Mandatory TDD** — For every testable task:
-- **Features**: Delegate writes tests{{#ifRule "feature-planning-gate"}} based on the test plan{{/ifRule}} → fail (Red) → implement → pass (Green)
+- **Features**: Delegate writes tests{{#ifRule "feature-planning-gate"}} based on the test plan (Given-When-Then){{/ifRule}} → fail (Red) → implement → pass (Green)
 - **Bug fixes**: Test that reproduces the bug → fail (Red) → fix → pass (Green)
 - **Refactoring**: Ensure existing tests pass → refactor → tests still pass
 
@@ -599,7 +619,7 @@ Each module has well-defined boundaries. See `.claude/rules/scope-responsibiliti
 **Pre-implementation checklist:**
 1. Is it a new feature? (keywords: implement, create, add, new module)
 2. If YES → do `{{paths.docsRoot}}/{{paths.rules}}/{module}/{{paths.businessRules}}/{feature}.md` exist in affected modules?
-3. If NO → Classify Simple/Complex → `/plan-feature`
+3. If NO → Classify Simple/Complex → `/plan-feature` (5 phases with gates)
 4. If YES → Use `{{paths.devPlans}}/{feature}.md` as implementation guide
 
 **Classification**: SIMPLE when ALL: max 2 modules, standard CRUD, no new concept, clear pattern, no new integration, no complex rules. Any failure → COMPLEX.
@@ -607,11 +627,13 @@ Each module has well-defined boundaries. See `.claude/rules/scope-responsibiliti
 **NOT a feature**: bug fix, refactoring, config/adjustment, layout fix.
 
 **Docs per module**: For each affected module, 3 files in `{{paths.docsRoot}}/{{paths.rules}}/{module}/`:
-- `{{paths.businessRules}}/{feature}.md` — business rules
-- `{{paths.testPlans}}/{feature}.md` — test plan
-- `{{paths.devPlans}}/{feature}.md` — atomic delegate tasks
+- `{{paths.businessRules}}/{feature}.md` — business rules (Given-When-Then)
+- `{{paths.testPlans}}/{feature}.md` — test plan (Gherkin)
+- `{{paths.devPlans}}/{feature}.md` — atomic tasks with rule traceability
 
-**Skill**: `/plan-feature` orchestrates the full flow automatically.
+**Reuse Check**: Before creating ANY new endpoint or component, search for existing ones with Grep. Document the reuse decision.
+
+**Skill**: `/plan-feature` orchestrates 5 phases with mandatory gates.
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}

@@ -12,18 +12,6 @@ export async function generateDocs(
   const paths = getPathMap(config.project.language);
   const docsDir = path.join(projectDir, paths.docsRoot);
 
-  // Change log directories per module
-  if (config.methodology.rules["changelog-by-date"]) {
-    for (const mod of config.modules) {
-      await ensureDir(path.join(docsDir, paths.changelog, mod.name));
-      await writeFile(
-        path.join(docsDir, paths.changelog, mod.name, ".gitkeep"),
-        ""
-      );
-    }
-    generatedFiles.push(`${paths.docsRoot}/${paths.changelog}/`);
-  }
-
   // Feature planning directories per module
   if (config.methodology.rules["feature-planning-gate"]) {
     for (const mod of config.modules) {
@@ -93,17 +81,6 @@ export async function generateDocs(
     );
     generatedFiles.push(
       `${paths.docsRoot}/${paths.templates}/mermaid-reference.md`
-    );
-  }
-
-  if (config.methodology.rules["changelog-by-date"]) {
-    const changelog = renderTemplate("docs/changelog-entry.md.hbs", context);
-    await writeFile(
-      path.join(docsDir, paths.templates, "changelog-entry.md"),
-      changelog
-    );
-    generatedFiles.push(
-      `${paths.docsRoot}/${paths.templates}/changelog-entry.md`
     );
   }
 

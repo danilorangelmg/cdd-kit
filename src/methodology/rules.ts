@@ -30,9 +30,9 @@ export const RULES: Rule[] = [
     name: "Changelog by Date",
     namePtBr: "Changelog por Data",
     description:
-      "Every completed delegation generates a changelog entry per module per day with title, agent, status, decision, changes, and Mermaid diagram (if applicable).",
+      "Every completed delegation generates a structured git commit per submodule with title, agent, status, decision, changes, and Mermaid diagram (if applicable). History lives in git log, not in files.",
     descriptionPtBr:
-      "Toda delegacao concluida gera uma entrada de changelog por modulo por dia com titulo, agente, status, decisao, alteracoes e diagrama Mermaid (se aplicavel).",
+      "Toda delegacao concluida gera um commit git estruturado por submodulo com titulo, agente, status, decisao, alteracoes e diagrama Mermaid (se aplicavel). Historico vive no git log, nao em arquivos.",
     alwaysActive: false,
     requires: [],
     category: "documentation",

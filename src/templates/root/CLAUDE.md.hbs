@@ -133,34 +133,31 @@ Cada modulo tem fronteiras bem definidas. Consulte `.claude/rules/scope-responsi
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}
-## Changelog (Regra #1)
+## Commit com Changelog (Regra #1)
 
-Toda delegacao concluida gera: `{{paths.docsRoot}}/{{paths.changelog}}/{modulo}/{YYYY-MM-DD}.md`
+Toda delegacao concluida gera um **commit git estruturado** por submodulo. Historico vive no `git log`, nao em arquivos.
 
-### Estrutura de Diretorios
-
-```
-{{paths.docsRoot}}/{{paths.changelog}}/
-  {modulo}/
-    {modulo}.md          ← historico (entradas anteriores)
-    {YYYY-MM-DD}.md      ← entradas do dia
-```
-
-### Formato de Entrada
+### Formato do Commit
 
 ```
-### Titulo curto
-**Agente**: {sub-agente} | **Status**: Concluido/Falhou
-**Decisao**: {justificativa da abordagem}
-**Alteracoes**: {lista de arquivos criados/modificados}
-{{#ifRule "conditional-mermaid"}}**Diagrama**: Mermaid (se mudanca arquitetural){{/ifRule}}
+feat({modulo}): titulo curto da mudanca
+
+Agent: {sub-agente}
+Status: Completed | Failed
+Decision: {justificativa da abordagem}
+
+Changes:
+- path/arquivo (Created|Modified|Removed): descricao
+{{#ifRule "conditional-mermaid"}}
+Diagram: (se mudanca arquitetural — mermaid no corpo do commit)
+{{/ifRule}}
 ```
 
 ### Regras
-- Se ja existir arquivo da data atual → **APPEND** da nova entrada no topo
-- Se nao existir → criar novo arquivo com a entrada
-- A data NAO vai no titulo da entrada (redundante — ja esta no nome do arquivo)
-- **Responsabilidade do orquestrador** (nao do sub-agente), pois ele tem visao das decisoes
+- Um commit por delegacao concluida, no submodulo afetado
+- Usar Conventional Commits: `feat`, `fix`, `refactor`, `chore`
+- **Responsabilidade do orquestrador** (nao do sub-agente): `git add {submodulo} && git commit`
+- Para consultar historico: `git log --oneline {submodulo}/`
 {{/ifRule}}
 
 {{#ifRule "conditional-mermaid"}}
@@ -618,34 +615,31 @@ Each module has well-defined boundaries. See `.claude/rules/scope-responsibiliti
 {{/ifRule}}
 
 {{#ifRule "changelog-by-date"}}
-## Changelog (Rule #1)
+## Commit with Changelog (Rule #1)
 
-Every completed delegation generates: `{{paths.docsRoot}}/{{paths.changelog}}/{module}/{YYYY-MM-DD}.md`
+Every completed delegation generates a **structured git commit** per submodule. History lives in `git log`, not in files.
 
-### Directory Structure
-
-```
-{{paths.docsRoot}}/{{paths.changelog}}/
-  {module}/
-    {module}.md          ← historical (previous entries)
-    {YYYY-MM-DD}.md      ← daily entries
-```
-
-### Entry Format
+### Commit Format
 
 ```
-### Short title
-**Agent**: {sub-agent} | **Status**: Completed/Failed
-**Decision**: {approach justification}
-**Changes**: {list of files created/modified}
-{{#ifRule "conditional-mermaid"}}**Diagram**: Mermaid (if architectural change){{/ifRule}}
+feat({module}): short change title
+
+Agent: {sub-agent}
+Status: Completed | Failed
+Decision: {approach justification}
+
+Changes:
+- path/file (Created|Modified|Removed): description
+{{#ifRule "conditional-mermaid"}}
+Diagram: (if architectural change — mermaid in commit body)
+{{/ifRule}}
 ```
 
 ### Rules
-- If file for current date already exists → **APPEND** new entry at the top
-- If not → create new file with the entry
-- Date does NOT go in entry title (redundant — already in filename)
-- **Orchestrator's responsibility** (not sub-agent's), as it has decision visibility
+- One commit per completed delegation, in the affected submodule
+- Use Conventional Commits: `feat`, `fix`, `refactor`, `chore`
+- **Orchestrator's responsibility** (not sub-agent's): `git add {submodule} && git commit`
+- To check history: `git log --oneline {submodule}/`
 {{/ifRule}}
 
 {{#ifRule "conditional-mermaid"}}

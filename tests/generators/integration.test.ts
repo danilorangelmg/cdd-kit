@@ -107,13 +107,9 @@ describe("Project Generation (Standard preset, English)", () => {
     expect(claude).toContain("make validate-all");
     expect(claude).toContain("make lint-frontend");
 
-    // Phase 9: Expanded Rule #1 (changelog entry format)
-    expect(claude).toContain("Entry Format");
-    expect(claude).toContain("**Agent**:");
-    expect(claude).toContain("**Decision**:");
-
-    // Phase 15: Expanded Rule #1 (changelog directory tree, append, ownership)
-    expect(claude).toContain("APPEND");
+    // Phase 9: Expanded Rule #1 (git-based changelog)
+    expect(claude).toContain("Commit Format");
+    expect(claude).toContain("Conventional Commits");
     expect(claude).toContain("Orchestrator's responsibility");
 
     // Phase 16/20: Expanded Rule #3 (planning gate auto-detection, SIMPLE criteria)
@@ -457,11 +453,9 @@ describe("Project Generation (Standard preset, English)", () => {
   it("generates English documentation structure", async () => {
     const files = await generateDocs(TEST_DIR, standardConfig);
 
-    // English directory names
-    expect(files).toContain("docs/changelog/");
+    // English directory names (changelog is git-based, no dirs)
     expect(files).toContain("docs/rules/");
     expect(files).toContain("docs/templates/feature-planning.md");
-    expect(files).toContain("docs/templates/changelog-entry.md");
 
     // Verify per-module doc structure with English names
     for (const mod of standardConfig.modules) {
@@ -626,8 +620,7 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
 
     const files = await generateDocs(TEST_DIR, ptBrFullConfig);
 
-    // Portuguese directory names
-    expect(files).toContain("documentos/change-log/");
+    // Portuguese directory names (changelog is git-based, no dirs)
     expect(files).toContain("documentos/regras/");
 
     // Verify Portuguese sub-dir names
@@ -695,8 +688,8 @@ describe("Project Generation (Minimal preset, PT-BR)", () => {
       "utf-8"
     );
 
-    // Phase 15: PT-BR changelog expansion
-    expect(claude).toContain("APPEND");
+    // Phase 15: PT-BR git-based changelog
+    expect(claude).toContain("Conventional Commits");
     expect(claude).toContain("Responsabilidade do orquestrador");
 
     // Phase 16/20: PT-BR planning gate expansion
